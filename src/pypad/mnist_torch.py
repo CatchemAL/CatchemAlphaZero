@@ -9,15 +9,15 @@ from .mnist_pytorch_loader import load_torch_data
 class MLP(nn.Module):
     def __init__(self):
         super(MLP, self).__init__()
-        self.fc1 = nn.Linear(784, 125)
-        self.fc2 = nn.Linear(125, 10)
-        self.relu = nn.ReLU()
+
+        self.network_layers = nn.Sequential(
+            nn.Linear(784, 125),
+            nn.ReLU(),
+            nn.Linear(125, 10),
+        )
 
     def forward(self, x):
-        x = x.view(-1, 784)  # Flatten the input image
-        x = self.fc1(x)
-        x = self.relu(x)
-        x = self.fc2(x)
+        x = self.network_layers(x)
         return x
 
 # Define the training loop
@@ -25,10 +25,10 @@ def train(model, optimizer, cost_function, train_loader):
     model.train()
     for inputs, labels in train_loader:
         optimizer.zero_grad()
-        outputs = model(inputs)
-        loss = cost_function(outputs, labels)
-        loss.backward()
-        optimizer.step()
+        predictions = model(inputs)
+        loss = cost_function(predictions, labels)
+        loss.backward() # calculate gradients
+        optimizer.step() # update weights
 
 # Define the testing loop
 def test(model, test_loader):
@@ -50,10 +50,10 @@ def run_torch():
     batch_size = 32
 
     # Create the data loaders
-    train_loader, test_loader = load_torch_data(batch_size)
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    train_loader, test_loader = load_torch_data(batch_size, device)
 
     # Create the model, loss function, and optimizer
-    device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using {device} device")
     model = MLP().to(device)
     print(model)
@@ -61,9 +61,11 @@ def run_torch():
     cost_function = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=alpha)
 
-    # Train the model
     for epoch in range(num_epochs):
+        # Train the model
         train(model, optimizer, cost_function, train_loader)
+    
+        # Test after each epoch
         num_correct = test(model, test_loader)
         accuracy = num_correct / len(test_loader.dataset)
         print(f"Epoch {epoch+1}: {accuracy*100:.2f}% accuracy")
