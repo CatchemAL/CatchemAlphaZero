@@ -9,7 +9,6 @@ from sklearn.neural_network import MLPClassifier
 
 from .mnist_loader import load_data
 
-
 def mlp_run():
     training_data, validation_data, test_data = load_data()
     
