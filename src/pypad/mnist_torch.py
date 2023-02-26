@@ -1,7 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+
 from .mnist_loader import load_data
+from .mnist_pytorch_loader import load_torch_data
 
 # Define the MLP model
 class MLP(nn.Module):
@@ -47,41 +49,23 @@ def run_torch():
     num_epochs = 10
     batch_size = 32
 
-    # load data
-    training_data, validation_data, test_data = load_data()
-    x_train, y_train = training_data[0][:,:], training_data[1][:]
-    x_test, y_test = test_data[0], test_data[1]
-
-    # Convert data to PyTorch tensors
-    x_train = torch.from_numpy(x_train).float()
-    y_train = torch.from_numpy(y_train).long()
-    x_test = torch.from_numpy(x_test).float()
-    y_test = torch.from_numpy(y_test).long()
+    # Create the data loaders
+    train_loader, test_loader = load_torch_data(batch_size)
 
     # Create the model, loss function, and optimizer
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using {device} device")
-
     model = MLP().to(device)
     print(model)
 
-    criterion = nn.CrossEntropyLoss()
+    cost_function = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=alpha)
-
-    # Create the data loaders
-    train_dataset = torch.utils.data.TensorDataset(x_train, y_train)
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    test_dataset = torch.utils.data.TensorDataset(x_test, y_test)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     # Train the model
     for epoch in range(num_epochs):
-        train(model, optimizer, criterion, train_loader)
+        train(model, optimizer, cost_function, train_loader)
         num_correct = test(model, test_loader)
-        accuracy = num_correct / len(y_test)
+        accuracy = num_correct / len(test_loader.dataset)
         print(f"Epoch {epoch+1}: {accuracy*100:.2f}% accuracy")
 
-    # Test the model
-    num_correct = test(model, test_loader)
-    accuracy = num_correct / len(y_test)
-    print(f"\nBaseline classifier using an MLP. {num_correct} of {len(y_test)} values correct ({accuracy*100:.2f}% accuracy).")
+
