@@ -131,8 +131,9 @@ class Solver:
         beta = min(beta, max_possible_score)
         
         score = -100_000_000
-
-        for col in self.move_order:
+        move_order = Solver.create_order(board.mask_utils.cols)
+        
+        for col in move_order:
             if not board.can_play_col(col):
                 continue  # todo mask col with possible moves and fire that in instead
             
@@ -144,4 +145,16 @@ class Solver:
                 return alpha
 
         return alpha
+    
+    @staticmethod
+    def create_order(cols: int) -> List[int]:
+        order: List[int] = [0] * cols
+
+        for i in range(cols):
+            if i % 2 == 0:
+                order[i] = (cols - i - 1) // 2
+            else:
+                order[i] = (cols + i) // 2
+
+        return order
     
