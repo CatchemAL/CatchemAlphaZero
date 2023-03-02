@@ -130,13 +130,17 @@ class OXOState:
     def GetMoves(self):
         """ Get all possible moves from this state.
         """
+        for (x,y,z) in [(0,1,2),(3,4,5),(6,7,8),(0,3,6),(1,4,7),(2,5,8),(0,4,8),(2,4,6)]:
+            if self.board[x] != 0 and self.board[x] == self.board[y] == self.board[z]:
+                return []
+
         return [i for i in range(9) if self.board[i] == 0]
     
     def GetResult(self, playerjm):
         """ Get the game result from the viewpoint of playerjm. 
         """
         for (x,y,z) in [(0,1,2),(3,4,5),(6,7,8),(0,3,6),(1,4,7),(2,5,8),(0,4,8),(2,4,6)]:
-            if self.board[x] == self.board[y] == self.board[z]:
+            if self.board[x] != 0 and self.board[x] == self.board[y] == self.board[z]:
                 if self.board[x] == playerjm:
                     return 1.0
                 else:
@@ -283,7 +287,13 @@ class Node:
             lambda c: c.wins/c.visits + UCTK * sqrt(2*log(self.visits)/c.visits to vary the amount of
             exploration versus exploitation.
         """
-        s = sorted(self.childNodes, key = lambda c: c.wins/c.visits + sqrt(2*log(self.visits)/c.visits))[-1]
+        def ucb1(node: 'Node') -> float:
+            exploitation_param = node.wins / node.visits
+            exploration_param  = sqrt(log(self.visits) / node.visits)
+            c = sqrt(2)
+            return exploitation_param + c * exploration_param
+
+        s = max(self.childNodes, key=ucb1)
         return s
     
     def AddChild(self, m, s):
@@ -366,15 +376,15 @@ def UCTPlayGame():
     """ Play a sample game between two UCT players where each player gets a different number 
         of UCT iterations (= simulations = tree nodes).
     """
-    state = OthelloState(4) # uncomment to play Othello on a square board of the given size
+    # state = OthelloState(4) # uncomment to play Othello on a square board of the given size
     state = OXOState() # uncomment to play OXO
     # state = NimState(15) # uncomment to play Nim with the given number of starting chips
     while (state.GetMoves() != []):
         print(str(state))
         if state.playerJustMoved == 1:
-            m = UCT(rootstate = state, itermax = 1000, verbose = False) # play with values for itermax and verbose = True
+            m = UCT(rootstate = state, itermax = 100, verbose = False) # play with values for itermax and verbose = True
         else:
-            m = UCT(rootstate = state, itermax = 100, verbose = False)
+            m = UCT(rootstate = state, itermax = 1000, verbose = False)
         print("Best Move: " + str(m) + "\n")
         state.DoMove(m)
     if state.GetResult(state.playerJustMoved) == 1.0:
