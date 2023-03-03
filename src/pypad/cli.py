@@ -1,7 +1,7 @@
-from .mnist_loader import load_data_wrapper
-from .mnist_mlp import mlp_run
-from .mnist_svm import svm_baseline
-from .mnist_torch import run_torch
+from .mnist.mnist_loader import load_data_wrapper
+from .mnist.mnist_mlp import mlp_run
+from .mnist.mnist_svm import svm_baseline
+from .mnist.mnist_torch import run_torch
 
 from .connectx import Board
 from .solver import Solver
