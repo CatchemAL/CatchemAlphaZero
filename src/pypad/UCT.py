@@ -391,7 +391,8 @@ def UCTPlayGame():
         print("Player " + str(state.playerJustMoved) + " wins!")
     elif state.GetResult(state.playerJustMoved) == 0.0:
         print("Player " + str(3 - state.playerJustMoved) + " wins!")
-    else: print("Nobody wins!")
+    else:
+        print("Nobody wins!")
 
 if __name__ == "__main__":
     """ Play a single game to the end using UCT for both players. 
