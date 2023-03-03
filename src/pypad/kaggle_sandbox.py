@@ -6,7 +6,6 @@ from kaggle_environments import make
 from .connectx import Board
 
 
-
 # Helper function for score_move: calculates value of heuristic for grid
 def get_heuristic(board) -> int:
     directions = (board.mask_utils.rows - 1, board.mask_utils.rows, board.mask_utils.rows + 1, 1)
@@ -16,10 +15,10 @@ def get_heuristic(board) -> int:
     for dir in directions:
         if result := bitboard & (bitboard >> dir) & (bitboard >> 2 * dir):
             score += 0.1 * result.bit_count()
-            
+
         if result := bitboard2 & (bitboard2 >> dir) & (bitboard2 >> 2 * dir):
             score -= 0.2 * result.bit_count()
-            
+
     return score
 
 
@@ -29,13 +28,13 @@ def shallow_negamax(board: Board, alpha: int, beta: int, depth: int) -> int:
 
     win_mask = board.win_mask()
     possible_moves = board.possible_moves_mask()
-    if (win_mask & possible_moves):
+    if win_mask & possible_moves:
         return (board.num_slots() - board.num_moves + 1) // 2
 
     max_possible_score = (board.num_slots() - board.num_moves - 1) // 2
     if max_possible_score <= alpha:
         return max_possible_score
-    
+
     if depth == 0:
         return get_heuristic(board)
 
@@ -52,8 +51,8 @@ def shallow_negamax(board: Board, alpha: int, beta: int, depth: int) -> int:
 
     return alpha
 
-def agent_negamax(obs, config, depth):
 
+def agent_negamax(obs, config, depth):
     grid = np.asarray(obs.board).reshape(config.rows, config.columns)
     board = Board.from_grid(grid)
 
@@ -73,8 +72,9 @@ def agent_negamax(obs, config, depth):
         if score > best_score:
             best_score = score
             best_col = col
-            
+
     return best_col
+
 
 def run_kaggle() -> None:
     agent_negamax5 = partial(agent_negamax, depth=5)

@@ -4,11 +4,10 @@ import torch.optim as optim
 from .mnist_loader import load_data
 
 
-def load_torch_data(batch_size: int = 32, device: str = 'cpu'):
-
+def load_torch_data(batch_size: int = 32, device: str = "cpu"):
     # load data
     training_data, validation_data, test_data = load_data()
-    x_train, y_train = training_data[0][:,:], training_data[1][:]
+    x_train, y_train = training_data[0][:, :], training_data[1][:]
     x_test, y_test = test_data[0], test_data[1]
 
     # Convert data to PyTorch tensors

@@ -5,6 +5,7 @@ import torch.optim as optim
 from .mnist_loader import load_data
 from .mnist_pytorch_loader import load_torch_data
 
+
 # Define the MLP model
 class MLP(nn.Module):
     def __init__(self):
@@ -20,6 +21,7 @@ class MLP(nn.Module):
         x = self.network_layers(x)
         return x
 
+
 # Define the training loop
 def train(model, optimizer, cost_function, train_loader):
     model.train()
@@ -27,8 +29,9 @@ def train(model, optimizer, cost_function, train_loader):
         optimizer.zero_grad()
         predictions = model(inputs)
         loss = cost_function(predictions, labels)
-        loss.backward() # calculate gradients
-        optimizer.step() # update weights
+        loss.backward()  # calculate gradients
+        optimizer.step()  # update weights
+
 
 # Define the testing loop
 def test(model, test_loader):
@@ -41,8 +44,8 @@ def test(model, test_loader):
             num_correct += torch.sum(predictions == labels).item()
     return num_correct
 
-def run_torch():
 
+def run_torch():
     # Define the hyperparameters
     learning_rate = 0.22
     alpha = 0.0005
@@ -64,10 +67,8 @@ def run_torch():
     for epoch in range(num_epochs):
         # Train the model
         train(model, optimizer, cost_function, train_loader)
-    
+
         # Test after each epoch
         num_correct = test(model, test_loader)
         accuracy = num_correct / len(test_loader.dataset)
         print(f"Epoch {epoch+1}: {accuracy*100:.2f}% accuracy")
-
-

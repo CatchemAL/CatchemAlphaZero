@@ -9,14 +9,15 @@ from sklearn.neural_network import MLPClassifier
 
 from .mnist_loader import load_data
 
+
 def mlp_run():
     training_data, validation_data, test_data = load_data()
-    
-    x_train, y_train = training_data[0][:,:], training_data[1][:]
+
+    x_train, y_train = training_data[0][:, :], training_data[1][:]
     x_test, y_test = test_data[0], test_data[1]
 
     # train
-    print('Begin MLP training')
+    print("Begin MLP training")
     mlp = MLPClassifier(
         hidden_layer_sizes=(125,),
         alpha=0.0005,
@@ -27,7 +28,7 @@ def mlp_run():
     )
 
     mlp.fit(x_train, y_train)
-    
+
     # test
     predictions = mlp.predict(x_test)
     is_correct = predictions == y_test

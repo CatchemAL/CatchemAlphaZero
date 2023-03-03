@@ -16,6 +16,7 @@ import gzip
 # Third-party libraries
 import numpy as np
 
+
 def load_data():
     """Return the MNIST data as a tuple containing the training data,
     the validation data, and the test data.
@@ -39,10 +40,11 @@ def load_data():
     That's done in the wrapper function ``load_data_wrapper()``, see
     below.
     """
-    with gzip.open('./data/mnist.pkl.gz', 'rb') as f:
+    with gzip.open("./data/mnist.pkl.gz", "rb") as f:
         training_data, validation_data, test_data = pickle.load(f, encoding="latin1")
 
     return (training_data, validation_data, test_data)
+
 
 def load_data_wrapper():
     """Return a tuple containing ``(training_data, validation_data,
@@ -74,6 +76,7 @@ def load_data_wrapper():
     test_inputs = [np.reshape(x, (784, 1)) for x in te_d[0]]
     test_data = zip(test_inputs, te_d[1])
     return (training_data, validation_data, test_data)
+
 
 def vectorized_result(j):
     """Return a 10-dimensional unit vector with a 1.0 in the jth
