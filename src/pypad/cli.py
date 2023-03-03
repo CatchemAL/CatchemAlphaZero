@@ -4,11 +4,13 @@ from .mnist_svm import svm_baseline
 from .mnist_torch import run_torch
 
 from .connectx import Board, Solver
+from .kaggle_sandbox import run_kaggle
 
 import numpy as np
 
 def main() -> None:
 
+    run_kaggle()
 
     ROWS, COLS = 6, 7
     moves = [1,1,2,2,3,3]

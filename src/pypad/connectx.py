@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import numpy as np
 from typing import List
 from collections.abc import Generator
 
@@ -69,7 +70,7 @@ class Board:
     
     def is_won(self) -> bool:
         directions = (self.mask_utils.rows - 1, self.mask_utils.rows, self.mask_utils.rows + 1, 1)
-        bitboard = self.position ^ self.mask;
+        bitboard = self.position ^ self.mask
         for dir in directions:
             bitmask = bitboard & (bitboard >> dir)
             if (bitmask & (bitmask >> 2 * dir)):
@@ -89,6 +90,16 @@ class Board:
             possible_move = possible_moves_mask & col_mask
             if possible_move > 0:
                 yield possible_move
+    
+    def possible_col_moves(self) -> Generator[int, None, None]:
+        possible_moves_mask = self.possible_moves_mask()
+        move_order = self.mask_utils.move_order()
+        
+        for col in move_order:
+            col_mask = self.mask_utils.get_col_mask(col)
+            possible_move = possible_moves_mask & col_mask
+            if possible_move > 0:
+                yield col
     
     def win_mask(self) -> int:
 
@@ -126,8 +137,29 @@ class Board:
     @classmethod
     def create(cls, rows: int, cols: int, moves: List[int]) -> 'Board':
         mask = MaskUtils(rows + 1, cols)
-        mask.BOTTOM_ROW
         board = cls(mask, 0, 0, 0) 
         for move in moves:
             board.play_col(move - 1)
+        return board
+    
+    @classmethod
+    def from_grid(cls, grid) -> 'Board':
+        rows, cols = grid.shape
+        padded_grid = np.vstack((np.zeros(cols), grid))
+        
+        indices = np.flipud(np.arange((rows + 1) * cols).reshape((cols, rows + 1)).transpose())
+        binary_vals = 2 ** indices.astype(np.int64)
+
+        mask = (padded_grid > 0).astype(np.int64)
+        num_moves = np.sum(mask)
+        mark = 1 + num_moves % 2
+        
+        posn = (padded_grid == mark).astype(np.int64)
+        mask_utils = MaskUtils(rows + 1, cols)
+        board = cls(mask_utils, 0, 0, 0)
+        mask_val = np.sum(mask * binary_vals)
+        posn_val = np.sum(posn * binary_vals)
+        board.mask = mask_val
+        board.position = posn_val
+        board.num_moves = np.sum(mask)
         return board
