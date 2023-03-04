@@ -1,6 +1,8 @@
 from copy import copy
 from functools import partial
 
+from .game_state import MctsSolver
+
 import numpy as np
 from kaggle_environments import make
 
@@ -75,6 +77,15 @@ def agent_negamax(obs, config, depth):
             best_col = col
 
     return best_col
+
+
+def agent_mcts(obs, config):
+    grid = np.asarray(obs.board).reshape(config.rows, config.columns)
+    board = Board.from_grid(grid)
+    mcts = MctsSolver()
+    move = mcts.solve(board)
+    col = board.bitboard_util.move_to_col(move)
+    return col
 
 
 def run_kaggle() -> None:

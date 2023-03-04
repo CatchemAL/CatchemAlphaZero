@@ -23,6 +23,14 @@ class BitboardUtil:
         first_col = (1 << (self.rows - 1)) - 1
         return first_col << (self.rows * col)
 
+    def move_to_col(self, move: int) -> int:
+        for i in range(self.cols):
+            col_mask = self.get_col_mask(i)
+            if col_mask & move:
+                return i
+
+        raise ValueError(f"Move {move} not associated with any column.")
+
     def get_board_mask(self) -> int:
         x = self.BOTTOM_ROW << (self.rows - 1)
         return x - self.BOTTOM_ROW
