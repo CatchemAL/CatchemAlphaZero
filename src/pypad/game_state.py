@@ -32,12 +32,20 @@ class Node(Generic[TMove]):
         self.wins: int = 0
         self.visit_count: int = 0
 
-    def is_fully_expanded(self) -> bool:
-        return not any(self.unexplored_moves) and any(self.children)
-    
+    @property
+    def has_legal_moves(self) -> bool:
+        return bool(self.children or self.unexplored_moves)
+
+    @property
+    def is_leaf_node(self) -> bool:
+        return bool(self.unexplored_moves or self.is_terminal_state)
+
+    def update(self) -> None:
+        pass
+
     def select_child(self) -> "Node[TMove]":
-        return max(self.children, key= lambda c: c.ucb())
-    
+        return max(self.children, key=lambda c: c.ucb())
+
     def ucb(self) -> float:
         c = sqrt(2)
         exploitation_param = self.wins / self.visits
@@ -61,27 +69,32 @@ class MctsSolver:
             node = root
             state = copy(root_state)
 
-            # selection
-            while node.is_fully_expanded():
+            # Selection
+            while not node.is_leaf_node and node.has_legal_moves:
                 node = node.select_child()
                 state.play_move(node.move)
 
-            # expansion
-            if any(node.unexplored_moves):
+            # Expansion
+            if node.unexplored_moves:
                 move = random.choice(node.unexplored_moves)
                 state.play_move(move)
                 child = Node(state, parent=node, move=move)
                 node.unexplored_moves.remove(move)
                 node.children.append(child)
 
-            # simulation
+            # Simulation (aka rollout)
+            while legal_moves := list(state.get_legal_moves()):
+                move = random.choice(legal_moves)
+                state.play_move(move)
 
-            # backpropagation
+            # Backpropagate
+            outcome = state.get_outcome()
+            while node:
+                node.update(outcome)
+                outcome *= -1
+                node = node.parent
 
         return max(root.children, key=lambda c: c.visit_count).move
-
-    def select_node(self, node: Node[TMove]) -> Node[TMove]:
-        
 
 
 if __name__ == "__main__":
