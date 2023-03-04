@@ -110,9 +110,7 @@ class OXOState:
     """
 
     def __init__(self):
-        self.playerJustMoved = (
-            2  # At the root pretend the player just moved is p2 - p1 has the first move
-        )
+        self.playerJustMoved = 2  # At the root pretend the player just moved is p2 - p1 has the first move
         self.board = [0, 0, 0, 0, 0, 0, 0, 0, 0]  # 0 = empty, 1 = player 1, 2 = player 2
 
     def Clone(self):
@@ -350,17 +348,7 @@ class Node:
         self.wins += result
 
     def __repr__(self):
-        return (
-            "[M:"
-            + str(self.move)
-            + " W/V:"
-            + str(self.wins)
-            + "/"
-            + str(self.visits)
-            + " U:"
-            + str(self.untriedMoves)
-            + "]"
-        )
+        return "[M:" + str(self.move) + " W/V:" + str(self.wins) + "/" + str(self.visits) + " U:" + str(self.untriedMoves) + "]"
 
     def TreeToString(self, indent):
         s = self.IndentString(indent) + str(self)
@@ -393,8 +381,7 @@ def UCT(rootstate, itermax, verbose=False):
         state = rootstate.Clone()
 
         # Select
-        while node.untriedMoves == [] and node.childNodes != []:
-            # node is fully expanded and non-terminal
+        while node.untriedMoves == [] and node.childNodes != []:  # node is fully expanded and non-terminal
             node = node.UCTSelectChild()
             state.DoMove(node.move)
 
@@ -410,9 +397,7 @@ def UCT(rootstate, itermax, verbose=False):
 
         # Backpropagate
         while node != None:  # backpropagate from the expanded node and work back to the root node
-            node.Updatestate.GetResult(
-                node.playerJustMoved
-            )  # state is terminal. Update node with result from POV of node.playerJustMoved
+            node.Update(state.GetResult(node.playerJustMoved))  # state is terminal. Update node with result from POV of node.playerJustMoved
             node = node.parentNode
 
     # Output some information about the tree - can be omitted

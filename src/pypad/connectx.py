@@ -69,6 +69,7 @@ class Board:
         self.mask |= move
         self.num_moves += 1
 
+    @property
     def num_slots(self) -> int:
         return self.rows * self.cols
 
@@ -76,15 +77,14 @@ class Board:
         return (self.mask + self.bitboard_util.BOTTOM_ROW) | self.position
 
     def is_full(self) -> bool:
-        return self.num_moves == self.num_slots()
+        return self.num_moves == self.num_slots
+
+    def get_outcome(self, player: int) -> int:
+        return 42
 
     def is_won(self) -> bool:
-        directions = (
-            self.bitboard_util.rows - 1,
-            self.bitboard_util.rows,
-            self.bitboard_util.rows + 1,
-            1,
-        )
+        rows = self.rows + 1
+        directions = (1, rows - 1, rows, rows + 1)
         bitboard = self.position ^ self.mask
         for dir in directions:
             bitmask = bitboard & (bitboard >> dir)
@@ -103,7 +103,7 @@ class Board:
         for col in move_order:
             col_mask = self.bitboard_util.get_col_mask(col)
             possible_move = possible_moves_mask & col_mask
-            if possible_move > 0:
+            if possible_move:
                 yield possible_move
 
     def possible_col_moves(self) -> Generator[int, None, None]:
@@ -145,13 +145,14 @@ class Board:
 
         return wm & (self.bitboard_util.BOARD_MASK ^ self.mask)
 
-    def copy(self) -> "Board":
+    def __copy__(self) -> "Board":
         return Board(self.bitboard_util, self.mask, self.position, self.num_moves)
 
     @classmethod
-    def create(cls, rows: int, cols: int, moves: List[int]) -> "Board":
+    def create(cls, rows: int, cols: int, moves: List[int] | None = None) -> "Board":
         mask = BitboardUtil(rows + 1, cols)
         board = cls(mask, 0, 0, 0)
+        moves = moves or []
         for move in moves:
             board.play_col(move - 1)
         return board

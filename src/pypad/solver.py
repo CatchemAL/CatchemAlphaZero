@@ -1,4 +1,5 @@
 from .connectx import Board
+from copy import copy
 
 
 class Solver:
@@ -19,7 +20,7 @@ class Solver:
         beta = min(beta, max_possible_score)
 
         for move in board.possible_moves():
-            b = board.copy()
+            b = copy(board)
             b.play_move(move)
             score = -self.minimax(b, -beta, -alpha)
             alpha = max(alpha, score)

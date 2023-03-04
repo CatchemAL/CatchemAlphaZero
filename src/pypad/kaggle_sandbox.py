@@ -1,5 +1,6 @@
 import numpy as np
 from functools import partial
+from copy import copy
 
 from kaggle_environments import make
 
@@ -42,7 +43,7 @@ def shallow_negamax(board: Board, alpha: int, beta: int, depth: int) -> int:
     beta = min(beta, max_possible_score)
 
     for move in board.possible_moves():
-        b = board.copy()
+        b = copy(board)
         b.play_move(move)
         score = -shallow_negamax(b, -beta, -alpha, depth - 1)
         alpha = max(alpha, score)
