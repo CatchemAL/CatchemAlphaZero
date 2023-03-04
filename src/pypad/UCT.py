@@ -393,9 +393,8 @@ def UCT(rootstate, itermax, verbose=False):
         state = rootstate.Clone()
 
         # Select
-        while (
-            node.untriedMoves == [] and node.childNodes != []
-        ):  # node is fully expanded and non-terminal
+        while node.untriedMoves == [] and node.childNodes != []:
+            # node is fully expanded and non-terminal
             node = node.UCTSelectChild()
             state.DoMove(node.move)
 
@@ -411,8 +410,8 @@ def UCT(rootstate, itermax, verbose=False):
 
         # Backpropagate
         while node != None:  # backpropagate from the expanded node and work back to the root node
-            node.Update(
-                state.GetResult(node.playerJustMoved)
+            node.Updatestate.GetResult(
+                node.playerJustMoved
             )  # state is terminal. Update node with result from POV of node.playerJustMoved
             node = node.parentNode
 
