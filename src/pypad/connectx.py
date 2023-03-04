@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import numpy as np
 from typing import List
 from collections.abc import Generator
+from typing import Protocol
 
 
 class BitboardUtil:
