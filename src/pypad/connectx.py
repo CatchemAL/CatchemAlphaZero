@@ -2,7 +2,6 @@ from dataclasses import dataclass
 import numpy as np
 from typing import List
 from collections.abc import Generator
-from typing import Protocol
 
 
 class BitboardUtil:
@@ -54,6 +53,11 @@ class Board:
     def cols(self) -> int:
         return self.bitboard_util.cols
 
+    @property
+    def played_by(self) -> int:
+        is_odd_num_moves = self.num_moves & 1
+        return 2 - is_odd_num_moves
+
     def can_play_col(self, col: int) -> None:
         offset = (col + 1) * self.bitboard_util.rows - 2
         top_col_bit = 1 << offset
@@ -79,8 +83,22 @@ class Board:
     def is_full(self) -> bool:
         return self.num_moves == self.num_slots
 
-    def get_outcome(self, player: int) -> int:
-        return 42
+    def outcome(self, perspective: int, indicator: str = "win-loss") -> float:
+        score = self._outcome(perspective)
+        if indicator == "win-loss":
+            return (1 + np.sign(score)) / 2
+
+        return score
+
+    def _outcome(self, perspective: int) -> int:
+        if self.is_full and not self.is_won():
+            return 0
+
+        score = (self.num_slots - self.num_moves + 2) // 2
+        is_odd_num_moves = self.num_moves & 1
+        is_odd_perspective = perspective & 1
+
+        return score if is_odd_num_moves == is_odd_perspective else -score
 
     def is_won(self) -> bool:
         rows = self.rows + 1

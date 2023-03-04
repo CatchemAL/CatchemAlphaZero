@@ -14,6 +14,7 @@ import numpy as np
 
 def main() -> None:
     mcts()
+    return
     run_kaggle()
 
     ROWS, COLS = 6, 7
