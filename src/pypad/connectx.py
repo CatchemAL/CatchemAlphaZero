@@ -1,7 +1,8 @@
-from dataclasses import dataclass
-import numpy as np
-from typing import List
 from collections.abc import Generator
+from dataclasses import dataclass
+from typing import List
+
+import numpy as np
 
 
 class BitboardUtil:

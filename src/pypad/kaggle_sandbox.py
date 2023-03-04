@@ -1,7 +1,7 @@
-import numpy as np
-from functools import partial
 from copy import copy
+from functools import partial
 
+import numpy as np
 from kaggle_environments import make
 
 from .connectx import Board

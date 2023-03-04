@@ -1,5 +1,6 @@
-from .connectx import Board
 from copy import copy
+
+from .connectx import Board
 
 
 class Solver:

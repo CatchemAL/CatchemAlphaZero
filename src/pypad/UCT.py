@@ -15,8 +15,8 @@
 #
 # For more information about Monte Carlo Tree Search check out our web site at www.mcts.ai
 
-from math import *
 import random
+from math import *
 
 
 class GameState:

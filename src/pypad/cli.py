@@ -1,15 +1,13 @@
+import numpy as np
+
+from .connectx import Board
+from .game_state import mcts
+from .kaggle_sandbox import run_kaggle
 from .mnist.mnist_loader import load_data_wrapper
 from .mnist.mnist_mlp import mlp_run
 from .mnist.mnist_svm import svm_baseline
 from .mnist.mnist_torch import run_torch
-
-from .connectx import Board
 from .solver import Solver
-
-from .game_state import mcts
-from .kaggle_sandbox import run_kaggle
-
-import numpy as np
 
 
 def main() -> None:

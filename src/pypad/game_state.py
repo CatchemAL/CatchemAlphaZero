@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from typing import List, TypeVar, Protocol, Generic, Generator
-from copy import copy
-from .connectx import Board
-from math import sqrt, log
 import random
+from copy import copy
+from math import log, sqrt
+from typing import Generator, Generic, List, Protocol, TypeVar
+
+from .connectx import Board
 
 TMove = TypeVar("TMove")
 
