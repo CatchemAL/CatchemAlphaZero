@@ -10,9 +10,9 @@ class Solver:
         win_mask = board.win_mask()
         possible_moves = board.possible_moves_mask()
         if win_mask & possible_moves:
-            return (board.num_slots() - board.num_moves + 1) // 2
+            return (board.num_slots - board.num_moves + 1) // 2
 
-        max_possible_score = (board.num_slots() - board.num_moves - 1) // 2
+        max_possible_score = (board.num_slots - board.num_moves - 1) // 2
         if max_possible_score <= alpha:
             return max_possible_score
 
