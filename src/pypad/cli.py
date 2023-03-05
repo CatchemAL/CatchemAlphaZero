@@ -1,6 +1,6 @@
 import numpy as np
 
-from .connectx import Board
+from .state import ConnectX
 from .mcts import mcts
 from .kaggle_sandbox import run_kaggle
 from .mnist.mnist_loader import load_data_wrapper
@@ -20,7 +20,7 @@ def main() -> None:
     # 12211221122137477577675665566556
     sequence = "1,2,2,1,1,2,2,1,1,2,2,1,3,7,4,7,7,5,7,7,6,7,5,6,6,5,5,6,6,5,5,6".split(",")
     moves = [int(s) for s in sequence]
-    board = Board.create(ROWS, COLS, moves)
+    board = ConnectX.create(ROWS, COLS, moves)
     solver = Solver()
     solver.minimax(board, -np.inf, np.inf)
 

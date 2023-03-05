@@ -35,7 +35,7 @@ class State(Protocol[TMove]):
 
 
 @dataclass
-class Board:
+class ConnectX:
     bitboard_util: BitboardUtil
     mask: int
     position: int
@@ -168,8 +168,8 @@ class Board:
 
         return wm & (self.bitboard_util.BOARD_MASK ^ self.mask)
 
-    def __copy__(self) -> "Board":
-        return Board(self.bitboard_util, self.mask, self.position, self.num_moves)
+    def __copy__(self) -> "ConnectX":
+        return ConnectX(self.bitboard_util, self.mask, self.position, self.num_moves)
 
     def to_grid(self) -> np.ndarray:
         num_entries = self.num_slots + self.cols
@@ -189,7 +189,7 @@ class Board:
         return np.flipud(linear_grid.reshape(shape).transpose())
 
     @classmethod
-    def create(cls, rows: int, cols: int, moves: List[int] | None = None) -> "Board":
+    def create(cls, rows: int, cols: int, moves: List[int] | None = None) -> "ConnectX":
         mask = BitboardUtil(rows + 1, cols)
         board = cls(mask, 0, 0, 0)
         moves = moves or []
@@ -198,7 +198,7 @@ class Board:
         return board
 
     @classmethod
-    def from_grid(cls, grid) -> "Board":
+    def from_grid(cls, grid) -> "ConnectX":
         rows, cols = grid.shape
         padded_grid = np.vstack((np.zeros(cols), grid))
 
@@ -218,11 +218,3 @@ class Board:
         board.position = posn_val
         board.num_moves = int(np.sum(mask))
         return board
-
-
-def test(g: State) -> None:
-    pass
-
-
-c = Board.create(3, 4)
-test(c)

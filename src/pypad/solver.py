@@ -1,27 +1,27 @@
 from copy import copy
 
-from .connectx import Board
+from .state import ConnectX
 
 
 class Solver:
-    def minimax(self, board: Board, alpha: int, beta: int) -> int:
-        if board.is_full():
+    def minimax(self, state: ConnectX, alpha: int, beta: int) -> int:
+        if state.is_full():
             return 0
 
-        win_mask = board.win_mask()
-        possible_moves = board.possible_moves_mask()
+        win_mask = state.win_mask()
+        possible_moves = state.possible_moves_mask()
         if win_mask & possible_moves:
-            return (board.num_slots - board.num_moves + 1) // 2
+            return (state.num_slots - state.num_moves + 1) // 2
 
-        max_possible_score = (board.num_slots - board.num_moves - 1) // 2
+        max_possible_score = (state.num_slots - state.num_moves - 1) // 2
         if max_possible_score <= alpha:
             return max_possible_score
 
         alpha = -100_000_000
         beta = min(beta, max_possible_score)
 
-        for move in board.possible_moves():
-            b = copy(board)
+        for move in state.possible_moves():
+            b = copy(state)
             b.play_move(move)
             score = -self.minimax(b, -beta, -alpha)
             alpha = max(alpha, score)

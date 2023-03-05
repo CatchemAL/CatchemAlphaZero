@@ -5,7 +5,7 @@ from copy import copy
 from math import log, sqrt
 from typing import Generic, List, TypeVar
 
-from .connectx import Board, State
+from .state import ConnectX, State
 
 TMove = TypeVar("TMove")
 
@@ -89,9 +89,6 @@ class MctsSolver:
 
 
 def mcts() -> None:
-    ROWS, COLS = 6, 7
-    connect = Board.create(ROWS, COLS)
-
     import numpy as np
 
     grid = np.array(
@@ -105,7 +102,9 @@ def mcts() -> None:
         ]
     )
 
-    connect = Board.from_grid(grid)
+    ROWS, COLS = 6, 7
+    connect = ConnectX.create(ROWS, COLS)
+    connect = ConnectX.from_grid(grid)
 
     print("Starting...")
     mcts = MctsSolver()

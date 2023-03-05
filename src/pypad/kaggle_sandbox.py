@@ -3,36 +3,37 @@ from functools import partial
 
 import numpy as np
 
-from .connectx import Board
+from .state import ConnectX
 from .mcts import MctsSolver
 
 
 # Helper function for score_move: calculates value of heuristic for grid
 def get_heuristic(board) -> int:
-    directions = (board.mask_utils.rows - 1, board.mask_utils.rows, board.mask_utils.rows + 1, 1)
+    rows = board.rows + 1
+    directions = (1, rows - 1, rows, rows + 1)
     bitboard = board.position ^ board.mask
     bitboard2 = board.position
     score = 0
     for dir in directions:
         if result := bitboard & (bitboard >> dir) & (bitboard >> 2 * dir):
-            score += 0.1 * result.bit_count()
+            score += 0.2 * result.bit_count()
 
         if result := bitboard2 & (bitboard2 >> dir) & (bitboard2 >> 2 * dir):
-            score -= 0.2 * result.bit_count()
+            score -= 0.1 * result.bit_count()
 
     return score
 
 
-def shallow_negamax(board: Board, alpha: int, beta: int, depth: int) -> int:
+def shallow_negamax(board: ConnectX, alpha: int, beta: int, depth: int) -> int:
     if board.is_full():
         return 0
 
     win_mask = board.win_mask()
     possible_moves = board.possible_moves_mask()
     if win_mask & possible_moves:
-        return (board.num_slots() - board.num_moves + 1) // 2
+        return (board.num_slots - board.num_moves + 1) // 2
 
-    max_possible_score = (board.num_slots() - board.num_moves - 1) // 2
+    max_possible_score = (board.num_slots - board.num_moves - 1) // 2
     if max_possible_score <= alpha:
         return max_possible_score
 
@@ -55,18 +56,18 @@ def shallow_negamax(board: Board, alpha: int, beta: int, depth: int) -> int:
 
 def agent_negamax(obs, config, depth):
     grid = np.asarray(obs.board).reshape(config.rows, config.columns)
-    board = Board.from_grid(grid)
+    board = ConnectX.from_grid(grid)
 
     best_col, best_score = next(board.possible_col_moves()), -1_000_000
 
     for col in board.possible_col_moves():
-        b = board.copy()
+        b = copy(board)
         b.play_col(col)
         if b.is_won():
             return col
 
     for col in board.possible_col_moves():
-        b = board.copy()
+        b = copy(board)
         b.play_col(col)
         alpha, beta = -1, 1
         score = -shallow_negamax(b, alpha, beta, depth)
@@ -79,9 +80,9 @@ def agent_negamax(obs, config, depth):
 
 def agent_mcts(obs, config):
     grid = np.asarray(obs.board).reshape(config.rows, config.columns)
-    board = Board.from_grid(grid)
+    board = ConnectX.from_grid(grid)
     mcts = MctsSolver()
-    move = mcts.solve(board)
+    move = mcts.solve(board, 1_000)
     col = board.bitboard_util.move_to_col(move)
     return col
 
@@ -92,7 +93,7 @@ def run_kaggle() -> None:
     agent_negamax5 = partial(agent_negamax, depth=5)
     agent_negamax2 = partial(agent_negamax, depth=2)
 
-    # Setup a tictactoe environment.
+    # Setup a ConnectX environment.
     env = make("connectx", debug=True)
     env.run([agent_negamax2, agent_negamax5])
     env.render(mode="ipython")
