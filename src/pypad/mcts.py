@@ -3,32 +3,11 @@ from __future__ import annotations
 import random
 from copy import copy
 from math import log, sqrt
-from typing import Generator, Generic, List, Protocol, TypeVar
+from typing import Generic, List, TypeVar
 
-from .connectx import Board
+from .connectx import Board, State
 
 TMove = TypeVar("TMove")
-
-
-class State(Protocol[TMove]):
-    @property
-    def played_by(self) -> int:
-        ...
-
-    def legal_moves(self) -> Generator[TMove, None, None]:
-        ...
-
-    def play_move(self, move: TMove) -> None:
-        ...
-
-    def is_won(self) -> bool:
-        ...
-
-    def outcome(self, perspective: int, indicator: str = "win-loss") -> float:
-        ...
-
-    def __copy__(self) -> "State[TMove]":
-        ...
 
 
 class Node(Generic[TMove]):

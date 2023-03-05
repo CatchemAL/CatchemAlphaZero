@@ -1,50 +1,37 @@
 from collections.abc import Generator
 from dataclasses import dataclass
-from typing import List
+from typing import Generator, List, Protocol, TypeVar, Tuple
 
 import numpy as np
 
+from .bitboard_utils import BitboardUtil
 
-class BitboardUtil:
-    def __init__(self, rows: int, cols: int):
-        self.rows: int = rows
-        self.cols: int = cols
-        self.num_slots: int = rows * cols
-        self.BOTTOM_ROW: int = self.get_bottom_row()
-        self.BOARD_MASK: int = self.get_board_mask()
+TMove = TypeVar("TMove")
 
-    def get_bottom_row(self) -> int:
-        x = 1
-        for _ in range(self.cols - 1):
-            x |= x << self.rows
-        return x
 
-    def get_col_mask(self, col: int) -> int:
-        first_col = (1 << (self.rows - 1)) - 1
-        return first_col << (self.rows * col)
+class State(Protocol[TMove]):
+    @property
+    def played_by(self) -> int:
+        ...
 
-    def move_to_col(self, move: int) -> int:
-        for i in range(self.cols):
-            col_mask = self.get_col_mask(i)
-            if col_mask & move:
-                return i
+    @property
+    def shape(self) -> Tuple[int, int]:
+        ...
 
-        raise ValueError(f"Move {move} not associated with any column.")
+    def legal_moves(self) -> Generator[TMove, None, None]:
+        ...
 
-    def get_board_mask(self) -> int:
-        x = self.BOTTOM_ROW << (self.rows - 1)
-        return x - self.BOTTOM_ROW
+    def play_move(self, move: TMove) -> None:
+        ...
 
-    def move_order(self) -> List[int]:
-        order: List[int] = [0] * self.cols
+    def is_won(self) -> bool:
+        ...
 
-        for i in range(self.cols):
-            if i % 2 == 0:
-                order[i] = (self.cols - i - 1) // 2
-            else:
-                order[i] = (self.cols + i) // 2
+    def outcome(self, perspective: int, indicator: str = "win-loss") -> float:
+        ...
 
-        return order
+    def __copy__(self) -> "State[TMove]":
+        ...
 
 
 @dataclass
@@ -63,11 +50,19 @@ class Board:
         return self.bitboard_util.cols
 
     @property
+    def shape(self) -> Tuple[int, int]:
+        return self.rows, self.cols
+
+    @property
+    def num_slots(self) -> int:
+        return self.rows * self.cols
+
+    @property
     def played_by(self) -> int:
         is_odd_num_moves = self.num_moves & 1
         return 2 - is_odd_num_moves
 
-    def can_play_col(self, col: int) -> None:
+    def can_play_col(self, col: int) -> bool:
         offset = (col + 1) * self.bitboard_util.rows - 2
         top_col_bit = 1 << offset
         return (self.mask & top_col_bit) == 0
@@ -81,10 +76,6 @@ class Board:
         self.position ^= self.mask
         self.mask |= move
         self.num_moves += 1
-
-    @property
-    def num_slots(self) -> int:
-        return self.rows * self.cols
 
     def key(self) -> int:
         return (self.mask + self.bitboard_util.BOTTOM_ROW) | self.position
@@ -180,6 +171,23 @@ class Board:
     def __copy__(self) -> "Board":
         return Board(self.bitboard_util, self.mask, self.position, self.num_moves)
 
+    def to_grid(self) -> np.ndarray:
+        num_entries = self.num_slots + self.cols
+        linear_grid = np.zeros((num_entries,), dtype=np.int8)
+
+        posn = self.position ^ self.mask if self.num_moves & 1 else self.position
+        player_1 = posn
+        player_2 = posn ^ self.mask
+
+        for i in range(num_entries):
+            if player_1 & 1 << i:
+                linear_grid[i] = 1
+            elif player_2 & 1 << i:
+                linear_grid[i] = 2
+
+        shape = self.rows + 1, self.cols
+        return np.flipud(linear_grid.reshape(shape).transpose())
+
     @classmethod
     def create(cls, rows: int, cols: int, moves: List[int] | None = None) -> "Board":
         mask = BitboardUtil(rows + 1, cols)
@@ -210,3 +218,11 @@ class Board:
         board.position = posn_val
         board.num_moves = int(np.sum(mask))
         return board
+
+
+def test(g: State) -> None:
+    pass
+
+
+c = Board.create(3, 4)
+test(c)

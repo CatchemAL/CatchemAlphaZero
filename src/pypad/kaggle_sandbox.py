@@ -1,12 +1,10 @@
 from copy import copy
 from functools import partial
 
-from .game_state import MctsSolver
-
 import numpy as np
 
-
 from .connectx import Board
+from .mcts import MctsSolver
 
 
 # Helper function for score_move: calculates value of heuristic for grid

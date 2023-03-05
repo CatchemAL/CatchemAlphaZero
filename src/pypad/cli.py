@@ -1,7 +1,7 @@
 import numpy as np
 
 from .connectx import Board
-from .game_state import mcts
+from .mcts import mcts
 from .kaggle_sandbox import run_kaggle
 from .mnist.mnist_loader import load_data_wrapper
 from .mnist.mnist_mlp import mlp_run
