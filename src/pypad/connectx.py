@@ -120,8 +120,10 @@ class Board:
 
         return False
 
-    def possible_moves_mask(self) -> int:
-        return (self.mask + self.bitboard_util.BOTTOM_ROW) & self.bitboard_util.BOARD_MASK
+    def legal_moves(self) -> Generator[int, None, None]:
+        if not self.is_won():
+            return self.possible_moves()
+        return range(0)
 
     def possible_moves(self) -> Generator[int, None, None]:
         possible_moves_mask = self.possible_moves_mask()
@@ -132,6 +134,9 @@ class Board:
             possible_move = possible_moves_mask & col_mask
             if possible_move:
                 yield possible_move
+
+    def possible_moves_mask(self) -> int:
+        return (self.mask + self.bitboard_util.BOTTOM_ROW) & self.bitboard_util.BOARD_MASK
 
     def possible_col_moves(self) -> Generator[int, None, None]:
         possible_moves_mask = self.possible_moves_mask()
@@ -203,5 +208,5 @@ class Board:
         posn_val = np.sum(posn * binary_vals)
         board.mask = mask_val
         board.position = posn_val
-        board.num_moves = np.sum(mask)
+        board.num_moves = int(np.sum(mask))
         return board

@@ -15,7 +15,7 @@ class State(Protocol[TMove]):
     def played_by(self) -> int:
         ...
 
-    def possible_moves(self) -> Generator[TMove, None, None]:
+    def legal_moves(self) -> Generator[TMove, None, None]:
         ...
 
     def play_move(self, move: TMove) -> None:
@@ -45,7 +45,7 @@ class Node(Generic[TMove]):
         self.visit_count: int = 0
 
         self.children: List[Node[TMove]] = []
-        self.unexplored_moves: List[TMove] = list(state.possible_moves())
+        self.unexplored_moves: List[TMove] = list(state.legal_moves())
 
     @property
     def has_legal_moves(self) -> bool:
@@ -95,7 +95,7 @@ class MctsSolver:
                 node = child_node
 
             # Simulation (aka rollout)
-            while not state.is_won() and (legal_moves := list(state.possible_moves())):
+            while legal_moves := list(state.legal_moves()):
                 move = random.choice(legal_moves)
                 state.play_move(move)
 
@@ -103,7 +103,7 @@ class MctsSolver:
             outcome = state.outcome(node.played_by)
             while node:
                 node.update(outcome)
-                outcome *= -1
+                outcome = 1 - outcome
                 node = node.parent
 
         return max(root.children, key=lambda c: c.visit_count).move
@@ -112,6 +112,22 @@ class MctsSolver:
 def mcts() -> None:
     ROWS, COLS = 6, 7
     connect = Board.create(ROWS, COLS)
+
+    import numpy as np
+
+    grid = np.array(
+        [
+            [0, 1, 1, 2, 2, 2, 0],
+            [0, 1, 2, 1, 1, 1, 0],
+            [0, 2, 1, 1, 2, 2, 1],
+            [0, 2, 2, 2, 1, 1, 2],
+            [0, 1, 2, 1, 2, 2, 1],
+            [2, 1, 2, 1, 1, 2, 1],
+        ]
+    )
+
+    connect = Board.from_grid(grid)
+
     print("Starting...")
     mcts = MctsSolver()
     move = mcts.solve(connect)

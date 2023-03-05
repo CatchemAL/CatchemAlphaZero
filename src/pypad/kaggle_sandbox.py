@@ -4,7 +4,7 @@ from functools import partial
 from .game_state import MctsSolver
 
 import numpy as np
-from kaggle_environments import make
+
 
 from .connectx import Board
 
@@ -89,6 +89,8 @@ def agent_mcts(obs, config):
 
 
 def run_kaggle() -> None:
+    from kaggle_environments import make
+
     agent_negamax5 = partial(agent_negamax, depth=5)
     agent_negamax2 = partial(agent_negamax, depth=2)
 
