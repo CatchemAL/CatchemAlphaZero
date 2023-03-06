@@ -30,7 +30,7 @@ class State(Protocol[TMove]):
     def outcome(self, perspective: int, indicator: str = "win-loss") -> float:
         ...
 
-    def to_numpy(self):
+    def to_numpy(self) -> np.ndarray:
         ...
 
     def __copy__(self) -> "State[TMove]":
