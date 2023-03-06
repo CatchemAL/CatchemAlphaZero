@@ -88,8 +88,8 @@ class MctsSolver:
         return max(root.children, key=lambda c: c.visit_count).move
 
 
-from kaggle_environments import make
 import numpy as np
+from kaggle_environments import make
 
 
 def agent_ttt_mcts(obs, config):

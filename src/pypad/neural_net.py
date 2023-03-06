@@ -1,8 +1,8 @@
+from typing import Tuple
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
-
-from typing import Tuple
 
 NUM_CHANNELS = 3  # Player 1 mask, Player 2 mask, Possible moves mask
 KERNEL_SIZE = 3

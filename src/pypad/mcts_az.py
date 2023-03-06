@@ -5,8 +5,8 @@ from copy import copy
 from math import log, sqrt
 from typing import Generic, List, TypeVar
 
-from .state import ConnectX, State, TicTacToe
 from .neural_net import ResNet
+from .state import ConnectX, State, TicTacToe
 
 TMove = TypeVar("TMove")
 
@@ -92,8 +92,8 @@ class MctsSolver:
         return max(root.children, key=lambda c: c.visit_count).move
 
 
-from kaggle_environments import make
 import numpy as np
+from kaggle_environments import make
 
 
 def agent_ttt_mcts(obs, config):

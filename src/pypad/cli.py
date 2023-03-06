@@ -1,13 +1,13 @@
 import numpy as np
 
-from .state import ConnectX
-from .mcts import mcts, tictactoe
 from .kaggle_sandbox import run_kaggle
+from .mcts import mcts, tictactoe
 from .mnist.mnist_loader import load_data_wrapper
 from .mnist.mnist_mlp import mlp_run
 from .mnist.mnist_svm import svm_baseline
 from .mnist.mnist_torch import run_torch
 from .solver import Solver
+from .state import ConnectX
 
 
 def main() -> None:

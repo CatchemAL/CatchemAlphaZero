@@ -1,6 +1,6 @@
 from collections.abc import Generator
 from dataclasses import dataclass
-from typing import Generator, List, Protocol, TypeVar, Tuple
+from typing import Generator, List, Protocol, Tuple, TypeVar
 
 import numpy as np
 

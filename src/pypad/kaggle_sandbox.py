@@ -3,8 +3,8 @@ from functools import partial
 
 import numpy as np
 
-from .state import ConnectX
 from .mcts import MctsSolver
+from .state import ConnectX
 
 
 # Helper function for score_move: calculates value of heuristic for grid
