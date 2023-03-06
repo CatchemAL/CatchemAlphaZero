@@ -30,6 +30,9 @@ class State(Protocol[TMove]):
     def outcome(self, perspective: int, indicator: str = "win-loss") -> float:
         ...
 
+    def to_numpy(self):
+        ...
+
     def __copy__(self) -> "State[TMove]":
         ...
 
@@ -39,6 +42,7 @@ class State(Protocol[TMove]):
 # 1  5  9
 # 0  4  8
 MOVES = [1 << 2, 1 << 6, 1 << 10, 1 << 1, 1 << 5, 1 << 9, 1 << 0, 1 << 4, 1 << 8]
+POWERS = np.array(MOVES).reshape(3, 3)
 
 
 @dataclass
@@ -120,24 +124,44 @@ class TicTacToe:
     def possible_moves_mask(self) -> int:
         return self.mask ^ self.bitboard_util.BOARD_MASK
 
-    def __copy__(self) -> "TicTacToe":
-        return TicTacToe(self.bitboard_util, self.mask, self.position, self.num_moves)
+    def to_numpy(self):
+        player_to_move = self.position
+        opponent_of_player_to_move = self.position ^ self.mask
+        r = np.sign(player_to_move & POWERS, dtype=np.float32)
+        g = np.sign(opponent_of_player_to_move & POWERS, dtype=np.float32)
+        b = 1 - r - g
+        return np.stack((r, g, b))
 
     def to_grid(self) -> np.ndarray:
-        linear_grid = np.zeros((self.num_slots,), dtype=np.int8)
-
         posn = self.position ^ self.mask if self.num_moves & 1 else self.position
         player_1 = posn
         player_2 = posn ^ self.mask
+        r = np.sign(player_1 & POWERS)
+        g = np.sign(player_2 & POWERS)
+        return np.asarray(r + 2 * g, dtype=np.int8)
 
-        for i, m in enumerate(MOVES):
-            if player_1 & m:
-                linear_grid[i] = 1
-            elif player_2 & m:
-                linear_grid[i] = 2
+    def plot(self) -> None:
+        import matplotlib.pyplot as plt
 
-        shape = self.rows, self.cols
-        return linear_grid.reshape(shape)
+        grid = self.to_grid()
+        r = (grid == 1).astype(np.float32)
+        g = (grid == 2).astype(np.float32)
+        b = (grid == 0).astype(np.float32)
+        planes = [r, g, b]
+        stacked = np.stack(planes)
+
+        fig, ax = plt.subplots(figsize=(3, 2))
+        plt.imshow(stacked.transpose(1, 2, 0))
+        ax.set_xticks(np.arange(-0.5, grid.shape[0], 1), minor=True)
+        ax.set_yticks(np.arange(-0.5, grid.shape[1], 1), minor=True)
+        ax.grid(which="minor", color="black", linestyle="-", linewidth=0.5)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_title("Player 1 = Red\nPlayer 2 = Green", loc="left", fontsize=8, fontname="Monospace")
+        plt.show()
+
+    def __copy__(self) -> "TicTacToe":
+        return TicTacToe(self.bitboard_util, self.mask, self.position, self.num_moves)
 
     @classmethod
     def from_grid(cls, grid: np.ndarray) -> "TicTacToe":
