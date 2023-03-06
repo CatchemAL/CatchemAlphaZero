@@ -150,7 +150,7 @@ class TicTacToe:
         planes = [r, g, b]
         stacked = np.stack(planes)
 
-        fig, ax = plt.subplots(figsize=(3, 2))
+        _, ax = plt.subplots(figsize=(3, 2))
         plt.imshow(stacked.transpose(1, 2, 0))
         ax.set_xticks(np.arange(-0.5, grid.shape[0], 1), minor=True)
         ax.set_yticks(np.arange(-0.5, grid.shape[1], 1), minor=True)
