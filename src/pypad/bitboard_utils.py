@@ -41,3 +41,6 @@ class BitboardUtil:
                 order[i] = (self.cols + i) // 2
 
         return order
+
+    def __repr__(self) -> str:
+        return f"BitboardUtil(rows={self.rows}, cols={self.cols})"
