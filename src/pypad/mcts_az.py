@@ -55,9 +55,8 @@ class Node(Generic[TMove]):
 
     def ucb(self) -> float:
         c = 2  # todo AlphaZero sets to.... 2?
-        q_value = (1 + self.value_sum / self.visit_count) / 2 if self.visit_count > 0 else 0
         exploration_param = sqrt(self.parent.visit_count) / (1 + self.visit_count)
-        return q_value + c * self.prior * exploration_param
+        return self.q_value + c * self.prior * exploration_param
 
     def __repr__(self):
         return f"Node(move={self.move}, Q={self.q_value:.4}, prior={self.prior:.2%}))"
@@ -76,7 +75,7 @@ class MctsSolver:
             state = copy(root_state)
 
             # === Selection ===
-            while not node.has_children:
+            while node.has_children:
                 node = node.select_child()
                 state.play_move(node.move)
 
@@ -84,7 +83,7 @@ class MctsSolver:
                 planes = state.to_numpy()
                 tensor = torch.tensor(planes).unsqueeze(0)
                 raw_policy, value = self.neural_net(tensor)
-                raw_policy = torch.softmax(policy, axis=1).squeeze().cpu().numpy()
+                raw_policy = torch.softmax(raw_policy, axis=1).squeeze().cpu().numpy()
 
                 policy = raw_policy * 0  # Filter out illegal moves
                 policy[legal_moves] = raw_policy[legal_moves]
@@ -104,7 +103,7 @@ class MctsSolver:
                 value: float = value.item()
 
             else:
-                value = state.outcome(node.played_by)
+                value = 1 if state.is_won() else 0
 
             # === Backpropagate ===
             while node:
@@ -138,25 +137,16 @@ def tictactoe() -> None:
     env.render(mode="ipython")
 
 
-def mcts() -> None:
+def mcts_az() -> None:
     import numpy as np
 
-    grid = np.array(
-        [
-            [0, 1, 1, 2, 2, 2, 0],
-            [0, 1, 2, 1, 1, 1, 0],
-            [0, 2, 1, 1, 2, 2, 1],
-            [0, 2, 2, 2, 1, 1, 2],
-            [0, 1, 2, 1, 2, 2, 1],
-            [2, 1, 2, 1, 1, 2, 1],
-        ]
-    )
-
-    ROWS, COLS = 6, 7
-    connect = ConnectX.create(ROWS, COLS)
-    connect = ConnectX.from_grid(grid)
+    tictactoe = TicTacToe.create()
 
     print("Starting...")
-    mcts = MctsSolver()
-    move = mcts.solve(connect)
+    shape = 3, 3
+    num_resnet_layers = 4
+    num_features = 64
+    neural_net = ResNet(shape, num_res_blocks=num_resnet_layers, num_features=num_features)
+    mcts = MctsSolver(neural_net)
+    move = mcts.solve(tictactoe)
     print(f"Done and move is {move}.")

@@ -2,6 +2,7 @@ import numpy as np
 
 from .kaggle_sandbox import run_kaggle
 from .mcts import mcts, tictactoe
+from .mcts_az import mcts_az
 from .mnist.mnist_loader import load_data_wrapper
 from .mnist.mnist_mlp import mlp_run
 from .mnist.mnist_svm import svm_baseline
@@ -11,6 +12,7 @@ from .state import ConnectX
 
 
 def main() -> None:
+    mcts_az()
     tictactoe()
     mcts()
     return
