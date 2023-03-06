@@ -101,13 +101,13 @@ def agent_ttt_mcts(obs, config):
     return move
 
 
-def agent_det_mcts(obs, config):
-    return [7, 6][obs.step // 2]
-
-
 def tictactoe() -> None:
+    moves = [0, 5]
+    state = TicTacToe.create(moves)
+    state.position
+
     env = make("tictactoe", debug=True)
-    env.run([agent_det_mcts, agent_ttt_mcts])
+    env.run([agent_ttt_mcts, agent_ttt_mcts])
     env.render(mode="ipython")
 
 
