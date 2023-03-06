@@ -5,7 +5,7 @@ from copy import copy
 from math import log, sqrt
 from typing import Generic, List, TypeVar
 
-from .state import ConnectX, State
+from .state import ConnectX, State, TicTacToe
 
 TMove = TypeVar("TMove")
 
@@ -32,7 +32,7 @@ class Node(Generic[TMove]):
 
     @property
     def is_leaf_node(self) -> bool:
-        return any(self.unexplored_moves)
+        return bool(self.unexplored_moves)
 
     def update(self, outcome: int) -> None:
         self.visit_count += 1
@@ -86,6 +86,29 @@ class MctsSolver:
                 node = node.parent
 
         return max(root.children, key=lambda c: c.visit_count).move
+
+
+from kaggle_environments import make
+import numpy as np
+
+
+def agent_ttt_mcts(obs, config):
+    print(config)
+    grid = np.asarray(obs.board).reshape(3, 3)
+    state = TicTacToe.from_grid(grid)
+    mcts = MctsSolver()
+    move = mcts.solve(state, 1_000)
+    return move
+
+
+def agent_det_mcts(obs, config):
+    return [7, 6][obs.step // 2]
+
+
+def tictactoe() -> None:
+    env = make("tictactoe", debug=True)
+    env.run([agent_det_mcts, agent_ttt_mcts])
+    env.render(mode="ipython")
 
 
 def mcts() -> None:

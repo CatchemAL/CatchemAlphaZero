@@ -1,7 +1,7 @@
 import numpy as np
 
 from .state import ConnectX
-from .mcts import mcts
+from .mcts import mcts, tictactoe
 from .kaggle_sandbox import run_kaggle
 from .mnist.mnist_loader import load_data_wrapper
 from .mnist.mnist_mlp import mlp_run
@@ -11,6 +11,7 @@ from .solver import Solver
 
 
 def main() -> None:
+    tictactoe()
     mcts()
     return
     run_kaggle()
