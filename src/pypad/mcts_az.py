@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-import random
 from copy import copy
-from math import log, sqrt
+from math import sqrt
 from typing import Generic, List, TypeVar
+
+import torch
 
 from .neural_net import ResNet
 from .state import ConnectX, State, TicTacToe
@@ -12,50 +13,61 @@ TMove = TypeVar("TMove")
 
 
 class Node(Generic[TMove]):
-    __slots__ = ["move", "parent", "played_by", "wins", "visit_count", "children", "unexplored_moves"]
+    __slots__ = ["move", "parent", "played_by", "value_sum", "visit_count", "children", "prior"]
 
     def __init__(
-        self, state: State[TMove], parent: Node[TMove] | None = None, move: TMove | None = None
+        self,
+        state: State[TMove],
+        parent: Node[TMove] | None = None,
+        move: TMove | None = None,
+        prior: np.float32 = 1,
     ):
         self.move = move
         self.parent = parent
         self.played_by = state.played_by
+        self.prior = prior
 
-        self.wins: int = 0
+        self.value_sum: int = 0
         self.visit_count: int = 0
 
         self.children: List[Node[TMove]] = []
-        self.unexplored_moves: List[TMove] = list(state.legal_moves())
 
     @property
     def has_legal_moves(self) -> bool:
         return bool(self.children or self.unexplored_moves)
 
     @property
-    def is_leaf_node(self) -> bool:
-        return bool(self.unexplored_moves)
+    def has_children(self) -> bool:
+        return bool(self.children)
+
+    @property
+    def q_value(self) -> float:
+        if self.visit_count == 0:
+            return 0
+        return (1 + self.value_sum / self.visit_count) / 2
 
     def update(self, outcome: int) -> None:
         self.visit_count += 1
-        self.wins += outcome
+        self.value_sum += outcome
 
     def select_child(self) -> "Node[TMove]":
         return max(self.children, key=lambda c: c.ucb())
 
     def ucb(self) -> float:
-        c = sqrt(2)
-        exploitation_param = self.wins / self.visit_count
-        exploration_param = sqrt(log(self.parent.visit_count) / self.visit_count)
-        return exploitation_param + c * exploration_param
+        c = 2  # todo AlphaZero sets to.... 2?
+        q_value = (1 + self.value_sum / self.visit_count) / 2 if self.visit_count > 0 else 0
+        exploration_param = sqrt(self.parent.visit_count) / (1 + self.visit_count)
+        return q_value + c * self.prior * exploration_param
 
     def __repr__(self):
-        return f"Node(move={self.move}, W/V={self.wins}/{self.visit_count}, ({len(self.unexplored_moves)} unexplored moves))"
+        return f"Node(move={self.move}, Q={self.q_value:.4}, prior={self.prior:.2%}))"
 
 
 class MctsSolver:
     def __init__(self, neural_net: ResNet) -> None:
         self.neural_net = neural_net
 
+    @torch.no_grad()
     def solve(self, root_state: State[TMove], num_mcts_sims: int = 1_000) -> TMove:
         root: Node[TMove] = Node(root_state, None, None)
 
@@ -63,31 +75,42 @@ class MctsSolver:
             node = root
             state = copy(root_state)
 
-            # Selection
-            while not node.is_leaf_node and node.has_legal_moves:
+            # === Selection ===
+            while not node.has_children:
                 node = node.select_child()
                 state.play_move(node.move)
 
-            # Expansion
-            if node.unexplored_moves:
-                move = random.choice(node.unexplored_moves)
-                state.play_move(move)
-                child_node = Node(state, parent=node, move=move)
-                node.unexplored_moves.remove(move)
-                node.children.append(child_node)
-                node = child_node
+            if legal_moves := list(state.legal_moves()):
+                planes = state.to_numpy()
+                tensor = torch.tensor(planes).unsqueeze(0)
+                raw_policy, value = self.neural_net(tensor)
+                raw_policy = torch.softmax(policy, axis=1).squeeze().cpu().numpy()
 
-            # Simulation (aka rollout)
-            while legal_moves := list(state.legal_moves()):
-                move = random.choice(legal_moves)
-                state.play_move(move)
+                policy = raw_policy * 0  # Filter out illegal moves
+                policy[legal_moves] = raw_policy[legal_moves]
+                policy /= np.sum(policy)
 
-            # Backpropagate
-            outcome = state.outcome(node.played_by)
+                # === Expansion ===
+                for move in legal_moves:
+                    child_state = copy(state)
+                    child_state.play_move(move)
+                    prior = policy[move]
+                    child_node = Node(child_state, parent=node, move=move, prior=prior)
+                    node.children.append(child_node)
+
+                # === Simulation ===
+                # Here, the AlphaZero paper completely replaces the traditional
+                # rollout phase with a value estimation from the neural net.
+                value: float = value.item()
+
+            else:
+                value = state.outcome(node.played_by)
+
+            # === Backpropagate ===
             while node:
-                node.update(outcome)
-                outcome = 1 - outcome
+                node.update(value)
                 node = node.parent
+                value *= -1
 
         return max(root.children, key=lambda c: c.visit_count).move
 
