@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Generator, List, Tuple
 import numpy as np
 
 UNKNOWN = 0
@@ -7,7 +8,29 @@ INCLUDE = 2
 
 
 class Knapsack:
-    ...
+    def must_include(self) -> bool:
+        return "today"
+
+    def must_exclude(self) -> bool:
+        return "today"
+
+    def include(self, i: int, j: int) -> "Knapsack":
+        pass
+
+    def exclude(self, i: int, j: int) -> "Knapsack":
+        pass
+
+
+@dataclass
+class Line:
+    numbers: np.ndarray
+    mask: np.ndarray
+    target: float
+
+    def unknowns(self) -> Generator[int, None, None]:
+        for i, m in enumerate(self.mask):
+            if m == UNKNOWN:
+                yield i
 
 
 @dataclass
@@ -17,8 +40,21 @@ class Board:
     row_sums: np.ndarray
     col_sums: np.ndarray
 
-    def unsolved_lines(self) -> Line:
-        ...
+    def unsolved_lines(self) -> Generator[Line, None, None]:
+        yield from self.unsolved_rows()
+        yield from self.unsolved_cols()
+
+    def unsolved_rows(self) -> Generator[Line, None, None]:
+        for i in range(self.grid.shape[0]):
+            row_mask = self.mask[i, :]
+            if np.any(row_mask == UNKNOWN):
+                yield Line(self.grid[i, :], self.mask[i, :], self.row_sums[i])
+
+    def unsolved_cols(self) -> Generator[Line, None, None]:
+        for i in range(self.grid.shape[1]):
+            col_mask = self.mask[:, i]
+            if np.any(col_mask == UNKNOWN):
+                yield Line(self.grid[:, i], self.mask[:, i], self.col_sums[i])
 
 
 class SumpleteSolver:
