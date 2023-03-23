@@ -6,12 +6,19 @@ EXCLUDE = 1
 INCLUDE = 2
 
 
+class Knapsack:
+    ...
+
+
 @dataclass
 class Board:
     grid: np.ndarray
     mask: np.ndarray
     row_sums: np.ndarray
     col_sums: np.ndarray
+
+    def unsolved_lines(self) -> Line:
+        ...
 
 
 class SumpleteSolver:
@@ -24,10 +31,10 @@ class SumpleteSolver:
                 knapsack = Knapsack(line)
                 for index in line.unknowns():
                     if knapsack.must_include(index):
-                        grid[line.full_index] = INCLUDE
-                        knapsack[index] = INCLUDE
+                        knapsack = knapsack.include(line.full_index)
+                        board[line.full_index] = INCLUDE
                         is_updating = True
                     elif knapsack.must_exclude(index):
-                        grid[line.full_index] = EXCLUDE
-                        knapsack[index] = EXCLUDE
+                        knapsack = knapsack.exclude(line.full_index)
+                        board[line.full_index] = EXCLUDE
                         is_updating = True
