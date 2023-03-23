@@ -7,18 +7,41 @@ EXCLUDE = 1
 INCLUDE = 2
 
 
+@dataclass
 class Knapsack:
-    def must_include(self) -> bool:
+    def __init__(self, numbers: np.ndarray, mask: np.ndarray, target: float) -> None:
+        self.numbers: np.ndarray = numbers
+        self.mask: np.ndarray = mask
+        self.target: float = target
+
+        self._number_line, self._accessibles, self._actual_target = self._build_accessible_numbers()
+
+    def must_include(self, index: int) -> bool:
         return "today"
 
-    def must_exclude(self) -> bool:
+    def must_exclude(self, index: int) -> bool:
         return "today"
 
-    def include(self, i: int, j: int) -> "Knapsack":
+    def include(self, index: int) -> "Knapsack":
         pass
 
-    def exclude(self, i: int, j: int) -> "Knapsack":
+    def exclude(self, index: int) -> "Knapsack":
         pass
+
+    def _build_accessible_numbers(self) -> Tuple[np.ndarray, np.ndarray, float]:
+        lower_bound, upper_bound = self.get_bounds()
+        number_line = np.arange(lower_bound, upper_bound + 1)
+        accessibles = number_line == 0
+        actual_target = self.target - self.numbers[self.mask == INCLUDE]
+
+        for num, m in zip(self.numbers, self.mask):
+            if not m == UNKNOWN:
+                continue
+
+            shifted = Knapsack.shift(accessibles, num)
+            accessibles |= shifted
+
+        return (number_line, accessibles, actual_target)
 
 
 @dataclass
@@ -51,10 +74,13 @@ class Board:
                 yield Line(self.grid[i, :], self.mask[i, :], self.row_sums[i])
 
     def unsolved_cols(self) -> Generator[Line, None, None]:
-        for i in range(self.grid.shape[1]):
-            col_mask = self.mask[:, i]
+        for j in range(self.grid.shape[1]):
+            col_mask = self.mask[:, j]
             if np.any(col_mask == UNKNOWN):
-                yield Line(self.grid[:, i], self.mask[:, i], self.col_sums[i])
+                yield Line(self.grid[:, j], self.mask[:, j], self.col_sums[j])
+
+    def is_solved(self) -> bool:
+        return True
 
 
 class SumpleteSolver:
