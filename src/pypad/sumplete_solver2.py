@@ -90,13 +90,13 @@ class SumpleteSolver:
             is_updating = False
 
             for line in board.unsolved_lines():
-                knapsack = Knapsack(line)
                 for index in line.unknowns():
-                    if knapsack.must_include(index):
-                        knapsack = knapsack.include(line.full_index)
+                    number_line = line.exclude(index)
+                    if not number_line.can_reach(line.target):
+                        line.include(index)
                         board[line.full_index] = INCLUDE
                         is_updating = True
-                    elif knapsack.must_exclude(index):
-                        knapsack = knapsack.exclude(line.full_index)
+                    elif not number_line.can_reach(line.target - line.numbers[index]):
+                        line.exclude(index)
                         board[line.full_index] = EXCLUDE
                         is_updating = True
