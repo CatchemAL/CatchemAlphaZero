@@ -86,14 +86,6 @@ class BoardVector:
     def exclude(self, index: int) -> None:
         self.mask[index] = EXCLUDE
 
-    @staticmethod
-    def generate_game(size: int) -> "BoardVector":
-        if size > 8:
-            value_range = np.concatenate((np.arange(-20, 0), np.arange(1, 21)))
-            return np.random.choice(value_range, size=(size, size))
-
-        return np.random.randint(low=0, high=10, size=(8, 8))
-
 
 @dataclass
 class Board:
@@ -120,6 +112,21 @@ class Board:
 
     def is_solved(self) -> bool:
         return len(list(self.unsolved_vectors())) == 0
+
+    @classmethod
+    def generate_game(cls, size: int) -> "Board":
+        if size > 8:
+            value_range = np.concatenate((np.arange(-20, 0), np.arange(1, 21)))
+            grid = np.random.choice(value_range, size=(size, size))
+        else:
+            grid = np.random.randint(low=1, high=10, size=(size, size))
+
+        true_mask = np.random.randint(low=1, high=3, size=(size, size))
+        included = grid * (true_mask == 2)
+        row_sums = np.sum(included, axis=1)
+        col_sums = np.sum(included, axis=0)
+
+        return cls(grid, grid == 0, row_sums, col_sums)
 
 
 class BoardPrinter:
