@@ -1,3 +1,4 @@
+from enum import Enum
 from dataclasses import dataclass
 from typing import Generator, List, Tuple
 import numpy as np
@@ -5,6 +6,11 @@ import numpy as np
 UNKNOWN = 0
 EXCLUDE = 1
 INCLUDE = 2
+
+
+class VectorType(Enum):
+    ROW = 1
+    COLUMN = 2
 
 
 @dataclass
@@ -45,15 +51,27 @@ class Knapsack:
 
 
 @dataclass
-class Line:
+class BoardVector:
     numbers: np.ndarray
     mask: np.ndarray
     target: float
+    vector_type: VectorType
+    index: int
 
     def unknowns(self) -> Generator[int, None, None]:
         for i, m in enumerate(self.mask):
             if m == UNKNOWN:
                 yield i
+
+    def full_index(self, index: int) -> Tuple[int, int]:
+        if self.vector_type == VectorType.COLUMN:
+            return index, self.index
+        if self.vector_type == VectorType.ROW:
+            return self.index, index
+        raise ValueError(f"vector {self.vector_type} type unknown")
+
+    def without(self, index: int) -> Knapsack:
+        pass
 
 
 @dataclass
@@ -63,21 +81,21 @@ class Board:
     row_sums: np.ndarray
     col_sums: np.ndarray
 
-    def unsolved_lines(self) -> Generator[Line, None, None]:
+    def unsolved_vectors(self) -> Generator[BoardVector, None, None]:
         yield from self.unsolved_rows()
         yield from self.unsolved_cols()
 
-    def unsolved_rows(self) -> Generator[Line, None, None]:
+    def unsolved_rows(self) -> Generator[BoardVector, None, None]:
         for i in range(self.grid.shape[0]):
             row_mask = self.mask[i, :]
             if np.any(row_mask == UNKNOWN):
-                yield Line(self.grid[i, :], self.mask[i, :], self.row_sums[i])
+                yield BoardVector(self.grid[i, :], self.mask[i, :], self.row_sums[i])
 
-    def unsolved_cols(self) -> Generator[Line, None, None]:
+    def unsolved_cols(self) -> Generator[BoardVector, None, None]:
         for j in range(self.grid.shape[1]):
             col_mask = self.mask[:, j]
             if np.any(col_mask == UNKNOWN):
-                yield Line(self.grid[:, j], self.mask[:, j], self.col_sums[j])
+                yield BoardVector(self.grid[:, j], self.mask[:, j], self.col_sums[j])
 
     def is_solved(self) -> bool:
         return True
@@ -89,14 +107,15 @@ class SumpleteSolver:
         while is_updating and not board.is_solved():
             is_updating = False
 
-            for line in board.unsolved_lines():
-                for index in line.unknowns():
-                    number_line = line.exclude(index)
-                    if not number_line.can_reach(line.target):
-                        line.include(index)
-                        board[line.full_index] = INCLUDE
+            for vector in board.unsolved_vectors():
+                for index in vector.unknowns():
+                    number_line = vector.without(index)
+                    i, j = vector.full_index(index)
+                    if not number_line.can_reach(vector.target):
+                        vector.include(index)
+                        board[i, j] = INCLUDE
                         is_updating = True
-                    elif not number_line.can_reach(line.target - line.numbers[index]):
-                        line.exclude(index)
-                        board[line.full_index] = EXCLUDE
+                    elif not number_line.can_reach(vector.target - vector.numbers[index]):
+                        vector.exclude(index)
+                        board[i, j] = EXCLUDE
                         is_updating = True
