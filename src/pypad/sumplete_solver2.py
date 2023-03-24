@@ -15,17 +15,16 @@ class VectorType(Enum):
 
 @dataclass
 class KnapsackNumberLine:
-    def __init__(self, numbers: np.ndarray, mask: np.ndarray, target: float) -> None:
+    def __init__(self, numbers: np.ndarray, mask: np.ndarray) -> None:
         self.numbers: np.ndarray = numbers
         self.mask: np.ndarray = mask
-        self.target: float = target
 
-        self._number_line, self._accessibles, self._actual_target = self._build_accessible_numbers()
+        self._number_line, self._accessibles = self._build_accessible_numbers()
 
     def can_reach(self, target: int) -> bool:
-        return True
+        return self._accessibles[self._number_line == target]
 
-    def _build_accessible_numbers(self) -> Tuple[np.ndarray, np.ndarray, float]:
+    def _build_accessible_numbers(self) -> Tuple[np.ndarray, np.ndarray]:
         lower_bound, upper_bound = self.get_bounds()
         number_line = np.arange(lower_bound, upper_bound + 1)
         accessibles = number_line == 0
@@ -39,6 +38,11 @@ class KnapsackNumberLine:
         accessibles = KnapsackNumberLine.shift(accessibles, include_shift)
 
         return (number_line, accessibles)
+
+    def get_bounds(self) -> np.ndarray:
+        lower_bound = np.sum(self.numbers[self.numbers < 0])
+        upper_bound = np.sum(self.numbers[self.numbers > 0])
+        return lower_bound, upper_bound
 
     @staticmethod
     def shift(x: np.ndarray, n: int) -> np.ndarray:
