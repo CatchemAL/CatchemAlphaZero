@@ -1,3 +1,4 @@
+from colorama import Fore, Style
 from enum import Enum
 from dataclasses import dataclass
 from typing import Generator, List, Tuple
@@ -6,6 +7,7 @@ import numpy as np
 UNKNOWN = 0
 EXCLUDE = 1
 INCLUDE = 2
+v
 
 
 class VectorType(Enum):
@@ -39,7 +41,7 @@ class KnapsackNumberLine:
 
         return (number_line, accessibles)
 
-    def get_bounds(self) -> np.ndarray:
+    def get_bounds(self) -> Tuple[int, int]:
         lower_bound = np.sum(self.numbers[self.numbers < 0])
         upper_bound = np.sum(self.numbers[self.numbers > 0])
         return lower_bound, upper_bound
@@ -84,6 +86,14 @@ class BoardVector:
     def exclude(self, index: int) -> None:
         self.mask[index] = EXCLUDE
 
+    @staticmethod
+    def generate_game(size: int) -> "BoardVector":
+        if size > 8:
+            value_range = np.concatenate((np.arange(-20, 0), np.arange(1, 21)))
+            return np.random.choice(value_range, size=(size, size))
+
+        return np.random.randint(low=0, high=10, size=(8, 8))
+
 
 @dataclass
 class Board:
@@ -109,11 +119,44 @@ class Board:
                 yield BoardVector(self.grid[:, j], self.mask[:, j], self.col_sums[j])
 
     def is_solved(self) -> bool:
-        return True
+        return len(list(self.unsolved_vectors())) == 0
+
+
+class BoardPrinter:
+    def print(self, board: Board) -> None:
+        rows, cols = board.grid.shape
+
+        # Print headeri in row
+        col_nums = "    " + " ".join([f" {i+1:2}" for i in range(cols)])
+        row_divider = "   |" + "-" * (cols * 4) + "|"
+        print(col_nums)
+        print(row_divider)
+
+        # Print each row of the matrix
+        for i in range(rows):
+            row_items = []
+            for j in range(cols):
+                item = f"{board.grid[i][j]:3}"
+                if board.mask[i][j] == 1:
+                    item = f"{Fore.RED}{item}{Style.RESET_ALL}"
+                elif board.mask[i][j] == 2:
+                    item = f"{Fore.GREEN}{item}{Style.RESET_ALL}"
+                row_items.append(item)
+
+            row_string = " ".join(row_items)
+            row_sum = f"{np.sum(board.grid[i]):3}"
+            print(f"{i+1:2} |{row_string} |{row_sum}")
+
+        # Print the footer for the matrix
+        col_sums = [f"{np.sum(board.grid[:,j]):3}" for j in range(cols)]
+        total_sum = f"{np.sum(board.grid):3}"
+        col_string = " ".join(col_sums)
+        print(row_divider)
+        print(f"   |{col_string} |")
 
 
 class SumpleteSolver:
-    def solve(self, board: Board) -> None:
+    def solve(self, board: Board) -> bool:
         is_updating = True
         while is_updating and not board.is_solved():
             is_updating = False
@@ -130,3 +173,5 @@ class SumpleteSolver:
                         vector.exclude(index)
                         board[i, j] = EXCLUDE
                         is_updating = True
+
+        return board.unsolved_vectors()
