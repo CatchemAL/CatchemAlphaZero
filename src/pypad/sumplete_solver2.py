@@ -14,7 +14,7 @@ class VectorType(Enum):
 
 
 @dataclass
-class Knapsack:
+class KnapsackNumberLine:
     def __init__(self, numbers: np.ndarray, mask: np.ndarray, target: float) -> None:
         self.numbers: np.ndarray = numbers
         self.mask: np.ndarray = mask
@@ -22,32 +22,33 @@ class Knapsack:
 
         self._number_line, self._accessibles, self._actual_target = self._build_accessible_numbers()
 
-    def must_include(self, index: int) -> bool:
-        return "today"
-
-    def must_exclude(self, index: int) -> bool:
-        return "today"
-
-    def include(self, index: int) -> "Knapsack":
-        pass
-
-    def exclude(self, index: int) -> "Knapsack":
-        pass
+    def can_reach(self, target: int) -> bool:
+        return True
 
     def _build_accessible_numbers(self) -> Tuple[np.ndarray, np.ndarray, float]:
         lower_bound, upper_bound = self.get_bounds()
         number_line = np.arange(lower_bound, upper_bound + 1)
         accessibles = number_line == 0
-        actual_target = self.target - self.numbers[self.mask == INCLUDE]
 
         for num, m in zip(self.numbers, self.mask):
-            if not m == UNKNOWN:
-                continue
+            if m == UNKNOWN:
+                shifted = KnapsackNumberLine.shift(accessibles, num)
+                accessibles |= shifted
 
-            shifted = Knapsack.shift(accessibles, num)
-            accessibles |= shifted
+        include_shift = np.sum(self.numbers[self.mask == INCLUDE])
+        accessibles = KnapsackNumberLine.shift(accessibles, include_shift)
 
-        return (number_line, accessibles, actual_target)
+        return (number_line, accessibles)
+
+    @staticmethod
+    def shift(x: np.ndarray, n: int) -> np.ndarray:
+        if n == 0:
+            return x[:]
+
+        if n > 0:
+            return np.pad(x, (n, 0))[:-n]
+
+        return np.pad(x, (0, -n))[-n:]
 
 
 @dataclass
@@ -70,8 +71,14 @@ class BoardVector:
             return self.index, index
         raise ValueError(f"vector {self.vector_type} type unknown")
 
-    def without(self, index: int) -> Knapsack:
+    def without(self, index: int) -> KnapsackNumberLine:
         pass
+
+    def include(self, index: int) -> None:
+        self.mask[index] = INCLUDE
+
+    def exclude(self, index: int) -> None:
+        self.mask[index] = EXCLUDE
 
 
 @dataclass
