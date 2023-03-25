@@ -1,8 +1,9 @@
-from colorama import Fore, Style
-from enum import Enum
 from dataclasses import dataclass
-from typing import Generator, List, Tuple
+from enum import Enum
+from typing import Generator, Tuple
+
 import numpy as np
+from colorama import Fore, Style
 
 UNKNOWN = 0
 EXCLUDE = 1
