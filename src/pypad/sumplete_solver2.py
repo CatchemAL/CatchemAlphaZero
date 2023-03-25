@@ -23,7 +23,8 @@ class KnapsackNumberLine:
         self._number_line, self._accessibles = self._build_accessible_numbers()
 
     def can_reach(self, target: int) -> bool:
-        return self._accessibles[self._number_line == target]
+        result = self._accessibles[self._number_line == target]
+        return len(result) == 1 and result[0]
 
     def _build_accessible_numbers(self) -> Tuple[np.ndarray, np.ndarray]:
         lower_bound, upper_bound = self.get_bounds()
@@ -118,11 +119,13 @@ class Board:
 
     @classmethod
     def create(cls, size: int) -> "Board":
+        rng = np.random.RandomState(seed=42)
+
         if size > 8:
             value_range = np.concatenate((np.arange(-20, 0), np.arange(1, 21)))
             grid = np.random.choice(value_range, size=(size, size))
         else:
-            grid = np.random.randint(low=1, high=10, size=(size, size))
+            grid = rng.randint(low=1, high=10, size=(size, size))
 
         true_mask = np.random.randint(low=1, high=3, size=(size, size))
         included = grid * (true_mask == INCLUDE)
@@ -188,6 +191,7 @@ if __name__ == "__main__":
     board = Board.create(n)
     printer = BoardPrinter()
     printer.print(board)
+    print()
 
     solver = SumpleteSolver()
     solver.solve(board)
