@@ -7,7 +7,6 @@ import numpy as np
 UNKNOWN = 0
 EXCLUDE = 1
 INCLUDE = 2
-v
 
 
 class VectorType(Enum):
@@ -78,7 +77,9 @@ class BoardVector:
         raise ValueError(f"vector {self.vector_type} type unknown")
 
     def without(self, index: int) -> KnapsackNumberLine:
-        pass
+        mask = self.mask.copy()
+        mask[index] = EXCLUDE
+        return KnapsackNumberLine(self.numbers, mask)
 
     def include(self, index: int) -> None:
         self.mask[index] = INCLUDE
@@ -102,19 +103,21 @@ class Board:
         for i in range(self.grid.shape[0]):
             row_mask = self.mask[i, :]
             if np.any(row_mask == UNKNOWN):
-                yield BoardVector(self.grid[i, :], self.mask[i, :], self.row_sums[i])
+                grid, mask = self.grid[i, :].view(), self.mask[i, :].view()
+                yield BoardVector(grid, mask, self.row_sums[i], VectorType.ROW, i)
 
     def unsolved_cols(self) -> Generator[BoardVector, None, None]:
         for j in range(self.grid.shape[1]):
             col_mask = self.mask[:, j]
             if np.any(col_mask == UNKNOWN):
-                yield BoardVector(self.grid[:, j], self.mask[:, j], self.col_sums[j])
+                grid, mask = self.grid[:, j], self.mask[:, j]
+                yield BoardVector(grid, mask, self.col_sums[j], VectorType.COLUMN, j)
 
     def is_solved(self) -> bool:
         return len(list(self.unsolved_vectors())) == 0
 
     @classmethod
-    def generate_game(cls, size: int) -> "Board":
+    def create(cls, size: int) -> "Board":
         if size > 8:
             value_range = np.concatenate((np.arange(-20, 0), np.arange(1, 21)))
             grid = np.random.choice(value_range, size=(size, size))
@@ -122,11 +125,11 @@ class Board:
             grid = np.random.randint(low=1, high=10, size=(size, size))
 
         true_mask = np.random.randint(low=1, high=3, size=(size, size))
-        included = grid * (true_mask == 2)
+        included = grid * (true_mask == INCLUDE)
         row_sums = np.sum(included, axis=1)
         col_sums = np.sum(included, axis=0)
 
-        return cls(grid, grid == 0, row_sums, col_sums)
+        return cls(grid, grid * 0, row_sums, col_sums)
 
 
 class BoardPrinter:
@@ -151,12 +154,10 @@ class BoardPrinter:
                 row_items.append(item)
 
             row_string = " ".join(row_items)
-            row_sum = f"{np.sum(board.grid[i]):3}"
-            print(f"{i+1:2} |{row_string} |{row_sum}")
+            print(f"{i+1:2} |{row_string} |{board.row_sums[i]:3}")
 
         # Print the footer for the matrix
-        col_sums = [f"{np.sum(board.grid[:,j]):3}" for j in range(cols)]
-        total_sum = f"{np.sum(board.grid):3}"
+        col_sums = [f"{board.col_sums[j]:3}" for j in range(cols)]
         col_string = " ".join(col_sums)
         print(row_divider)
         print(f"   |{col_string} |")
@@ -171,14 +172,24 @@ class SumpleteSolver:
             for vector in board.unsolved_vectors():
                 for index in vector.unknowns():
                     number_line = vector.without(index)
-                    i, j = vector.full_index(index)
                     if not number_line.can_reach(vector.target):
                         vector.include(index)
-                        board[i, j] = INCLUDE
                         is_updating = True
                     elif not number_line.can_reach(vector.target - vector.numbers[index]):
                         vector.exclude(index)
-                        board[i, j] = EXCLUDE
                         is_updating = True
 
         return board.unsolved_vectors()
+
+
+if __name__ == "__main__":
+    n = 6
+
+    board = Board.create(n)
+    printer = BoardPrinter()
+    printer.print(board)
+
+    solver = SumpleteSolver()
+    solver.solve(board)
+
+    printer.print(board)
