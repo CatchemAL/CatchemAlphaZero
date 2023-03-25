@@ -186,7 +186,7 @@ class SumpleteSolver:
 
 
 if __name__ == "__main__":
-    n = 6
+    n = 9
 
     board = Board.create(n)
     printer = BoardPrinter()
