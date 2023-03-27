@@ -1,3 +1,4 @@
+from copy import copy
 from dataclasses import dataclass
 from enum import Enum
 from typing import Generator, Tuple
@@ -116,7 +117,14 @@ class Board:
                 yield BoardVector(grid, mask, self.col_sums[j], VectorType.COLUMN, j)
 
     def is_solved(self) -> bool:
-        return len(list(self.unsolved_vectors())) == 0
+        included = self.mask != EXCLUDE
+        col_sums = np.sum(self.grid * included, axis=0)
+        row_sums = np.sum(self.grid * included, axis=1)
+
+        return np.alltrue(col_sums == self.col_sums) and np.alltrue(row_sums == self.row_sums)
+
+    def __copy__(self):
+        return Board(self.grid.copy(), self.mask.copy(), self.row_sums.copy(), self.col_sums.copy())
 
     @classmethod
     def create(cls, size: int) -> "Board":
@@ -140,7 +148,7 @@ class BoardPrinter:
     def print(self, board: Board) -> None:
         rows, cols = board.grid.shape
 
-        # Print headeri in row
+        # Print header row
         col_nums = "    " + " ".join([f" {i+1:2}" for i in range(cols)])
         row_divider = "   |" + "-" * (cols * 4) + "|"
         print(col_nums)
@@ -183,18 +191,40 @@ class SumpleteSolver:
                         vector.exclude(index)
                         is_updating = True
 
-        return board.unsolved_vectors()
+        return board.is_solved()
 
 
 if __name__ == "__main__":
     n = 9
 
+    grid = [
+        [9, -3, -14, 18, -3, 10, 19, -8, 15],
+        [13, 9, 16, -8, 18, 12, -1, -17, -17],
+        [-16, -12, -4, -15, -13, -18, 10, 18, 9],
+        [-2, -3, 13, 6, -17, -15, -17, 19, 9],
+        [13, 7, -19, -16, -3, -17, 13, 14, -5],
+        [-5, 3, 5, -7, 11, 8, -6, 2, -13],
+        [-11, -17, 13, -8, 11, -5, -20, 18, 10],
+        [-13, -8, -14, -17, -16, -12, -2, 2, -13],
+        [-13, -3, -19, 12, -6, 2, -16, -5, -1],
+    ]
+
+    row_sums = [17, 25, -16, -24, -28, -12, 13, -38, -26]
+    col_sums = [-19, -14, 10, -29, -7, -20, -24, 24, -10]
+
     board = Board.create(n)
+
+    if False:
+        board.grid = np.asarray(grid)
+        board.row_sums = np.asarray(row_sums)
+        board.col_sums = np.asarray(col_sums)
+
     printer = BoardPrinter()
     printer.print(board)
     print()
 
     solver = SumpleteSolver()
-    solver.solve(board)
+    is_solved = solver.solve(board)
 
     printer.print(board)
+    print(is_solved)
