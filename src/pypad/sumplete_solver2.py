@@ -201,25 +201,24 @@ class SumpleteSolver:
         if board.is_solved():
             return True
 
-        speculative_board = copy(board)
-        vector = next(speculative_board.unsolved_vectors())
-        index = next(vector.unknowns())
+        # Now we recurse...
+        def backtrack(try_include: bool) -> bool:
+            speculative_board = copy(board)
+            vector = next(speculative_board.unsolved_vectors())
+            index = next(vector.unknowns())
 
-        vector.include(index)
-        if self.solve(speculative_board):
-            board.mask = speculative_board.mask
-            return True
+            if try_include:
+                vector.include(index)
+            else:
+                vector.exclude(index)
 
-        speculative_board = copy(board)
-        vector = next(speculative_board.unsolved_vectors())
-        index = next(vector.unknowns())
+            if self.solve(speculative_board):
+                board.mask = speculative_board.mask
+                return True
 
-        vector.exclude(index)
-        if self.solve(speculative_board):
-            board.mask = speculative_board.mask
-            return True
+            return False
 
-        return False
+        return backtrack(True) or backtrack(False)
 
 
 if __name__ == "__main__":
