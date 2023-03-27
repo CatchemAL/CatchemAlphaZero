@@ -222,21 +222,12 @@ class SumpleteSolver:
 
 
 if __name__ == "__main__":
-    n = 9
-
+    n = 8
     board = Board.create(n)
 
-    if False:
-        board.grid = np.asarray(grid)
-        board.row_sums = np.asarray(row_sums)
-        board.col_sums = np.asarray(col_sums)
-
-    printer = BoardPrinter()
-    printer.print(board)
-    print()
-
     solver = SumpleteSolver()
-    is_solved = solver.solve(board)
-
-    printer.print(board)
-    print(is_solved)
+    if solver.solve(board):
+        printer = BoardPrinter()
+        printer.print(board)
+    else:
+        print("failed to solve")
