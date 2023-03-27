@@ -72,6 +72,10 @@ class BoardVector:
             if m == UNKNOWN:
                 yield i
 
+    def sum(self) -> int:
+        included = self.mask != EXCLUDE
+        return np.sum(self.numbers[included])
+
     def full_index(self, index: int) -> Tuple[int, int]:
         if self.vector_type == VectorType.COLUMN:
             return index, self.index
@@ -178,9 +182,8 @@ class BoardPrinter:
 class SumpleteSolver:
     def solve(self, board: Board) -> bool:
         is_updating = True
-        while is_updating and not board.is_solved():
+        while is_updating:
             is_updating = False
-
             for vector in board.unsolved_vectors():
                 for index in vector.unknowns():
                     number_line = vector.without(index)
@@ -191,7 +194,32 @@ class SumpleteSolver:
                         vector.exclude(index)
                         is_updating = True
 
-        return board.is_solved()
+                # If the target cannot be reached...
+                if np.all(vector.mask != UNKNOWN) and vector.sum() != vector.target:
+                    return False
+
+        if board.is_solved():
+            return True
+
+        speculative_board = copy(board)
+        vector = next(speculative_board.unsolved_vectors())
+        index = next(vector.unknowns())
+
+        vector.include(index)
+        if self.solve(speculative_board):
+            board.mask = speculative_board.mask
+            return True
+
+        speculative_board = copy(board)
+        vector = next(speculative_board.unsolved_vectors())
+        index = next(vector.unknowns())
+
+        vector.exclude(index)
+        if self.solve(speculative_board):
+            board.mask = speculative_board.mask
+            return True
+
+        return False
 
 
 if __name__ == "__main__":
@@ -214,7 +242,7 @@ if __name__ == "__main__":
 
     board = Board.create(n)
 
-    if False:
+    if True:
         board.grid = np.asarray(grid)
         board.row_sums = np.asarray(row_sums)
         board.col_sums = np.asarray(col_sums)
