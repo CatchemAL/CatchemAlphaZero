@@ -132,7 +132,7 @@ class Board:
 
     @classmethod
     def create(cls, size: int) -> "Board":
-        rng = np.random.RandomState(seed=42)
+        rng = np.random.RandomState()
 
         if size > 8:
             value_range = np.concatenate((np.arange(-20, 0), np.arange(1, 21)))
