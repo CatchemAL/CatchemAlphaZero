@@ -5,6 +5,9 @@
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
     "editor.formatOnSave": true,
-    "python.formatting.provider": "black",
-    "python.analysis.typeCheckingMode": "off"
+    "python.formatting.provider": "none",
+    "python.analysis.typeCheckingMode": "off",
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter"
+    }
 }
