@@ -4,10 +4,11 @@ from copy import copy
 from math import sqrt
 from typing import Generic, List, TypeVar
 
+import numpy as np
 import torch
 
-from ..games.state import State
 from ..games import State
+from ..games.state import State
 from .neural_net import ResNet
 
 TMove = TypeVar("TMove")

@@ -3,8 +3,9 @@ from functools import partial
 
 import numpy as np
 
-from .kaggle_agent import Configuration, Observation
-from .mcts.solver import MctsSolver
+from .games.connectx import ConnectX
+from .kaggle_types import Configuration, Observation
+from .solvers.mcts import MctsSolver
 
 
 # Helper function for score_move: calculates value of heuristic for grid
