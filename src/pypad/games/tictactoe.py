@@ -95,7 +95,7 @@ class TicTacToe(State[int]):
     def possible_moves_mask(self) -> int:
         return self.mask ^ self.bitboard_util.BOARD_MASK
 
-    def to_numpy(self):
+    def to_numpy(self) -> np.ndarray:
         player_to_move = self.position
         opponent_of_player_to_move = self.position ^ self.mask
         r = np.sign(player_to_move & POWERS, dtype=np.float32)

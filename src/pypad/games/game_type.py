@@ -5,7 +5,7 @@ class GameType(Enum):
     """Enum representing the types of games supported."""
 
     TICTACTOE = "TICTACTOE"
-    CONNECT4 = "CONNECT4"
+    CONNECTX = "CONNECTX"
     CHESS = "CHESS"
 
     @staticmethod
@@ -23,8 +23,8 @@ class GameType(Enum):
         """
         if value.upper().startswith("TIC"):
             return GameType.TICTACTOE
-        if value.upper() == "CONNECT4":
-            return GameType.CONNECT4
+        if value.upper() == "CONNECTX":
+            return GameType.CONNECTX
         if value.upper() == "CHESS":
             return GameType.CHESS
         supported_types = ", ".join([e.name for e in GameType])

@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Tic (H-H)",
+            "name": "Tic (M-M)",
             "type": "python",
             "request": "launch",
             "module": "src.pypad",
@@ -13,6 +13,19 @@
             "args": [
                 "run",
                 "--game=tic",
+                "--player1=mcts",
+                "--player2=mcts",
+            ]
+        },
+        {
+            "name": "Connect (M-M)",
+            "type": "python",
+            "request": "launch",
+            "module": "src.pypad",
+            "justMyCode": true,
+            "args": [
+                "run",
+                "--game=connectx",
                 "--player1=mcts",
                 "--player2=mcts",
             ]

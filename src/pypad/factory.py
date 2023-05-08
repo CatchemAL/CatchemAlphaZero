@@ -31,7 +31,7 @@ def get_controller(game_type: GameType, player1: Solver, player2: Solver) -> Con
             state_factory = TicTacToeFactory()
             view = TicTacToeView()
             return Controller(player1, player2, state_factory, view)
-        case GameType.CONNECT4:
+        case GameType.CONNECTX:
             state_factory = ConnectXFactory()
             view = ConnectXView()
             return Controller(player1, player2, state_factory, view)
@@ -43,7 +43,7 @@ def create_agent(game_type: GameType, player: Solver) -> Callable[[Observation, 
     match game_type:
         case GameType.TICTACTOE:
             state_factory = TicTacToeFactory()
-        case GameType.CONNECT4:
+        case GameType.CONNECTX:
             state_factory = ConnectXFactory()
         case _:
             raise ValueError(f"Unsupported game type: {game_type}")

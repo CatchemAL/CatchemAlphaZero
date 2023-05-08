@@ -162,6 +162,9 @@ class ConnectX(State[int]):
         shape = self.rows + 1, self.cols
         return np.flipud(linear_grid.reshape(shape).transpose())[1:, :]
 
+    def to_numpy(self) -> np.ndarray:
+        raise NotImplementedError("todo")
+
     @classmethod
     def from_grid(cls, grid: np.ndarray) -> "ConnectX":
         rows, cols = grid.shape
