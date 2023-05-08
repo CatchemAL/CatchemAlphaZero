@@ -3,8 +3,8 @@ from functools import partial
 
 import numpy as np
 
-from .mcts import MctsSolver
-from .state import ConnectX
+from .kaggle_agent import Configuration, Observation
+from .mcts.solver import MctsSolver
 
 
 # Helper function for score_move: calculates value of heuristic for grid
@@ -54,7 +54,7 @@ def shallow_negamax(board: ConnectX, alpha: int, beta: int, depth: int) -> int:
     return alpha
 
 
-def agent_negamax(obs, config, depth):
+def agent_negamax(obs: Observation, config: Configuration, depth):
     grid = np.asarray(obs.board).reshape(config.rows, config.columns)
     board = ConnectX.from_grid(grid)
 

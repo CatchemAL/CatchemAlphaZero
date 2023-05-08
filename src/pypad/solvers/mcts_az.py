@@ -6,8 +6,9 @@ from typing import Generic, List, TypeVar
 
 import torch
 
+from ..games.state import State
+from ..games import State
 from .neural_net import ResNet
-from .state import ConnectX, State, TicTacToe
 
 TMove = TypeVar("TMove")
 
@@ -112,29 +113,6 @@ class MctsSolver:
                 value *= -1
 
         return max(root.children, key=lambda c: c.visit_count).move
-
-
-import numpy as np
-from kaggle_environments import make
-
-
-def agent_ttt_mcts(obs, config):
-    print(config)
-    grid = np.asarray(obs.board).reshape(3, 3)
-    state = TicTacToe.from_grid(grid)
-    mcts = MctsSolver()
-    move = mcts.solve(state, 1_000)
-    return move
-
-
-def tictactoe() -> None:
-    moves = [0, 5]
-    state = TicTacToe.create(moves)
-    state.position
-
-    env = make("tictactoe", debug=True)
-    env.run([agent_ttt_mcts, agent_ttt_mcts])
-    env.render(mode="ipython")
 
 
 def mcts_az() -> None:

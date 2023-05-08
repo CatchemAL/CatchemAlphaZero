@@ -3,11 +3,10 @@ from __future__ import annotations
 import random
 from copy import copy
 from math import log, sqrt
-from typing import Generic, List, TypeVar
+from typing import Generic, List
 
-from .state import ConnectX, State, TicTacToe
-
-TMove = TypeVar("TMove")
+from ..games.state import State, TMove
+from . import Solver
 
 
 class Node(Generic[TMove]):
@@ -51,8 +50,8 @@ class Node(Generic[TMove]):
         return f"Node(move={self.move}, W/V={self.wins}/{self.visit_count}, ({len(self.unexplored_moves)} unexplored moves))"
 
 
-class MctsSolver:
-    def solve(self, root_state: State[TMove], num_mcts_sims: int = 1_000) -> TMove:
+class MctsSolver(Solver):
+    def solve(self, root_state: State[TMove], num_mcts_sims: int = 10_000) -> TMove:
         root: Node[TMove] = Node(root_state, None, None)
 
         for _ in range(num_mcts_sims):
@@ -86,50 +85,3 @@ class MctsSolver:
                 node = node.parent
 
         return max(root.children, key=lambda c: c.visit_count).move
-
-
-import numpy as np
-from kaggle_environments import make
-
-
-def agent_ttt_mcts(obs, config):
-    print(config)
-    grid = np.asarray(obs.board).reshape(3, 3)
-    state = TicTacToe.from_grid(grid)
-    mcts = MctsSolver()
-    move = mcts.solve(state, 1_000)
-    return move
-
-
-def tictactoe() -> None:
-    moves = [0, 5]
-    state = TicTacToe.create(moves)
-    state.position
-
-    env = make("tictactoe", debug=True)
-    env.run([agent_ttt_mcts, agent_ttt_mcts])
-    env.render(mode="ipython")
-
-
-def mcts() -> None:
-    import numpy as np
-
-    grid = np.array(
-        [
-            [0, 1, 1, 2, 2, 2, 0],
-            [0, 1, 2, 1, 1, 1, 0],
-            [0, 2, 1, 1, 2, 2, 1],
-            [0, 2, 2, 2, 1, 1, 2],
-            [0, 1, 2, 1, 2, 2, 1],
-            [2, 1, 2, 1, 1, 2, 1],
-        ]
-    )
-
-    ROWS, COLS = 6, 7
-    connect = ConnectX.create(ROWS, COLS)
-    connect = ConnectX.from_grid(grid)
-
-    print("Starting...")
-    mcts = MctsSolver()
-    move = mcts.solve(connect)
-    print(f"Done and move is {move}.")

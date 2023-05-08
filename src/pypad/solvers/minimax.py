@@ -1,6 +1,6 @@
 from copy import copy
 
-from .state import ConnectX
+from ..games.connectx import ConnectX
 
 
 class Solver:
