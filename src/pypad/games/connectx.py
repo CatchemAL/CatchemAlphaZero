@@ -159,7 +159,7 @@ class ConnectX(State[int]):
             elif player_2 & 1 << i:
                 linear_grid[i] = 2
 
-        shape = self.rows + 1, self.cols
+        shape = self.cols, self.rows + 1
         return np.flipud(linear_grid.reshape(shape).transpose())[1:, :]
 
     def to_numpy(self) -> np.ndarray:
@@ -199,7 +199,7 @@ class ConnectX(State[int]):
 
 class ConnectXFactory(StateFactory[ConnectX]):
     def load_initial_state(self, initial_position: str) -> ConnectX:
-        return ConnectX.create(7, 6, initial_position)
+        return ConnectX.create(6, 7, initial_position)
 
     def from_kaggle(self, obs: Observation, config: Configuration) -> ConnectX:
         grid = np.asarray(obs.board).reshape(config.rows, config.columns)

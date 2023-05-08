@@ -51,7 +51,7 @@ class Node(Generic[TMove]):
 
 
 class MctsSolver(Solver):
-    def solve(self, root_state: State[TMove], num_mcts_sims: int = 10_000) -> TMove:
+    def solve(self, root_state: State[TMove], num_mcts_sims: int = 1_000) -> TMove:
         root: Node[TMove] = Node(root_state, None, None)
 
         for _ in range(num_mcts_sims):
