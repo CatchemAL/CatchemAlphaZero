@@ -211,27 +211,3 @@ class ConnectXView(StateView[ConnectX]):
     def display(self, state: ConnectX) -> None:
         grid = state.to_grid()
         print(grid)
-
-
-def mcts() -> None:
-    import numpy as np
-
-    grid = np.array(
-        [
-            [0, 1, 1, 2, 2, 2, 0],
-            [0, 1, 2, 1, 1, 1, 0],
-            [0, 2, 1, 1, 2, 2, 1],
-            [0, 2, 2, 2, 1, 1, 2],
-            [0, 1, 2, 1, 2, 2, 1],
-            [2, 1, 2, 1, 1, 2, 1],
-        ]
-    )
-
-    ROWS, COLS = 6, 7
-    connect = ConnectX.create(ROWS, COLS)
-    connect = ConnectX.from_grid(grid)
-
-    print("Starting...")
-    mcts = MctsSolver()
-    move = mcts.solve(connect)
-    print(f"Done and move is {move}.")
