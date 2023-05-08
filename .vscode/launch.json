@@ -5,6 +5,19 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Tic (H-H)",
+            "type": "python",
+            "request": "launch",
+            "module": "src.pypad",
+            "justMyCode": true,
+            "args": [
+                "run",
+                "--game=tic",
+                "--player1=mcts",
+                "--player2=mcts",
+            ]
+        },
+        {
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
