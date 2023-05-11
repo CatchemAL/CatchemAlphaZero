@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import random
 from copy import copy
 from math import log, sqrt
@@ -50,11 +52,19 @@ class Node(Generic[TMove]):
         return f"Node(move={self.move}, W/V={self.wins}/{self.visit_count}, ({len(self.unexplored_moves)} unexplored moves))"
 
 
+@dataclass
 class MctsSolver(Solver):
-    def solve(self, root_state: State[TMove], num_mcts_sims: int = 1_000) -> TMove:
+    num_mcts_sims: int = 1_000
+
+    def solve(self, root_state: State[TMove]) -> TMove:
+        root = self.search(root_state)
+        max_child = max(root.children, key=lambda c: c.visit_count)
+        return max_child.move
+
+    def search(self, root_state: State[TMove]) -> Node:
         root: Node[TMove] = Node(root_state, None, None)
 
-        for _ in range(num_mcts_sims):
+        for _ in range(self.num_mcts_sims):
             node = root
             state = copy(root_state)
 
@@ -84,4 +94,4 @@ class MctsSolver(Solver):
                 outcome = 1 - outcome
                 node = node.parent
 
-        return max(root.children, key=lambda c: c.visit_count).move
+        return root

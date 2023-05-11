@@ -1,21 +1,29 @@
+from ..games.tictactoe import TicTacToe
+
+
 class TicTacToeHtmlView:
-    def display(self, piece_by_position) -> None:
+    def display(self, state: TicTacToe) -> None:
         from IPython.display import HTML
 
-        html_string = self.build_html(piece_by_position)
+        html_string = self.build_html(state)
         return HTML(html_string)
 
-    def build_html(self, piece_by_position) -> None:
+    def build_html(self, state: TicTacToe) -> None:
+        grid = state.to_grid()
+
         def piece(pos: str) -> str:
             col = pos[0]
             row = int(pos[1])
 
-            mark = piece_by_position[3 - row][ord(col) - ord("A")]
+            mark = grid[3 - row][ord(col) - ord("A")]
 
-            if not mark or str.isspace(mark):
-                return ""
-
-            return "⭕" if mark == "1" else "✖️"
+            match mark:
+                case 1:
+                    return "⭕"
+                case 2:
+                    return "✖️"
+                case _:
+                    return ""
 
         grid_html = f"""
         <table class="ttt-board" style="margin:auto;text-align:center;">
