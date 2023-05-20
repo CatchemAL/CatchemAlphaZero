@@ -3,9 +3,9 @@ from functools import partial
 
 import numpy as np
 
-from .games.connectx import ConnectXState
 from .kaggle_types import Configuration, Observation
 from .solvers.mcts import MctsSolver
+from .states import ConnectXState
 
 
 # Helper function for score_move: calculates value of heuristic for grid
