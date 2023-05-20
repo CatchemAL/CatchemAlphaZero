@@ -43,13 +43,15 @@ def kaggle(args: Namespace) -> None:
     player1_type: AgentType = args.player1
     player2_type: AgentType = args.player2
 
-    game = game_type.create()
+    player1 = player1_type.create_player()
+    player2 = player2_type.create_player()
 
-    agent1 = player1_type.create_agent(game)
-    agent2 = player2_type.create_agent(game)
+    game = game_type.create()
+    agent1 = game.create_agent(player1)
+    agent2 = game.create_agent(player2)
 
     # Setup a ConnectX environment.
-    env = make("connectx", debug=True)
+    env = make(game.label, debug=True)
     env.run([agent1, agent2])
     env.render(mode="ipython")
 
