@@ -4,36 +4,49 @@ from typing import Sequence
 
 import numpy as np
 
-from .agent_type import AgentType
-from .factory import create_agent, get_controller, load_player
 from .games import GameType
-from .mnist.mnist_mlp import mlp_run
-from .mnist.mnist_svm import svm_baseline
-from .mnist.mnist_torch import run_torch
-from .solvers import Solver
+from .solvers import AgentType, Solver
+
+# from .factory import create_agent, get_controller, load_player
+
+# from .mnist.mnist_mlp import mlp_run
+# from .mnist.mnist_svm import svm_baseline
+# from .mnist.mnist_torch import run_torch
 
 
 def run(args: Namespace) -> None:
     game_type: GameType = args.game
     init: str = args.init
+    player1_type: AgentType = args.player1
+    player2_type: AgentType = args.player2
 
-    player1 = load_player(args.player1)
-    player2 = load_player(args.player2)
+    game = game_type.create()
+    state = game.initial_state(init)
 
-    controller = get_controller(game_type, player1, player2)
-    controller.run(init)
+    player1 = player1_type.create_player()
+    player2 = player2_type.create_player()
+
+    player, opponent = player1, player2
+    while list(state.legal_moves()):
+        move = player.solve(state)
+        state.play_move(move)
+        game.display(state)
+        player, opponent = opponent, player
+
+    game.display_outcome(state)
 
 
 def kaggle(args: Namespace) -> None:
     from kaggle_environments import make
 
     game_type: GameType = args.game
+    player1_type: AgentType = args.player1
+    player2_type: AgentType = args.player2
 
-    player1 = load_player(args.player1)
-    player2 = load_player(args.player2)
+    game = game_type.create()
 
-    agent1 = create_agent(game_type, player1)
-    agent2 = create_agent(game_type, player2)
+    agent1 = player1_type.create_agent(game)
+    agent2 = player2_type.create_agent(game)
 
     # Setup a ConnectX environment.
     env = make("connectx", debug=True)
@@ -81,7 +94,7 @@ def parse_args(args: Sequence[str]) -> None:
     run_parser.add_argument("--init", type=str, default="")
     run_parser.set_defaults(func=run)
 
-    # Runs an adversarial on the kaggle platform
+    # Runs an adversarial game on the kaggle platform
     run_parser = subparsers.add_parser("kaggle")
     run_parser.add_argument("--game", type=GameType.from_str, default=GameType.TICTACTOE)
     run_parser.add_argument("--player1", type=AgentType.from_str, default=AgentType.HUMAN)

@@ -4,8 +4,7 @@ from typing import Generator, List, Tuple
 import numpy as np
 
 from ..bitboard_utils import BitboardUtil
-from ..kaggle_types import Configuration, Observation
-from .state import State, StateFactory, StateView
+from .state import State
 
 # 3  7 11
 # 2  6 10
@@ -17,7 +16,7 @@ POWERS = np.array(MOVES).reshape(3, 3)
 
 
 @dataclass
-class TicTacToe(State[int]):
+class TicTacToeState(State[int]):
     bitboard_util: BitboardUtil
     mask: int
     position: int
@@ -131,11 +130,11 @@ class TicTacToe(State[int]):
         ax.set_title("Player 1 = Red\nPlayer 2 = Green", loc="left", fontsize=8, fontname="Monospace")
         plt.show()
 
-    def __copy__(self) -> "TicTacToe":
-        return TicTacToe(self.bitboard_util, self.mask, self.position, self.num_moves)
+    def __copy__(self) -> "TicTacToeState":
+        return TicTacToeState(self.bitboard_util, self.mask, self.position, self.num_moves)
 
     @classmethod
-    def from_grid(cls, grid: np.ndarray) -> "TicTacToe":
+    def from_grid(cls, grid: np.ndarray) -> "TicTacToeState":
         rows, cols = grid.shape
         padded_grid = np.vstack((np.zeros(cols), grid))
 
@@ -157,26 +156,10 @@ class TicTacToe(State[int]):
         return board
 
     @classmethod
-    def create(cls, moves: List[int] | None = None) -> "TicTacToe":
+    def create(cls, moves: List[int] | None = None) -> "TicTacToeState":
         mask = BitboardUtil(3 + 1, 3)
         board = cls(mask, 0, 0, 0)
         moves = moves or []
         for move in moves:
             board.play_move(move)
         return board
-
-
-class TicTacToeFactory(StateFactory[TicTacToe]):
-    def load_initial_state(self, initial_position: str) -> TicTacToe:
-        return TicTacToe.create(initial_position)
-
-    def from_kaggle(self, obs: Observation, _: Configuration) -> TicTacToe:
-        grid = np.asarray(obs.board).reshape(3, 3)
-        state = TicTacToe.from_grid(grid)
-        return state
-
-
-class TicTacToeView(StateView[TicTacToe]):
-    def display(self, state: TicTacToe) -> None:
-        grid = state.to_grid()
-        print(grid)

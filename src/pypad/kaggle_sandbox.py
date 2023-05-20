@@ -3,7 +3,7 @@ from functools import partial
 
 import numpy as np
 
-from .games.connectx import ConnectX
+from .games.connectx import ConnectXState
 from .kaggle_types import Configuration, Observation
 from .solvers.mcts import MctsSolver
 
@@ -25,7 +25,7 @@ def get_heuristic(board) -> int:
     return score
 
 
-def shallow_negamax(board: ConnectX, alpha: int, beta: int, depth: int) -> int:
+def shallow_negamax(board: ConnectXState, alpha: int, beta: int, depth: int) -> int:
     if board.is_full():
         return 0
 
@@ -57,7 +57,7 @@ def shallow_negamax(board: ConnectX, alpha: int, beta: int, depth: int) -> int:
 
 def agent_negamax(obs: Observation, config: Configuration, depth):
     grid = np.asarray(obs.board).reshape(config.rows, config.columns)
-    board = ConnectX.from_grid(grid)
+    board = ConnectXState.from_grid(grid)
 
     best_col, best_score = next(board.possible_col_moves()), -1_000_000
 
@@ -81,7 +81,7 @@ def agent_negamax(obs: Observation, config: Configuration, depth):
 
 def agent_mcts(obs, config):
     grid = np.asarray(obs.board).reshape(config.rows, config.columns)
-    board = ConnectX.from_grid(grid)
+    board = ConnectXState.from_grid(grid)
     mcts = MctsSolver()
     move = mcts.solve(board, 1_000)
     col = board.bitboard_util.move_to_col(move)

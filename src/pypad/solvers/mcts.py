@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 import random
 from copy import copy
+from dataclasses import dataclass
 from math import log, sqrt
 from typing import Generic, List
 
-from ..games.state import State, TMove
+from ..states import State, TMove
 from . import Solver
 
 

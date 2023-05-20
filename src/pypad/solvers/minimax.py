@@ -1,10 +1,10 @@
 from copy import copy
 
-from ..games.connectx import ConnectX
+from ..games.connectx import ConnectXState
 
 
 class Solver:
-    def minimax(self, state: ConnectX, alpha: int, beta: int) -> int:
+    def minimax(self, state: ConnectXState, alpha: int, beta: int) -> int:
         if state.is_full():
             return 0
 

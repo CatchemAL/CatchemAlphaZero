@@ -4,7 +4,6 @@ from typing import Generator, Generic, Tuple, TypeVar
 
 import numpy as np
 
-from ..kaggle_types import Configuration, Observation
 
 TMove = TypeVar("TMove")
 TState = TypeVar("TState", bound="State[+TMove]")
@@ -45,19 +44,3 @@ class State(ABC, Generic[TMove]):
     @abstractmethod
     def __copy__(self) -> "State[TMove]":
         ...
-
-
-class StateFactory(ABC, Generic[TState_co]):
-    @abstractmethod
-    def load_initial_state(self, initial_position: str) -> TState_co:
-        ...
-
-    @abstractmethod
-    def from_kaggle(self, obs: Observation, config: Configuration) -> TState_co:
-        ...
-
-
-class StateView(ABC, Generic[TState]):
-    @abstractmethod
-    def display(self, state: TState) -> None:
-        pass

@@ -4,12 +4,11 @@ from typing import Generator, List, Tuple
 import numpy as np
 
 from ..bitboard_utils import BitboardUtil
-from ..kaggle_types import Configuration, Observation
-from .state import State, StateFactory, StateView
+from .state import State
 
 
 @dataclass
-class ConnectX(State[int]):
+class ConnectXState(State[int]):
     bitboard_util: BitboardUtil
     mask: int
     position: int
@@ -142,8 +141,8 @@ class ConnectX(State[int]):
 
         return wm & (self.bitboard_util.BOARD_MASK ^ self.mask)
 
-    def __copy__(self) -> "ConnectX":
-        return ConnectX(self.bitboard_util, self.mask, self.position, self.num_moves)
+    def __copy__(self) -> "ConnectXState":
+        return ConnectXState(self.bitboard_util, self.mask, self.position, self.num_moves)
 
     def to_grid(self) -> np.ndarray:
         num_entries = self.num_slots + self.cols
@@ -166,7 +165,7 @@ class ConnectX(State[int]):
         raise NotImplementedError("todo")
 
     @classmethod
-    def from_grid(cls, grid: np.ndarray) -> "ConnectX":
+    def from_grid(cls, grid: np.ndarray) -> "ConnectXState":
         rows, cols = grid.shape
         padded_grid = np.vstack((np.zeros(cols), grid))
 
@@ -188,7 +187,7 @@ class ConnectX(State[int]):
         return board
 
     @classmethod
-    def create(cls, rows: int, cols: int, moves: List[int] | None = None) -> "ConnectX":
+    def create(cls, rows: int, cols: int, moves: List[int] | None = None) -> "ConnectXState":
         mask = BitboardUtil(rows + 1, cols)
         board = cls(mask, 0, 0, 0)
         moves = moves or []
@@ -197,17 +196,19 @@ class ConnectX(State[int]):
         return board
 
 
-class ConnectXFactory(StateFactory[ConnectX]):
-    def load_initial_state(self, initial_position: str) -> ConnectX:
-        return ConnectX.create(6, 7, initial_position)
+"""
+class ConnectXFactory(StateFactory[ConnectXState]):
+    def load_initial_state(self, initial_position: str) -> ConnectXState:
+        return ConnectXState.create(6, 7, initial_position)
 
-    def from_kaggle(self, obs: Observation, config: Configuration) -> ConnectX:
+    def from_kaggle(self, obs: Observation, config: Configuration) -> ConnectXState:
         grid = np.asarray(obs.board).reshape(config.rows, config.columns)
-        state = ConnectX.from_grid(grid)
+        state = ConnectXState.from_grid(grid)
         return state
 
 
-class ConnectXView(StateView[ConnectX]):
-    def display(self, state: ConnectX) -> None:
+class ConnectXView(StateView[ConnectXState]):
+    def display(self, state: ConnectXState) -> None:
         grid = state.to_grid()
         print(grid)
+"""

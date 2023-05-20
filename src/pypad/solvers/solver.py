@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 
-from ..games import State
-from ..games.state import TMove
+from ..states import State, TMove
 
 
 class Solver(ABC):
