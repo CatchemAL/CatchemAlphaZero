@@ -1,9 +1,5 @@
 from enum import Enum
-from typing import Callable
 
-from ..games import Game
-from ..kaggle_types import Configuration, Observation
-from ..states import TState
 from .solver import Solver
 
 
@@ -54,13 +50,3 @@ class AgentType(Enum):
                 raise ValueError("todo")
             case _:
                 raise ValueError(f"Unsupported agent type: {self}")
-
-    def create_agent(self, game: Game[TState]) -> Callable[[Observation, Configuration], int]:
-        player: Solver = self.create_player()
-
-        def get_best_move(obs: Observation, config: Configuration) -> int:
-            state = game.from_kaggle(obs, config)
-            move = player.solve(state)
-            return move
-
-        return get_best_move
