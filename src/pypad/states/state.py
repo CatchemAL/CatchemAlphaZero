@@ -4,7 +4,6 @@ from typing import Generator, Generic, Tuple, TypeVar
 
 import numpy as np
 
-
 TMove = TypeVar("TMove")
 TState = TypeVar("TState", bound="State[+TMove]")
 TState_co = TypeVar("TState_co", bound="State[+TMove]", covariant=True)
@@ -35,6 +34,10 @@ class State(ABC, Generic[TMove]):
 
     @abstractmethod
     def outcome(self, perspective: int, indicator: str = "win-loss") -> float:
+        ...
+
+    @abstractmethod
+    def html(self, is_tiny_repr: bool = False) -> str:
         ...
 
     @abstractmethod
