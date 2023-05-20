@@ -110,6 +110,15 @@ class TicTacToeState(State[int]):
         g = np.sign(player_2 & POWERS)
         return np.asarray(r + 2 * g, dtype=np.int8)
 
+    def html(self, is_tiny_repr: bool = False) -> str:
+        from ..views.html import TicTacToeHtmlBuilder
+
+        html_printer = TicTacToeHtmlBuilder()
+        return html_printer.build_tiny_html(self) if is_tiny_repr else html_printer.build_html(self)
+
+    def _repr_html_(self) -> str:
+        return self.html()
+
     def plot(self) -> None:
         import matplotlib.pyplot as plt
 

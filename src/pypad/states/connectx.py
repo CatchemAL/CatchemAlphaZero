@@ -164,6 +164,15 @@ class ConnectXState(State[int]):
     def to_numpy(self) -> np.ndarray:
         raise NotImplementedError("todo")
 
+    def html(self, is_tiny_repr: bool = False) -> str:
+        from ..views.html import ConnectXHtmlBuilder
+
+        html_printer = ConnectXHtmlBuilder()
+        return html_printer.build_tiny_html(self) if is_tiny_repr else html_printer.build_html()
+
+    def _repr_html_(self) -> str:
+        return self.html()
+
     @classmethod
     def from_grid(cls, grid: np.ndarray) -> "ConnectXState":
         rows, cols = grid.shape
