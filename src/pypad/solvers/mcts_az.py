@@ -7,8 +7,7 @@ from typing import Generic, List, TypeVar
 import numpy as np
 import torch
 
-from ..games import State
-from ..games.state import State
+from ..states import State
 from .neural_net import ResNet
 
 TMove = TypeVar("TMove")
