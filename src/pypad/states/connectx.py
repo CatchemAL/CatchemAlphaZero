@@ -196,10 +196,15 @@ class ConnectXState(State[int]):
         return board
 
     @classmethod
-    def create(cls, rows: int, cols: int, moves: List[int] | None = None) -> "ConnectXState":
+    def create(cls, rows: int, cols: int, moves: str | List[int] | None = None) -> "ConnectXState":
         mask = BitboardUtil(rows + 1, cols)
         board = cls(mask, 0, 0, 0)
         moves = moves or []
+
+        if isinstance(moves, str):
+            move_array = moves.replace(" ", "").split(",")
+            moves = [int(move) for move in move_array]
+
         for move in moves:
             board.play_col(move - 1)
         return board

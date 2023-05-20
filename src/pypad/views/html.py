@@ -23,11 +23,11 @@ class HtmlBuilder(ABC, Generic[TState]):
     def display(self, state: TState) -> None:
         ...
 
-    def _html(self, grid: np.ndarray) -> str:
-        tiny_html = self._tiny_html(grid, True)
+    def _html(self, grid: np.ndarray, is_col_ordinal: bool) -> str:
+        tiny_html = self._tiny_html(grid, True, is_col_ordinal)
 
         html_table = f"""
-        <table class="ttt-board" style="margin:auto;text-align:center;">
+        <table class="ttt-board" style="margin:auto;text-align:center;float:left">
             <tbody>
                 {tiny_html}
             </tbody>
@@ -48,7 +48,7 @@ class HtmlBuilder(ABC, Generic[TState]):
             .ttt-board td:last-child { border-right: 1px solid #000; }
             .ttt-board tr:last-child td { border-bottom: 1px solid; }
             .ttt-board th:empty { border: none; }
-            .ttt-board td { width: 1.5em; height: 1.5em; text-align: center; font-size: 32px; line-height: 0;}
+            .ttt-board td { width: 1.5em; height: 1.5em; text-align: center; font-size: 18px; line-height: 0;}
         </style>
     </head>
     <body>"""
@@ -60,7 +60,9 @@ class HtmlBuilder(ABC, Generic[TState]):
         )
         return html_with_css
 
-    def _tiny_html(self, grid: np.ndarray, include_headers: bool = False) -> str:
+    def _tiny_html(
+        self, grid: np.ndarray, include_headers: bool = False, is_col_ordinal: bool = False
+    ) -> str:
         rows, cols = grid.shape
 
         def piece(i: int, j: int) -> str:
@@ -79,7 +81,7 @@ class HtmlBuilder(ABC, Generic[TState]):
             table += "        <tr>\n"
             table += "            <th></th>\n"
             for col in range(cols):
-                letter = chr(ord("a") + col)
+                letter = col + 1 if is_col_ordinal else chr(ord("a") + col)
                 table += f"            <th><center>{letter}</center></th>\n"
             table += "        </tr>\n"
 
@@ -137,7 +139,7 @@ class TicTacToeHtmlBuilder(HtmlBuilder[TicTacToeState]):
 
     def build_html(self, state: TicTacToeState) -> str:
         grid = state.to_grid()
-        return self._html(grid)
+        return self._html(grid, False)
 
 
 class ConnectXHtmlBuilder(HtmlBuilder[ConnectXState]):
@@ -153,7 +155,7 @@ class ConnectXHtmlBuilder(HtmlBuilder[ConnectXState]):
 
     def build_html(self, state: ConnectXState) -> str:
         grid = state.to_grid()
-        return self._html(grid)
+        return self._html(grid, True)
 
 
 class ChessHtmlView:

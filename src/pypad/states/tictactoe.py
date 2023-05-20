@@ -165,10 +165,15 @@ class TicTacToeState(State[int]):
         return board
 
     @classmethod
-    def create(cls, moves: List[int] | None = None) -> "TicTacToeState":
+    def create(cls, moves: str | List[int] | None = None) -> "TicTacToeState":
         mask = BitboardUtil(3 + 1, 3)
         board = cls(mask, 0, 0, 0)
         moves = moves or []
+
+        if isinstance(moves, str):
+            move_array = moves.replace(" ", "").split(",")
+            moves = [int(move) for move in move_array]
+
         for move in moves:
             board.play_move(move)
         return board

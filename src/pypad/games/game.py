@@ -12,7 +12,7 @@ from ..views.console import ConsoleConnectXView, ConsoleTicTacToeView
 
 class Game(ABC, Generic[TState]):
     @abstractmethod
-    def initial_state(self, start: str) -> TState:
+    def initial_state(self, start: str | list[int]) -> TState:
         ...
 
     @abstractmethod
@@ -51,8 +51,8 @@ class ConnectX(Game[ConnectXState]):
         self.cols = cols
         self.view = view or ConsoleConnectXView()
 
-    def initial_state(self, start: str) -> ConnectXState:
-        return ConnectXState.create(self.rows, self.cols)
+    def initial_state(self, start: str | list[int] | None = None) -> ConnectXState:
+        return ConnectXState.create(self.rows, self.cols, start)
 
     @property
     def label(self) -> str:
@@ -77,8 +77,8 @@ class TicTacToe(Game[TicTacToeState]):
     def __init__(self, view: View[TicTacToeState] | None = None) -> None:
         self.view = view or ConsoleTicTacToeView()
 
-    def initial_state(self, start: str) -> TicTacToeState:
-        return TicTacToeState.create()
+    def initial_state(self, start: str | list[int] | None = None) -> TicTacToeState:
+        return TicTacToeState.create(start)
 
     def from_kaggle(self, obs: Observation, config: Configuration) -> TicTacToeState:
         grid = np.asarray(obs.board).reshape(3, 3)
