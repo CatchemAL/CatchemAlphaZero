@@ -168,7 +168,7 @@ class ConnectXState(State[int]):
         from ..views.html import ConnectXHtmlBuilder
 
         html_printer = ConnectXHtmlBuilder()
-        return html_printer.build_tiny_html(self) if is_tiny_repr else html_printer.build_html()
+        return html_printer.build_tiny_html(self) if is_tiny_repr else html_printer.build_html(self)
 
     def _repr_html_(self) -> str:
         return self.html()
@@ -203,21 +203,3 @@ class ConnectXState(State[int]):
         for move in moves:
             board.play_col(move - 1)
         return board
-
-
-"""
-class ConnectXFactory(StateFactory[ConnectXState]):
-    def load_initial_state(self, initial_position: str) -> ConnectXState:
-        return ConnectXState.create(6, 7, initial_position)
-
-    def from_kaggle(self, obs: Observation, config: Configuration) -> ConnectXState:
-        grid = np.asarray(obs.board).reshape(config.rows, config.columns)
-        state = ConnectXState.from_grid(grid)
-        return state
-
-
-class ConnectXView(StateView[ConnectXState]):
-    def display(self, state: ConnectXState) -> None:
-        grid = state.to_grid()
-        print(grid)
-"""

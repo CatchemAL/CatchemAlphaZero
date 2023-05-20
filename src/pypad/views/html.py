@@ -1,10 +1,13 @@
 from abc import ABC, abstractmethod
 from typing import Generic, Tuple
 
-from pypad.states import TicTacToeState
+from pypad.states import TicTacToeState, ConnectXState
 
 from ..solvers.mcts import Node
 from ..states import TState
+
+
+import numpy as np
 
 
 class HtmlBuilder(ABC, Generic[TState]):
@@ -20,6 +23,77 @@ class HtmlBuilder(ABC, Generic[TState]):
     def display(self, state: TState) -> None:
         ...
 
+    def _html(self, grid: np.ndarray) -> str:
+        tiny_html = self._tiny_html(grid, True)
+
+        html_table = f"""
+        <table class="ttt-board" style="margin:auto;text-align:center;">
+            <tbody>
+                {tiny_html}
+            </tbody>
+        </table>"""
+
+        html_with_css = (
+            """
+<!DOCTYPE html>
+<html>
+    <head>
+        <title></title>
+        <meta charset="UTF-8">
+        <style>
+            .ttt-board { border-spacing: 0; border-collapse: collapse; }
+            .ttt-board th { padding: .5em; }
+            .ttt-board th + th { border-bottom: 1px solid #000; }
+            .ttt-board th:first-child,
+            .ttt-board td:last-child { border-right: 1px solid #000; }
+            .ttt-board tr:last-child td { border-bottom: 1px solid; }
+            .ttt-board th:empty { border: none; }
+            .ttt-board td { width: 1.5em; height: 1.5em; text-align: center; font-size: 32px; line-height: 0;}
+        </style>
+    </head>
+    <body>"""
+            + html_table
+            + """
+    </body>
+</html>
+"""
+        )
+        return html_with_css
+
+    def _tiny_html(self, grid: np.ndarray, include_headers: bool = False) -> str:
+        rows, cols = grid.shape
+
+        def piece(i: int, j: int) -> str:
+            mark = grid[i, j]
+            match mark:
+                case 1:
+                    return r'<font POINT-SIZE="12">⭕</font>'
+                case 2:
+                    return r'<font POINT-SIZE="12">✖️</font>'
+                case _:
+                    return ""
+
+        table = ""
+
+        if include_headers:
+            table += "        <tr>\n"
+            table += "            <th></th>\n"
+            for col in range(cols):
+                letter = chr(ord("a") + col)
+                table += f"            <th><center>{letter}</center></th>\n"
+            table += "        </tr>\n"
+
+        for row in range(rows):
+            table += "        <tr>\n"
+            if include_headers:
+                table += f"            <th>{rows - row}</th>\n"
+            for col in range(cols):
+                mark = piece(row, col)
+                color = "#FFFFFF" if (row + col) % 2 == 1 else "#EBEBEB"
+                table += f'            <td height="20" width="20" bgcolor="{color}">{mark}</td>\n'
+            table += "        </tr>\n"
+        return table
+
 
 class MctsNodeHtmlBuilder:
     def build_tiny_html(self, node: Node, state: TState) -> str:
@@ -28,15 +102,16 @@ class MctsNodeHtmlBuilder:
         win_label, ucb_label = MctsNodeHtmlBuilder._get_labels(node)
 
         tiny = state.html(True)
-        html = f"""<<table cellborder="0" cellspacing="0" border="0">{tiny}
+        html = f"""<<table cellborder="0" cellspacing="0" border="0">
+            {tiny}
             <tr>
                 <td height="5" colspan="{cols}" align="center"></td>
             </tr>
             <tr>
-                <td colspan="3" align="center"><font face="Helvetica" color="#424242" POINT-SIZE="11">{win_label}</font></td>
+                <td colspan="{cols}" align="center"><font face="Helvetica" color="#424242" POINT-SIZE="11">{win_label}</font></td>
             </tr>
             <tr>
-                <td colspan="3" align="center"><font face="Helvetica" color="#424242" POINT-SIZE="11">{ucb_label}</font></td>
+                <td colspan="{cols}" align="center"><font face="Helvetica" color="#424242" POINT-SIZE="11">{ucb_label}</font></td>
             </tr>
         </table>>"""
 
@@ -58,107 +133,27 @@ class TicTacToeHtmlBuilder(HtmlBuilder[TicTacToeState]):
 
     def build_tiny_html(self, state: TicTacToeState) -> str:
         grid = state.to_grid()
-
-        def piece(i: int, j: int) -> str:
-            mark = grid[i, j]
-            match mark:
-                case 1:
-                    return r'<font POINT-SIZE="12">⭕</font>'
-                case 2:
-                    return r'<font POINT-SIZE="12">✖️</font>'
-                case _:
-                    return ""
-
-        tiny = f"""
-        <tr>
-            <td height="20" width="20" bgcolor="#EBEBEB">{piece(0, 0)}</td>
-            <td height="20" width="20" bgcolor="#FFFFFF">{piece(0, 1)}</td>
-            <td height="20" width="20" bgcolor="#EBEBEB">{piece(0, 2)}</td>
-        </tr>
-        <tr>
-            <td height="20" width="20" bgcolor="#FFFFFF">{piece(1, 0)}</td>
-            <td height="20" width="20" bgcolor="#EBEBEB">{piece(1, 1)}</td>
-            <td height="20" width="20" bgcolor="#FFFFFF">{piece(1, 2)}</td>
-        </tr>
-        <tr>
-            <td height="20" width="20" bgcolor="#EBEBEB">{piece(2, 0)}</td>
-            <td height="20" width="20" bgcolor="#FFFFFF">{piece(2, 1)}</td>
-            <td height="20" width="20" bgcolor="#EBEBEB">{piece(2, 2)}</td>
-        </tr>"""
-
-        return tiny
+        return self._tiny_html(grid)
 
     def build_html(self, state: TicTacToeState) -> str:
         grid = state.to_grid()
+        return self._html(grid)
 
-        def piece(i: int, j: int) -> str:
-            mark = grid[i, j]
-            match mark:
-                case 1:
-                    return "⭕"
-                case 2:
-                    return "✖️"
-                case _:
-                    return ""
 
-        grid_html = f"""
-        <table class="ttt-board" style="margin:auto;text-align:center;">
-            <tbody>
-                <tr>
-                    <th></th>
-                    <th><center>a</center></th>
-                    <th><center>b</center></th>
-                    <th><center>c</center></th>
-                </tr>
-                <tr>
-                    <th>3</th>
-                    <td class="dark" >{piece(0, 0)}</td>
-                    <td class="light">{piece(0, 1)}</td>
-                    <td class="dark" >{piece(0, 2)}</td>
-                </tr>
-                <tr>
-                    <th>2</th>
-                    <td class="light">{piece(1, 0)}</td>
-                    <td class="dark" >{piece(1, 1)}</td>
-                    <td class="light">{piece(1, 2)}</td>
-                </tr>
-                <tr>
-                    <th>1</th>
-                    <td class="dark" >{piece(2, 0)}</td>
-                    <td class="light">{piece(2, 1)}</td>
-                    <td class="dark" >{piece(2, 2)}</td>
-                </tr>
-            </tbody>
-        </table>"""
+class ConnectXHtmlBuilder(HtmlBuilder[ConnectXState]):
+    def display(self, state: ConnectXState) -> None:
+        from IPython.display import HTML
 
-        html_string = (
-            """
-<!DOCTYPE html>
-<html>
-    <head>
-        <title></title>
-        <meta charset="UTF-8">
-        <style>
-            .ttt-board { border-spacing: 0; border-collapse: collapse; }
-            .ttt-board th { padding: .5em; }
-            .ttt-board th + th { border-bottom: 1px solid #000; }
-            .ttt-board th:first-child,
-            .ttt-board td:last-child { border-right: 1px solid #000; }
-            .ttt-board tr:last-child td { border-bottom: 1px solid; }
-            .ttt-board th:empty { border: none; }
-            .ttt-board td { width: 1.5em; height: 1.5em; text-align: center; font-size: 32px; line-height: 0;}
-            .ttt-board .light { background: #FCFCFC; }
-            .ttt-board .dark { background: #e9e9e9; }
-        </style>
-    </head>
-    <body>"""
-            + grid_html
-            + """
-    </body>
-</html>
-"""
-        )
-        return html_string
+        html_string = self.build_html(state)
+        return HTML(html_string)
+
+    def build_tiny_html(self, state: ConnectXState) -> str:
+        grid = state.to_grid()
+        return self._tiny_html(grid)
+
+    def build_html(self, state: ConnectXState) -> str:
+        grid = state.to_grid()
+        return self._html(grid)
 
 
 class ChessHtmlView:
