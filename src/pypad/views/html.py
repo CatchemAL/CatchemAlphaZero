@@ -1,22 +1,98 @@
-from ..games.tictactoe import TicTacToe
+from abc import ABC, abstractmethod
+from typing import Generic, Tuple
+
+from pypad.states import TicTacToeState
+
+from ..solvers.mcts import Node
+from ..states import TState
 
 
-class TicTacToeHtmlView:
-    def display(self, state: TicTacToe) -> None:
+class HtmlBuilder(ABC, Generic[TState]):
+    @abstractmethod
+    def build_html(self, state: TState) -> str:
+        ...
+
+    @abstractmethod
+    def build_tiny_html(self, state: TState) -> str:
+        ...
+
+    @abstractmethod
+    def display(self, state: TState) -> None:
+        ...
+
+
+class MctsNodeHtmlBuilder:
+    def build_tiny_html(self, node: Node, state: TState) -> str:
+        _, cols = state.shape
+
+        win_label, ucb_label = MctsNodeHtmlBuilder._get_labels(node)
+
+        tiny = state.html(True)
+        html = f"""<<table cellborder="0" cellspacing="0" border="0">{tiny}
+            <tr>
+                <td height="5" colspan="{cols}" align="center"></td>
+            </tr>
+            <tr>
+                <td colspan="3" align="center"><font face="Helvetica" color="#424242" POINT-SIZE="11">{win_label}</font></td>
+            </tr>
+            <tr>
+                <td colspan="3" align="center"><font face="Helvetica" color="#424242" POINT-SIZE="11">{ucb_label}</font></td>
+            </tr>
+        </table>>"""
+
+        return html
+
+    @staticmethod
+    def _get_labels(node: Node) -> Tuple[str, str]:
+        win_label = f"N={node.visit_count}, W={node.wins}"
+        ucb_label = f"UCB={node.ucb():.4}" if node.parent else "root"
+        return win_label, ucb_label
+
+
+class TicTacToeHtmlBuilder(HtmlBuilder[TicTacToeState]):
+    def display(self, state: TicTacToeState) -> None:
         from IPython.display import HTML
 
         html_string = self.build_html(state)
         return HTML(html_string)
 
-    def build_html(self, state: TicTacToe) -> None:
+    def build_tiny_html(self, state: TicTacToeState) -> str:
         grid = state.to_grid()
 
-        def piece(pos: str) -> str:
-            col = pos[0]
-            row = int(pos[1])
+        def piece(i: int, j: int) -> str:
+            mark = grid[i, j]
+            match mark:
+                case 1:
+                    return r'<font POINT-SIZE="12">⭕</font>'
+                case 2:
+                    return r'<font POINT-SIZE="12">✖️</font>'
+                case _:
+                    return ""
 
-            mark = grid[3 - row][ord(col) - ord("A")]
+        tiny = f"""
+        <tr>
+            <td height="20" width="20" bgcolor="#EBEBEB">{piece(0, 0)}</td>
+            <td height="20" width="20" bgcolor="#FFFFFF">{piece(0, 1)}</td>
+            <td height="20" width="20" bgcolor="#EBEBEB">{piece(0, 2)}</td>
+        </tr>
+        <tr>
+            <td height="20" width="20" bgcolor="#FFFFFF">{piece(1, 0)}</td>
+            <td height="20" width="20" bgcolor="#EBEBEB">{piece(1, 1)}</td>
+            <td height="20" width="20" bgcolor="#FFFFFF">{piece(1, 2)}</td>
+        </tr>
+        <tr>
+            <td height="20" width="20" bgcolor="#EBEBEB">{piece(2, 0)}</td>
+            <td height="20" width="20" bgcolor="#FFFFFF">{piece(2, 1)}</td>
+            <td height="20" width="20" bgcolor="#EBEBEB">{piece(2, 2)}</td>
+        </tr>"""
 
+        return tiny
+
+    def build_html(self, state: TicTacToeState) -> str:
+        grid = state.to_grid()
+
+        def piece(i: int, j: int) -> str:
+            mark = grid[i, j]
             match mark:
                 case 1:
                     return "⭕"
@@ -36,21 +112,21 @@ class TicTacToeHtmlView:
                 </tr>
                 <tr>
                     <th>3</th>
-                    <td class="dark" >{piece('A3')}</td>
-                    <td class="light">{piece('B3')}</td>
-                    <td class="dark" >{piece('C3')}</td>
+                    <td class="dark" >{piece(0, 0)}</td>
+                    <td class="light">{piece(0, 1)}</td>
+                    <td class="dark" >{piece(0, 2)}</td>
                 </tr>
                 <tr>
                     <th>2</th>
-                    <td class="light">{piece('A2')}</td>
-                    <td class="dark" >{piece('B2')}</td>
-                    <td class="light">{piece('C2')}</td>
+                    <td class="light">{piece(1, 0)}</td>
+                    <td class="dark" >{piece(1, 1)}</td>
+                    <td class="light">{piece(1, 2)}</td>
                 </tr>
                 <tr>
                     <th>1</th>
-                    <td class="dark" >{piece('A1')}</td>
-                    <td class="light">{piece('B1')}</td>
-                    <td class="dark" >{piece('C1')}</td>
+                    <td class="dark" >{piece(2, 0)}</td>
+                    <td class="light">{piece(2, 1)}</td>
+                    <td class="dark" >{piece(2, 2)}</td>
                 </tr>
             </tbody>
         </table>"""
