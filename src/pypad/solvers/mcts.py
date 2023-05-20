@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from math import log, sqrt
 from typing import Generic, List
 
-from ..states import State, TMove
+from ..states import State, TMove, TState
 from . import Solver
 
 
@@ -46,6 +46,17 @@ class Node(Generic[TMove]):
         exploitation_param = self.wins / self.visit_count
         exploration_param = sqrt(log(self.parent.visit_count) / self.visit_count)
         return exploitation_param + c * exploration_param
+
+    def html(self, state: TState) -> str:
+        from ..views.html import MctsNodeHtmlBuilder
+
+        html_printer = MctsNodeHtmlBuilder()
+        return html_printer.build_tiny_html(self, state)
+
+    def render(self, state: State[TMove]):
+        from ..graph import visualize_tree
+
+        return visualize_tree(state, self)
 
     def __repr__(self):
         return f"Node(move={self.move}, W/V={self.wins}/{self.visit_count}, ({len(self.unexplored_moves)} unexplored moves))"
