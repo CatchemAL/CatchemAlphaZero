@@ -6,6 +6,7 @@ import numpy as np
 
 from .games import GameType
 from .solvers import AgentType, Solver
+from .solvers.network import DummyNeuralNetwork
 
 # from .factory import create_agent, get_controller, load_player
 
@@ -27,11 +28,13 @@ def run(args: Namespace) -> None:
     player2 = player2_type.create_player()
 
     player, opponent = player1, player2
-    while list(state.legal_moves()):
+    status = state.status()
+    while status.is_in_progress:
         move = player.solve(state)
         state.play_move(move)
         game.display(state)
         player, opponent = opponent, player
+        status = state.status()
 
     game.display_outcome(state)
 
@@ -54,6 +57,30 @@ def kaggle(args: Namespace) -> None:
     env = make(game.label, debug=True)
     env.run([agent1, agent2])
     env.render(mode="ipython")
+
+
+def learn(args: Namespace) -> None:
+    game_type: GameType = args.game
+    init: str = args.init
+
+    game = game_type.create()
+
+    from torch.optim import Adam
+
+    from .solvers.alpha_zero_mcts import AlphaZero
+    from .solvers.network_architecture import PytorchNeuralNetwork, ResNet
+
+    shape = 3, 3
+    action_size = 9
+
+    resnet = ResNet(shape, action_size)
+    optimizer = Adam(resnet.parameters(), lr=0.001)
+    neural_net = PytorchNeuralNetwork(resnet, optimizer)
+
+    alpha_zero = AlphaZero(neural_net)
+    alpha_zero.learn(game)
+
+    print("done!")
 
 
 def main() -> None:
@@ -102,6 +129,12 @@ def parse_args(args: Sequence[str]) -> None:
     run_parser.add_argument("--player1", type=AgentType.from_str, default=AgentType.HUMAN)
     run_parser.add_argument("--player2", type=AgentType.from_str, default=AgentType.HUMAN)
     run_parser.set_defaults(func=kaggle)
+
+    # Trains a deep neural net via reinforcement learning
+    run_parser = subparsers.add_parser("learn")
+    run_parser.add_argument("--game", type=GameType.from_str, default=GameType.TICTACTOE)
+    run_parser.add_argument("--init", type=str, default="")
+    run_parser.set_defaults(func=learn)
 
     namespace = parser.parse_args(args)
     namespace.func(namespace)

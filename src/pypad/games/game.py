@@ -95,7 +95,7 @@ class TicTacToe(Game[TicTacToeState]):
     def display(self, state: TicTacToeState) -> None:
         self.view.display(state)
 
-    def display_outcome(self, state: ConnectXState) -> None:
+    def display_outcome(self, state: TicTacToeState) -> None:
         self.view.display_outcome(state)
 
 

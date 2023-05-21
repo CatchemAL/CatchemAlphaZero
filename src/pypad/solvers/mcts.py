@@ -24,7 +24,7 @@ class Node(Generic[TMove]):
         self.visit_count: int = 0
 
         self.children: List[Node[TMove]] = []
-        self.unexplored_moves: List[TMove] = list(state.legal_moves())
+        self.unexplored_moves: List[TMove] = state.status().legal_moves
 
     @property
     def has_legal_moves(self) -> bool:
@@ -36,7 +36,7 @@ class Node(Generic[TMove]):
 
     def update(self, outcome: int) -> None:
         self.visit_count += 1
-        self.wins += outcome
+        self.wins += (1 + outcome) / 2
 
     def select_child(self) -> "Node[TMove]":
         return max(self.children, key=lambda c: c.ucb())
@@ -93,15 +93,16 @@ class MctsSolver(Solver):
                 node = child_node
 
             # Simulation (aka rollout)
-            while legal_moves := list(state.legal_moves()):
-                move = random.choice(legal_moves)
+            status = state.status()
+            while status.is_in_progress:
+                move = random.choice(status.legal_moves)
                 state.play_move(move)
+                status = state.status()
 
             # Backpropagate
-            outcome = state.outcome(node.played_by)
             while node:
+                outcome = status.outcome(node.played_by)
                 node.update(outcome)
-                outcome = 1 - outcome
                 node = node.parent
 
         return root

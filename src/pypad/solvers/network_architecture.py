@@ -1,12 +1,14 @@
-import torch
-import torch.nn as nn
-import torch.optim as optim
-
-from ..states import State, TMove
 from dataclasses import dataclass
 
-from numpy.typing import NDArray
 import numpy as np
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from numpy.typing import NDArray
+from torch.optim import Adam, Optimizer
+
+from ..solvers.network import TrainingData
+from ..states import State, TMove
 
 NUM_CHANNELS = 3  # Player mask, Opponent mask, Possible moves mask
 KERNEL_SIZE = 3
@@ -94,6 +96,7 @@ class ResNetBlock(nn.Module):
 @dataclass
 class PytorchNeuralNetwork:
     resnet: ResNet
+    optimizer: Optimizer
 
     @torch.no_grad()
     def predict(self, state: State[TMove]) -> tuple[NDArray[np.float32], float]:
@@ -110,3 +113,32 @@ class PytorchNeuralNetwork:
         value: float = value.item()
 
         return raw_policy, value
+
+    def set_to_eval(self) -> None:
+        self.resnet.eval()
+
+    def set_to_train(self) -> None:
+        self.resnet.train()
+
+    def train(self, training_set: list[TrainingData]) -> None:
+        states = torch.tensor(np.array([d.encoded_state for d in training_set]), dtype=torch.float32)
+        policies = torch.tensor(np.array([d.policy for d in training_set]), dtype=torch.float32)
+        outcomes = torch.tensor(
+            np.array([d.outcome for d in training_set]).reshape(-1, 1), dtype=torch.float32
+        )
+
+        predicted_policies, predicted_outcomes = self.resnet(states)
+
+        policy_loss = F.cross_entropy(predicted_policies, policies)
+        outcome_loss = F.mse_loss(predicted_outcomes, outcomes)
+        total_loss = policy_loss + outcome_loss
+
+        self.optimizer.zero_grad()
+        total_loss.backward()
+        self.optimizer.step()
+
+    def save(self, generation: int) -> None:
+        network_weights = self.resnet.state_dict()
+        optimizer_state = self.optimizer.state_dict()
+        torch.save(network_weights, f"weights\model_weights_gen{generation:03d}.pt")
+        torch.save(optimizer_state, f"weights\optimizer_state_gen{generation:03d}.pt")

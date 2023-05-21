@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Generator
+from dataclasses import dataclass
 from typing import Generator, Generic, Tuple, TypeVar
 
 import numpy as np
@@ -7,6 +8,17 @@ import numpy as np
 TMove = TypeVar("TMove")
 TState = TypeVar("TState", bound="State[+TMove]")
 TState_co = TypeVar("TState_co", bound="State[+TMove]", covariant=True)
+
+
+@dataclass
+class Status(Generic[TMove]):
+    is_in_progress: bool
+    played_by: int
+    value: float
+    legal_moves: list[TMove]
+
+    def outcome(self, perspective: int) -> float:
+        return self.value if perspective == self.played_by else -self.value
 
 
 class State(ABC, Generic[TMove]):
@@ -26,7 +38,7 @@ class State(ABC, Generic[TMove]):
         ...
 
     @abstractmethod
-    def legal_moves(self) -> Generator[TMove, None, None]:
+    def status(self) -> Status[TMove]:
         ...
 
     @abstractmethod
@@ -35,10 +47,6 @@ class State(ABC, Generic[TMove]):
 
     @abstractmethod
     def is_won(self) -> bool:
-        ...
-
-    @abstractmethod
-    def outcome(self, perspective: int, indicator: str = "win-loss") -> float:
         ...
 
     @abstractmethod

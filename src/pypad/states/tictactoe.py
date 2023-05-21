@@ -4,7 +4,7 @@ from typing import Generator, List, Tuple
 import numpy as np
 
 from ..bitboard_utils import BitboardUtil
-from .state import State
+from .state import State, Status
 
 # 3  7 11
 # 2  6 10
@@ -43,35 +43,28 @@ class TicTacToeState(State[int]):
         return self.rows * self.cols
 
     @property
+    def is_full(self) -> bool:
+        return self.num_moves == self.num_slots
+
+    @property
     def played_by(self) -> int:
         is_odd_num_moves = self.num_moves & 1
         return 2 - is_odd_num_moves
+
+    def status(self) -> Status[int]:
+        is_won = self.is_won()
+        is_ended = is_won or self.is_full
+
+        is_in_progress = not is_ended
+        value = 1 if is_won else 0
+        legal_moves = [] if is_ended else self._possible_moves()
+        return Status(is_in_progress, self.played_by, value, legal_moves)
 
     def play_move(self, move: int) -> None:
         bitmove = MOVES[move]
         self.position ^= self.mask
         self.mask |= bitmove
         self.num_moves += 1
-
-    def is_full(self) -> bool:
-        return self.num_moves == self.num_slots
-
-    def outcome(self, perspective: int, indicator: str = "win-loss") -> float:
-        score = self._outcome(perspective)
-        if indicator == "win-loss":
-            return (1 + np.sign(score)) / 2
-
-        return score
-
-    def _outcome(self, perspective: int) -> int:
-        if self.is_full and not self.is_won():
-            return 0
-
-        score = (self.num_slots - self.num_moves + 2) // 2
-        is_odd_num_moves = self.num_moves & 1
-        is_odd_perspective = perspective & 1
-
-        return score if is_odd_num_moves == is_odd_perspective else -score
 
     def is_won(self) -> bool:
         rows = self.rows + 1
@@ -82,21 +75,6 @@ class TicTacToeState(State[int]):
                 return True
 
         return False
-
-    def legal_moves(self) -> Generator[int, None, None]:
-        if not self.is_won():
-            return self.possible_moves()
-        return range(0)
-
-    def possible_moves(self) -> Generator[int, None, None]:
-        possible_moves_mask = self.possible_moves_mask()
-
-        for i, move in enumerate(MOVES):
-            if possible_moves_mask & move:
-                yield i
-
-    def possible_moves_mask(self) -> int:
-        return self.mask ^ self.bitboard_util.BOARD_MASK
 
     def to_numpy(self) -> np.ndarray:
         player_to_move = self.position
@@ -120,9 +98,6 @@ class TicTacToeState(State[int]):
         html_printer = TicTacToeHtmlBuilder()
         return html_printer.build_tiny_html(self) if is_tiny_repr else html_printer.build_html(self)
 
-    def _repr_html_(self) -> str:
-        return self.html()
-
     def plot(self) -> None:
         import matplotlib.pyplot as plt
 
@@ -145,6 +120,19 @@ class TicTacToeState(State[int]):
 
     def __copy__(self) -> "TicTacToeState":
         return TicTacToeState(self.bitboard_util, self.mask, self.position, self.num_moves)
+
+    def _possible_moves(self) -> list[int]:
+        if self.is_full or self.is_won():
+            return range(0)
+
+        possible_moves_mask = self._possible_moves_mask()
+        return [i for i, move in enumerate(MOVES) if possible_moves_mask & move]
+
+    def _possible_moves_mask(self) -> int:
+        return self.mask ^ self.bitboard_util.BOARD_MASK
+
+    def _repr_html_(self) -> str:
+        return self.html()
 
     @classmethod
     def from_grid(cls, grid: np.ndarray) -> "TicTacToeState":
