@@ -8,7 +8,7 @@ import numpy as np
 import torch
 
 from ..states import State
-from .neural_net import ResNet
+from .network_architecture import ResNet
 
 TMove = TypeVar("TMove")
 
