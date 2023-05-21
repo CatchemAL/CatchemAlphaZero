@@ -18,6 +18,19 @@
             ]
         },
         {
+            "name": "Tic (M-AZ)",
+            "type": "python",
+            "request": "launch",
+            "module": "src.pypad",
+            "justMyCode": true,
+            "args": [
+                "run",
+                "--game=tic",
+                "--player1=mcts",
+                "--player2=az",
+            ]
+        },
+        {
             "name": "Connect (M-M)",
             "type": "python",
             "request": "launch",

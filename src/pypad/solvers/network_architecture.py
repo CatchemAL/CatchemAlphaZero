@@ -1,8 +1,12 @@
-from typing import Tuple
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
+
+from ..states import State, TMove
+from dataclasses import dataclass
+
+from numpy.typing import NDArray
+import numpy as np
 
 NUM_CHANNELS = 3  # Player mask, Opponent mask, Possible moves mask
 KERNEL_SIZE = 3
@@ -21,7 +25,7 @@ num_features_by_game = {
 
 class ResNet(nn.Module):
     def __init__(
-        self, shape: Tuple[int, int], action_size: int, num_res_blocks: int = 4, num_features: int = 64
+        self, shape: tuple[int, int], action_size: int, num_res_blocks: int = 4, num_features: int = 64
     ) -> None:
         super().__init__()
 
@@ -85,3 +89,24 @@ class ResNetBlock(nn.Module):
         output = self.layers(x)
         output += x
         return self.relu(output)
+
+
+@dataclass
+class PytorchNeuralNetwork:
+    resnet: ResNet
+
+    @torch.no_grad()
+    def predict(self, state: State[TMove]) -> tuple[NDArray[np.float32], float]:
+        # Convert to [player, opponent, unplayed]
+        planes = state.to_numpy()
+        tensor = torch.tensor(planes).unsqueeze(0)
+
+        # Fire the state through the net...
+        raw_policy, value = self.resnet(tensor)
+
+        # Surely we can put this in the network architecture instead of outside?
+        raw_policy = torch.softmax(raw_policy, axis=1).squeeze().cpu().numpy()
+
+        value: float = value.item()
+
+        return raw_policy, value

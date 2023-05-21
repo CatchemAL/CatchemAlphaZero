@@ -4,11 +4,11 @@ from copy import copy
 from math import sqrt
 from typing import Generic, List, TypeVar
 
+
 import numpy as np
-import torch
 
 from ..states import State
-from .network_architecture import ResNet
+from .network import NeuralNetwork
 
 TMove = TypeVar("TMove")
 
@@ -44,7 +44,7 @@ class Node(Generic[TMove]):
     @property
     def q_value(self) -> float:
         if self.visit_count == 0:
-            return 0
+            return 0.0
         return (1 + self.value_sum / self.visit_count) / 2
 
     def update(self, outcome: int) -> None:
@@ -63,12 +63,16 @@ class Node(Generic[TMove]):
         return f"Node(move={self.move}, Q={self.q_value:.4}, prior={self.prior:.2%}))"
 
 
-class MctsSolver:
-    def __init__(self, neural_net: ResNet) -> None:
+class AlphaZeroMctsSolver:
+    def __init__(self, neural_net: NeuralNetwork) -> None:
         self.neural_net = neural_net
 
-    @torch.no_grad()
-    def solve(self, root_state: State[TMove], num_mcts_sims: int = 1_000) -> TMove:
+    def solve(self, root_state: State[TMove], num_mcts_sims: int = 10_000) -> TMove:
+        root = self.search(root_state, num_mcts_sims)
+        max_child = max(root.children, key=lambda c: c.visit_count)
+        return max_child.move
+
+    def search(self, root_state: State[TMove], num_mcts_sims: int = 1_000) -> Node:
         root: Node[TMove] = Node(root_state, None, None)
 
         for _ in range(num_mcts_sims):
@@ -81,10 +85,7 @@ class MctsSolver:
                 state.play_move(node.move)
 
             if legal_moves := list(state.legal_moves()):
-                planes = state.to_numpy()
-                tensor = torch.tensor(planes).unsqueeze(0)
-                raw_policy, value = self.neural_net(tensor)
-                raw_policy = torch.softmax(raw_policy, axis=1).squeeze().cpu().numpy()
+                raw_policy, value = self.neural_net.predict(state)
 
                 policy = raw_policy * 0  # Filter out illegal moves
                 policy[legal_moves] = raw_policy[legal_moves]
@@ -101,10 +102,9 @@ class MctsSolver:
                 # === Simulation ===
                 # Here, the AlphaZero paper completely replaces the traditional
                 # rollout phase with a value estimation from the neural net.
-                value: float = value.item()
-
+                ...
             else:
-                value = 1 if state.is_won() else 0
+                value = 1.0 if state.is_won() else 0.0
 
             # === Backpropagate ===
             while node:
@@ -112,19 +112,23 @@ class MctsSolver:
                 node = node.parent
                 value *= -1
 
-        return max(root.children, key=lambda c: c.visit_count).move
+        return root
 
 
 def mcts_az() -> None:
     import numpy as np
+    from ..games import TicTacToe
+    from .network import DummyNeuralNetwork
 
-    tictactoe = TicTacToe.create()
+    tictactoe_state = TicTacToe.initial_state()
 
     print("Starting...")
     shape = 3, 3
     num_resnet_layers = 4
     num_features = 64
-    neural_net = ResNet(shape, num_res_blocks=num_resnet_layers, num_features=num_features)
-    mcts = MctsSolver(neural_net)
-    move = mcts.solve(tictactoe)
+
+    # neural_net = ResNet(shape, num_res_blocks=num_resnet_layers, num_features=num_features)
+    neural_net = DummyNeuralNetwork()
+    mcts = AlphaZeroMctsSolver(neural_net)
+    move = mcts.solve(tictactoe_state)
     print(f"Done and move is {move}.")

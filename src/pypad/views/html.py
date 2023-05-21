@@ -1,13 +1,12 @@
 from abc import ABC, abstractmethod
 from typing import Generic, Tuple
 
-from pypad.states import TicTacToeState, ConnectXState
+import numpy as np
+
+from pypad.states import ConnectXState, TicTacToeState
 
 from ..solvers.mcts import Node
 from ..states import TState
-
-
-import numpy as np
 
 
 class HtmlBuilder(ABC, Generic[TState]):

@@ -23,6 +23,10 @@ class ConnectXState(State[int]):
         return self.bitboard_util.cols
 
     @property
+    def action_size(self) -> int:
+        return self.cols
+
+    @property
     def shape(self) -> Tuple[int, int]:
         return self.rows, self.cols
 
@@ -145,24 +149,30 @@ class ConnectXState(State[int]):
         return ConnectXState(self.bitboard_util, self.mask, self.position, self.num_moves)
 
     def to_grid(self) -> np.ndarray:
-        num_entries = self.num_slots + self.cols
-        linear_grid = np.zeros((num_entries,), dtype=np.int8)
+        rows, cols = self.shape
+        sequence = np.arange((rows + 1) * cols, dtype=object)
+        indices = np.flipud(sequence.reshape((cols, rows + 1)).T)
+        powers = 2 ** indices[1:]
 
         posn = self.position ^ self.mask if self.num_moves & 1 else self.position
         player_1 = posn
         player_2 = posn ^ self.mask
-
-        for i in range(num_entries):
-            if player_1 & 1 << i:
-                linear_grid[i] = 1
-            elif player_2 & 1 << i:
-                linear_grid[i] = 2
-
-        shape = self.cols, self.rows + 1
-        return np.flipud(linear_grid.reshape(shape).transpose())[1:, :]
+        r = np.sign(player_1 & powers).astype(np.int8)
+        g = np.sign(player_2 & powers).astype(np.int8)
+        return np.asarray(r + 2 * g)
 
     def to_numpy(self) -> np.ndarray:
-        raise NotImplementedError("todo")
+        rows, cols = self.shape
+        sequence = np.arange((rows + 1) * cols, dtype=object)
+        indices = np.flipud(sequence.reshape((cols, rows + 1)).T)
+        powers = 2 ** indices[1:]
+
+        player_1 = self.position
+        player_2 = self.position ^ self.mask
+        r = np.sign(player_1 & powers).astype(np.int8)
+        g = np.sign(player_2 & powers).astype(np.int8)
+        b = 1 - r - g
+        return np.stack((r, g, b))
 
     def html(self, is_tiny_repr: bool = False) -> str:
         from ..views.html import ConnectXHtmlBuilder

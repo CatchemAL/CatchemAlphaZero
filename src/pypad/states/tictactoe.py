@@ -32,11 +32,15 @@ class TicTacToeState(State[int]):
 
     @property
     def shape(self) -> Tuple[int, int]:
-        return 3, 3
+        return self.rows, self.cols
+
+    @property
+    def action_size(self) -> int:
+        return self.num_slots
 
     @property
     def num_slots(self) -> int:
-        return 9
+        return self.rows * self.cols
 
     @property
     def played_by(self) -> int:

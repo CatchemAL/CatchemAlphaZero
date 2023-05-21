@@ -20,6 +20,11 @@ class State(ABC, Generic[TMove]):
     def shape(self) -> Tuple[int, int]:
         ...
 
+    @property
+    @abstractmethod
+    def action_size(self) -> int:
+        ...
+
     @abstractmethod
     def legal_moves(self) -> Generator[TMove, None, None]:
         ...
