@@ -3,10 +3,12 @@ from __future__ import annotations
 import random
 from copy import copy
 from math import sqrt
-from typing import Generic, List, TypeVar
+from typing import Generic, List, Self, TypeVar
 
 import numpy as np
-from tqdm import tqdm, trange
+from tqdm import tqdm
+
+from .alpha_zero_parameters import AZTrainingParameters
 
 from ..games import Game
 from ..states import State
@@ -96,7 +98,7 @@ class AlphaZeroMctsSolver:
             # === Selection ===
             while node.has_children:
                 node = node.select_child()
-                state.play_move(node.move)
+                state.play_bitmove(node.move)
 
             status = state.status()
             if status.is_in_progress:
@@ -136,29 +138,21 @@ class AlphaZero:
     def __init__(
         self,
         neural_net: NeuralNetwork,
-        num_mcts_sims: int = 2_00,
-        num_generations: int = 5,
-        num_epochs: int = 4,
-        games_per_generation: int = 500,
-        minibatch_size: int = 64,
     ) -> None:
         self.neural_net = neural_net
         self.mcts = AlphaZeroMctsSolver(self.neural_net, num_mcts_sims)
-        self.num_generations = num_generations
-        self.num_epochs = num_epochs
-        self.games_per_generation = games_per_generation
-        self.minibatch_size = minibatch_size
 
-    def self_play(self, game: Game) -> list[TrainingData]:
-        state: State = game.initial_state()
+    def self_play(self, initial_state: str | list[int] | None = None) -> list[TrainingData]:
+        state: State = self.neural_net.game.initial_state(initial_state)
         status = state.status()
 
+        self.neural_net.set_to_eval()
         move_history: list[tuple[np.ndarray, np.ndarray, int]] = []
 
         while status.is_in_progress:
             encoded_state = state.to_numpy()
             policy = self.mcts.policy(state)
-            move = np.random.choice(state.action_size, p=policy)
+            move = np.random.choice(len(policy), p=policy)
             state.play_move(move)
             move_history.append((encoded_state, policy, state.played_by))
             status = state.status()
@@ -172,50 +166,33 @@ class AlphaZero:
 
         return training_set
 
-    def train(self, training_set: list[TrainingData]) -> None:
+    def train(self, training_set: list[TrainingData], minibatch_size: int) -> None:
         random.shuffle(training_set)
 
-        for idx in range(0, len(training_set), self.minibatch_size):
-            minibatch = training_set[idx : idx + self.minibatch_size]
+        for idx in range(0, len(training_set), minibatch_size):
+            minibatch = training_set[idx : idx + minibatch_size]
             self.neural_net.train(minibatch)
 
-    def learn(self, game: Game) -> None:
-        outer_progress = tqdm(total=self.num_generations, desc="Generations")
-        for generation in range(self.num_generations):
+    def self_learn(
+        self, training_params: AZTrainingParameters, initial_state: str | list[int] | None = None
+    ) -> None:
+        outer_progress = tqdm(total=training_params.num_generations, desc="Generations")
+        for generation in range(training_params.num_generations):
             training_set: list[TrainingData] = []
 
-            self.neural_net.set_to_eval()
-            with tqdm(total=self.games_per_generation, desc="- Self-play", leave=False) as inner_bar:
-                for _ in range(self.games_per_generation):
+            with tqdm(
+                total=training_params.games_per_generation, desc="- Self-play", leave=False
+            ) as inner_bar:
+                for _ in range(training_params.games_per_generation):
                     inner_bar.update(1)
-                    game_training_set = self.self_play(game)
+                    game_training_set = self.self_play(initial_state)
                     training_set += game_training_set
 
             self.neural_net.set_to_train()
-            with tqdm(total=self.num_epochs, desc=" - Training", leave=False) as inner_bar:
-                for _ in range(self.num_epochs):
+            with tqdm(total=training_params.num_epochs, desc=" - Training", leave=False) as inner_bar:
+                for _ in range(training_params.num_epochs):
                     inner_bar.update(1)
-                    self.train(training_set)
+                    self.train(training_set, training_params.minibatch_size)
 
             self.neural_net.save(generation)
             outer_progress.update(1)
-
-
-def mcts_az() -> None:
-    import numpy as np
-
-    from ..games import TicTacToe
-    from .network import DummyNeuralNetwork
-
-    tictactoe_state = TicTacToe.initial_state()
-
-    print("Starting...")
-    shape = 3, 3
-    num_resnet_layers = 4
-    num_features = 64
-
-    # neural_net = ResNet(shape, num_res_blocks=num_resnet_layers, num_features=num_features)
-    neural_net = DummyNeuralNetwork()
-    mcts = AlphaZeroMctsSolver(neural_net)
-    move = mcts.solve(tictactoe_state)
-    print(f"Done and move is {move}.")

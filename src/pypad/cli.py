@@ -4,7 +4,9 @@ from typing import Sequence
 
 import numpy as np
 
-from .games import GameType
+from .solvers.alpha_zero_parameters import AZTrainingParameters
+
+from .games import Game, GameType, get_game
 from .solvers import AgentType, Solver
 from .solvers.network import DummyNeuralNetwork
 
@@ -21,20 +23,18 @@ def run(args: Namespace) -> None:
     player1_type: AgentType = args.player1
     player2_type: AgentType = args.player2
 
-    game = game_type.create()
+    game = get_game(game_type)
     state = game.initial_state(init)
 
     player1 = player1_type.create_player()
     player2 = player2_type.create_player()
 
     player, opponent = player1, player2
-    status = state.status()
-    while status.is_in_progress:
+    while state.status().is_in_progress:
         move = player.solve(state)
         state.play_move(move)
         game.display(state)
         player, opponent = opponent, player
-        status = state.status()
 
     game.display_outcome(state)
 
@@ -46,39 +46,36 @@ def kaggle(args: Namespace) -> None:
     player1_type: AgentType = args.player1
     player2_type: AgentType = args.player2
 
+    game = get_game(game_type)
+
     player1 = player1_type.create_player()
     player2 = player2_type.create_player()
-
-    game = game_type.create()
     agent1 = game.create_agent(player1)
     agent2 = game.create_agent(player2)
 
     # Setup a ConnectX environment.
-    env = make(game.label, debug=True)
+    env = make(game.name, debug=True)
     env.run([agent1, agent2])
     env.render(mode="ipython")
 
 
 def learn(args: Namespace) -> None:
-    game_type: GameType = args.game
-    init: str = args.init
-
-    game = game_type.create()
-
     from torch.optim import Adam
 
     from .solvers.alpha_zero_mcts import AlphaZero
-    from .solvers.network_architecture import PytorchNeuralNetwork, ResNet
+    from .solvers.network_torch import PytorchNeuralNetwork, ResNet
 
-    shape = 3, 3
-    action_size = 9
+    game_type: GameType = args.game
+    init: str = args.init
 
-    resnet = ResNet(shape, action_size)
-    optimizer = Adam(resnet.parameters(), lr=0.001)
-    neural_net = PytorchNeuralNetwork(resnet, optimizer)
+    game = get_game(game_type)
 
+    # Build alpha zero with latest weights
+    neural_net = PytorchNeuralNetwork.create(game, "./weights")
     alpha_zero = AlphaZero(neural_net)
-    alpha_zero.learn(game)
+
+    training_params = AZTrainingParameters.defaults(game.fullname)
+    alpha_zero.self_learn(training_params, init)
 
     print("done!")
 
@@ -133,7 +130,7 @@ def parse_args(args: Sequence[str]) -> None:
     # Trains a deep neural net via reinforcement learning
     run_parser = subparsers.add_parser("learn")
     run_parser.add_argument("--game", type=GameType.from_str, default=GameType.TICTACTOE)
-    run_parser.add_argument("--init", type=str, default="")
+    run_parser.add_argument("--init", type=str, default=None)
     run_parser.set_defaults(func=learn)
 
     namespace = parser.parse_args(args)

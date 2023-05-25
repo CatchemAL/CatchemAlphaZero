@@ -1,7 +1,5 @@
 from enum import Enum
 
-from .game import Chess, ConnectX, TicTacToe
-
 
 class GameType(Enum):
     """Enum representing the types of games supported."""
@@ -32,12 +30,3 @@ class GameType(Enum):
         supported_types = ", ".join([e.name for e in GameType])
         message = f"{value} not a supported solver type. Supported types are {supported_types}."
         raise ValueError(message)
-
-    def create(self) -> TicTacToe | ConnectX:
-        match self:
-            case GameType.TICTACTOE:
-                return TicTacToe()
-            case GameType.CONNECTX:
-                return ConnectX()
-            case _:
-                raise ValueError(f"Invalid game type: {self}")
