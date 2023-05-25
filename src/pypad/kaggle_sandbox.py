@@ -30,7 +30,7 @@ def shallow_negamax(board: ConnectXState, alpha: int, beta: int, depth: int) -> 
         return 0
 
     win_mask = board.win_mask()
-    possible_moves = board.possible_moves_mask()
+    possible_moves = board._possible_bitmoves_mask()
     if win_mask & possible_moves:
         return (board.num_slots - board.num_moves + 1) // 2
 
@@ -44,9 +44,9 @@ def shallow_negamax(board: ConnectXState, alpha: int, beta: int, depth: int) -> 
     alpha = -100_000_000
     beta = min(beta, max_possible_score)
 
-    for move in board.possible_moves():
+    for move in board.possible_bitmoves():
         b = copy(board)
-        b.play_move(move)
+        b.play_bitmove(move)
         score = -shallow_negamax(b, -beta, -alpha, depth - 1)
         alpha = max(alpha, score)
         if score >= beta:
@@ -59,17 +59,17 @@ def agent_negamax(obs: Observation, config: Configuration, depth):
     grid = np.asarray(obs.board).reshape(config.rows, config.columns)
     board = ConnectXState.from_grid(grid)
 
-    best_col, best_score = next(board.possible_col_moves()), -1_000_000
+    best_col, best_score = next(board.possible_moves()), -1_000_000
 
-    for col in board.possible_col_moves():
+    for col in board.possible_moves():
         b = copy(board)
-        b.play_col(col)
+        b.play_move(col)
         if b.is_won():
             return col
 
-    for col in board.possible_col_moves():
+    for col in board.possible_moves():
         b = copy(board)
-        b.play_col(col)
+        b.play_move(col)
         alpha, beta = -1, 1
         score = -shallow_negamax(b, alpha, beta, depth)
         if score > best_score:
