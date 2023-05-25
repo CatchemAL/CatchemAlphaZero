@@ -5,6 +5,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from ..states import State, TMove
+from ..games import Game
 
 
 @dataclass
@@ -15,6 +16,10 @@ class TrainingData:
 
 
 class NeuralNetwork(Protocol):
+    @property
+    def game(self) -> Game:
+        ...
+
     def predict(self, state: State[TMove]) -> tuple[NDArray[np.float32], float]:
         ...
 
