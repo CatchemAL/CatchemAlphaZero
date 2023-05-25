@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Callable, Generic
 
 import numpy as np
@@ -8,31 +9,49 @@ from ..solvers import Solver
 from ..states import ConnectXState, TicTacToeState, TState
 from ..views import View
 from ..views.console import ConsoleConnectXView, ConsoleTicTacToeView
+from .game_type import GameType
+
+
+@dataclass(frozen=True, slots=True)
+class GameParameters:
+    shape: tuple[int, int]
+    observation_shape: tuple[int, int, int]
+    action_size: int
 
 
 class Game(ABC, Generic[TState]):
+    @property
     @abstractmethod
-    def initial_state(self, start: str | list[int]) -> TState:
+    def name(self) -> str:
+        ...
+
+    @property
+    @abstractmethod
+    def fullname(self) -> str:
+        ...
+
+    @property
+    @abstractmethod
+    def shape(self) -> tuple[int, int]:
+        ...
+
+    @abstractmethod
+    def initial_state(self, start: str | list[int] | None = None) -> TState:
+        ...
+
+    @abstractmethod
+    def config(self) -> GameParameters:
         ...
 
     @abstractmethod
     def from_kaggle(self, obs: Observation, config: Configuration) -> TState:
         ...
 
-    @abstractmethod
-    def to_kaggle_move(self, state: TState, move: int) -> int:
-        ...
-
-    @property
-    @abstractmethod
-    def label(self) -> str:
-        ...
-
     def create_agent(self, player: Solver) -> Callable[[Observation, Configuration], int]:
         def get_best_move(obs: Observation, config: Configuration) -> int:
             state = self.from_kaggle(obs, config)
             move = player.solve(state)
-            return self.to_kaggle_move(state, move)
+            return move
 
         return get_best_move
 
@@ -51,20 +70,33 @@ class ConnectX(Game[ConnectXState]):
         self.cols = cols
         self.view = view or ConsoleConnectXView()
 
+    @property
+    def name(self) -> str:
+        return "connectx"
+
+    @property
+    def fullname(self) -> str:
+        return f"ConnectX_{self.rows}x{self.cols}"
+
+    @property
+    def shape(self) -> tuple[int, int]:
+        return self.rows, self.cols
+
     def initial_state(self, start: str | list[int] | None = None) -> ConnectXState:
         return ConnectXState.create(self.rows, self.cols, start)
 
-    @property
-    def label(self) -> str:
-        return "connectx"
+    def config(self) -> GameParameters:
+        NUM_PLANES = 3
+
+        shape = self.shape
+        observation_shape = self.rows, self.cols, NUM_PLANES
+        action_size = self.cols
+        return GameParameters(shape, observation_shape, action_size)
 
     def from_kaggle(self, obs: Observation, config: Configuration) -> ConnectXState:
         grid = np.asarray(obs.board).reshape(config.rows, config.columns)
         state = ConnectXState.from_grid(grid)
         return state
-
-    def to_kaggle_move(self, state: ConnectXState, move: int) -> int:
-        return state.bitboard_util.move_to_col(move)
 
     def display(self, state: ConnectXState) -> None:
         self.view.display(state)
@@ -74,23 +106,38 @@ class ConnectX(Game[ConnectXState]):
 
 
 class TicTacToe(Game[TicTacToeState]):
+    ROWS, COLS = 3, 3
+
     def __init__(self, view: View[TicTacToeState] | None = None) -> None:
         self.view = view or ConsoleTicTacToeView()
+
+    @property
+    def name(self) -> str:
+        return "tictactoe"
+
+    @property
+    def fullname(self) -> str:
+        return f"TicTacToe"
+
+    @property
+    def shape(self) -> tuple[int, int]:
+        return self.ROWS, self.COLS
 
     def initial_state(self, start: str | list[int] | None = None) -> TicTacToeState:
         return TicTacToeState.create(start)
 
+    def config(self) -> GameParameters:
+        NUM_PLANES = 3
+
+        shape = self.shape
+        observation_shape = self.ROWS, self.COLS, NUM_PLANES
+        action_size = self.ROWS * self.COLS
+        return GameParameters(shape, observation_shape, action_size)
+
     def from_kaggle(self, obs: Observation, config: Configuration) -> TicTacToeState:
-        grid = np.asarray(obs.board).reshape(3, 3)
+        grid = np.asarray(obs.board).reshape(self.ROWS, self.COLS)
         state = TicTacToeState.from_grid(grid)
         return state
-
-    def to_kaggle_move(self, _: ConnectXState, move: int) -> int:
-        return move
-
-    @property
-    def label(self) -> str:
-        return "tictactoe"
 
     def display(self, state: TicTacToeState) -> None:
         self.view.display(state)
@@ -101,3 +148,13 @@ class TicTacToe(Game[TicTacToeState]):
 
 class Chess:
     pass
+
+
+def get_game(game_type: GameType) -> TicTacToe | ConnectX:
+    match game_type:
+        case GameType.TICTACTOE:
+            return TicTacToe()
+        case GameType.CONNECTX:
+            return ConnectX()
+        case _:
+            raise ValueError(f"Invalid game type: {game_type}")
