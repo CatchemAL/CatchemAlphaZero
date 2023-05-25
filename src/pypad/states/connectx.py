@@ -1,10 +1,10 @@
 from dataclasses import dataclass
-from typing import Generator, List, Tuple
+from typing import Generator, Self
 
 import numpy as np
 
 from ..bitboard_utils import BitboardUtil
-from .state import State
+from .state import State, Status
 
 
 @dataclass
@@ -23,11 +23,7 @@ class ConnectXState(State[int]):
         return self.bitboard_util.cols
 
     @property
-    def action_size(self) -> int:
-        return self.cols
-
-    @property
-    def shape(self) -> Tuple[int, int]:
+    def shape(self) -> tuple[int, int]:
         return self.rows, self.cols
 
     @property
@@ -35,30 +31,40 @@ class ConnectXState(State[int]):
         return self.rows * self.cols
 
     @property
+    def is_full(self) -> bool:
+        return self.num_moves == self.num_slots
+
+    @property
     def played_by(self) -> int:
         is_odd_num_moves = self.num_moves & 1
         return 2 - is_odd_num_moves
 
-    def can_play_col(self, col: int) -> bool:
+    def status(self) -> Status[int]:
+        is_won = self.is_won()
+        is_ended = is_won or self.is_full
+
+        is_in_progress = not is_ended
+        value = 1 if is_won else 0
+        legal_moves = [] if is_ended else list(self._possible_moves_unchecked())
+        return Status(is_in_progress, self.played_by, value, legal_moves)
+
+    def can_play_move(self, col: int) -> bool:
         offset = (col + 1) * self.bitboard_util.rows - 2
         top_col_bit = 1 << offset
         return (self.mask & top_col_bit) == 0
 
-    def play_col(self, col: int) -> None:
+    def play_move(self, col: int) -> None:
         offset = self.bitboard_util.rows * col
         col_bit = 1 << offset
-        self.play_move(self.mask + col_bit)
+        self.play_bitmove(self.mask + col_bit)
 
-    def play_move(self, move: int) -> None:
+    def play_bitmove(self, move: int) -> None:
         self.position ^= self.mask
         self.mask |= move
         self.num_moves += 1
 
     def key(self) -> int:
         return (self.mask + self.bitboard_util.BOTTOM_ROW) | self.position
-
-    def is_full(self) -> bool:
-        return self.num_moves == self.num_slots
 
     def outcome(self, perspective: int, indicator: str = "win-loss") -> float:
         score = self._outcome(perspective)
@@ -88,13 +94,24 @@ class ConnectXState(State[int]):
 
         return False
 
-    def legal_moves(self) -> Generator[int, None, None]:
-        if not self.is_won():
-            return self.possible_moves()
-        return range(0)
+    def legal_bitmoves(self) -> Generator[int, None, None]:
+        if self.is_won() or self.is_full:
+            return range(0)
 
-    def possible_moves(self) -> Generator[int, None, None]:
-        possible_moves_mask = self.possible_moves_mask()
+        return self._possible_bitmoves_unchecked()
+
+    def _possible_moves_unchecked(self) -> Generator[int, None, None]:
+        possible_moves_mask = self._possible_bitmoves_mask()
+        move_order = self.bitboard_util.move_order()
+
+        for col in move_order:
+            col_mask = self.bitboard_util.get_col_mask(col)
+            possible_move = possible_moves_mask & col_mask
+            if possible_move:
+                yield col
+
+    def _possible_bitmoves_unchecked(self) -> Generator[int, None, None]:
+        possible_moves_mask = self._possible_bitmoves_mask()
         move_order = self.bitboard_util.move_order()
 
         for col in move_order:
@@ -103,18 +120,8 @@ class ConnectXState(State[int]):
             if possible_move:
                 yield possible_move
 
-    def possible_moves_mask(self) -> int:
+    def _possible_bitmoves_mask(self) -> int:
         return (self.mask + self.bitboard_util.BOTTOM_ROW) & self.bitboard_util.BOARD_MASK
-
-    def possible_col_moves(self) -> Generator[int, None, None]:
-        possible_moves_mask = self.possible_moves_mask()
-        move_order = self.bitboard_util.move_order()
-
-        for col in move_order:
-            col_mask = self.bitboard_util.get_col_mask(col)
-            possible_move = possible_moves_mask & col_mask
-            if possible_move > 0:
-                yield col
 
     def win_mask(self) -> int:
         H1 = self.bitboard_util.rows
@@ -184,7 +191,7 @@ class ConnectXState(State[int]):
         return self.html()
 
     @classmethod
-    def from_grid(cls, grid: np.ndarray) -> "ConnectXState":
+    def from_grid(cls, grid: np.ndarray) -> Self:
         rows, cols = grid.shape
         padded_grid = np.vstack((np.zeros(cols), grid))
 
@@ -206,9 +213,9 @@ class ConnectXState(State[int]):
         return board
 
     @classmethod
-    def create(cls, rows: int, cols: int, moves: str | List[int] | None = None) -> "ConnectXState":
-        mask = BitboardUtil(rows + 1, cols)
-        board = cls(mask, 0, 0, 0)
+    def create(cls, rows: int, cols: int, moves: str | list[int] | None = None) -> Self:
+        util = BitboardUtil(rows + 1, cols)
+        board = cls(util, 0, 0, 0)
         moves = moves or []
 
         if isinstance(moves, str):
@@ -216,5 +223,5 @@ class ConnectXState(State[int]):
             moves = [int(move) for move in move_array]
 
         for move in moves:
-            board.play_col(move - 1)
+            board.play_move(move - 1)
         return board

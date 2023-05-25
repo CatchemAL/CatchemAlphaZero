@@ -35,10 +35,6 @@ class TicTacToeState(State[int]):
         return self.rows, self.cols
 
     @property
-    def action_size(self) -> int:
-        return self.num_slots
-
-    @property
     def num_slots(self) -> int:
         return self.rows * self.cols
 
@@ -57,7 +53,7 @@ class TicTacToeState(State[int]):
 
         is_in_progress = not is_ended
         value = 1 if is_won else 0
-        legal_moves = [] if is_ended else self._possible_moves()
+        legal_moves = [] if is_ended else self._possible_moves_unchecked()
         return Status(is_in_progress, self.played_by, value, legal_moves)
 
     def play_move(self, move: int) -> None:
@@ -121,14 +117,11 @@ class TicTacToeState(State[int]):
     def __copy__(self) -> "TicTacToeState":
         return TicTacToeState(self.bitboard_util, self.mask, self.position, self.num_moves)
 
-    def _possible_moves(self) -> list[int]:
-        if self.is_full or self.is_won():
-            return range(0)
-
-        possible_moves_mask = self._possible_moves_mask()
+    def _possible_moves_unchecked(self) -> list[int]:
+        possible_moves_mask = self._possible_bitmoves_mask()
         return [i for i, move in enumerate(MOVES) if possible_moves_mask & move]
 
-    def _possible_moves_mask(self) -> int:
+    def _possible_bitmoves_mask(self) -> int:
         return self.mask ^ self.bitboard_util.BOARD_MASK
 
     def _repr_html_(self) -> str:
