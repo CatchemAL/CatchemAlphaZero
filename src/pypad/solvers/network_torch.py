@@ -1,16 +1,22 @@
 from dataclasses import dataclass
 
+
+from .alpha_zero_parameters import AZNetworkParameters
+
+from torch.optim import Adam
+from typing import Self
+
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from numpy.typing import NDArray
-from torch.optim import Adam, Optimizer
+from torch.optim import Optimizer
 
-from ..solvers.network import TrainingData
+from .network import TrainingData
 from ..states import State, TMove
+from ..games import Game
 
-NUM_CHANNELS = 3  # Player mask, Opponent mask, Possible moves mask
 KERNEL_SIZE = 3
 PADDING = (KERNEL_SIZE - 1) // 2
 
@@ -27,15 +33,19 @@ num_features_by_game = {
 
 class ResNet(nn.Module):
     def __init__(
-        self, shape: tuple[int, int], action_size: int, num_res_blocks: int = 4, num_features: int = 64
+        self,
+        observation_shape: tuple[int, int, int],
+        action_size: int,
+        num_res_blocks: int = 4,
+        num_features: int = 64,
     ) -> None:
         super().__init__()
 
-        rows, cols = shape
+        rows, cols, num_planes = observation_shape
 
         # We start with a convolutional layer
         self.start_block = nn.Sequential(
-            nn.Conv2d(NUM_CHANNELS, num_features, kernel_size=KERNEL_SIZE, padding=PADDING),
+            nn.Conv2d(num_planes, num_features, kernel_size=KERNEL_SIZE, padding=PADDING),
             nn.BatchNorm2d(num_features),
             nn.ReLU(inplace=True),
         )
@@ -59,7 +69,6 @@ class ResNet(nn.Module):
             nn.ReLU(inplace=True),
             nn.Flatten(),
             nn.Linear(32 * rows * cols, action_size),
-            # nn.Softmax()
         )
 
     def forward(self, x):
@@ -142,3 +151,15 @@ class PytorchNeuralNetwork:
         optimizer_state = self.optimizer.state_dict()
         torch.save(network_weights, f"weights\model_weights_gen{generation:03d}.pt")
         torch.save(optimizer_state, f"weights\optimizer_state_gen{generation:03d}.pt")
+
+    @classmethod
+    def create(cls, game: Game, directory: str, load_latest: bool | int = True) -> Self:
+        game_parameters = game.config()
+        obs_shape = game_parameters.observation_shape
+        action_size = game_parameters.action_size
+
+        net_params = AZNetworkParameters.defaults(game.fullname)
+        resnet = ResNet(obs_shape, action_size, net_params.num_resnet_blocks, net_params.num_features)
+        optimizer = Adam(resnet.parameters(), lr=net_params.optimizer_learn_rate)
+
+        return PytorchNeuralNetwork(resnet, optimizer)
