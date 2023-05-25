@@ -5,7 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Tic (M-M)",
+            "name": "Learn (Tic)",
+            "type": "python",
+            "request": "launch",
+            "module": "src.pypad",
+            "justMyCode": true,
+            "args": [
+                "learn",
+                "--game=tic",
+            ]
+        },
+        {
+            "name": "Run TicTacToe (MCTS)",
             "type": "python",
             "request": "launch",
             "module": "src.pypad",
@@ -18,7 +29,7 @@
             ]
         },
         {
-            "name": "Tic (M-AZ)",
+            "name": "Run TicTacToe (Alpha)",
             "type": "python",
             "request": "launch",
             "module": "src.pypad",
@@ -31,7 +42,7 @@
             ]
         },
         {
-            "name": "Connect (M-M)",
+            "name": "Run Connect (MCTS)",
             "type": "python",
             "request": "launch",
             "module": "src.pypad",
@@ -41,6 +52,71 @@
                 "--game=connectx",
                 "--player1=mcts",
                 "--player2=mcts",
+            ]
+        },
+        {
+            "name": "Run Connect (Alpha)",
+            "type": "python",
+            "request": "launch",
+            "module": "src.pypad",
+            "justMyCode": true,
+            "args": [
+                "run",
+                "--game=connectx",
+                "--player1=mcts",
+                "--player2=az",
+            ]
+        },
+        {
+            "name": "Kaggle TicTacToe (MCTS)",
+            "type": "python",
+            "request": "launch",
+            "module": "src.pypad",
+            "justMyCode": true,
+            "args": [
+                "kaggle",
+                "--game=tic",
+                "--player1=mcts",
+                "--player2=mcts",
+            ]
+        },
+        {
+            "name": "Kaggle TicTacToe (Alpha)",
+            "type": "python",
+            "request": "launch",
+            "module": "src.pypad",
+            "justMyCode": true,
+            "args": [
+                "kaggle",
+                "--game=tic",
+                "--player1=mcts",
+                "--player2=az",
+            ]
+        },
+        {
+            "name": "Kaggle Connect (MCTS)",
+            "type": "python",
+            "request": "launch",
+            "module": "src.pypad",
+            "justMyCode": true,
+            "args": [
+                "kaggle",
+                "--game=connectx",
+                "--player1=mcts",
+                "--player2=mcts",
+            ]
+        },
+        {
+            "name": "Kaggle Connect (Alpha)",
+            "type": "python",
+            "request": "launch",
+            "module": "src.pypad",
+            "justMyCode": true,
+            "args": [
+                "kaggle",
+                "--game=connectx",
+                "--player1=mcts",
+                "--player2=az",
             ]
         },
         {
