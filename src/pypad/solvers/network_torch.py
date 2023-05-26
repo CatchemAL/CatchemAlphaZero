@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-
+from pathlib import Path
 
 from .alpha_zero_parameters import AZNetworkParameters
 
@@ -102,10 +102,16 @@ class ResNetBlock(nn.Module):
         return self.relu(output)
 
 
-@dataclass
 class PytorchNeuralNetwork:
-    resnet: ResNet
-    optimizer: Optimizer
+    def __init__(
+        self, resnet: ResNet, optimizer: Optimizer, game: Game, generation: int, directory: Path
+    ) -> None:
+        self.resnet = resnet
+        self.optimizer = optimizer
+        self.game = game
+        self.directory = directory
+        self.generation = generation
+        self.action_size = game.config().action_size
 
     @torch.no_grad()
     def predict(self, state: State[TMove]) -> tuple[NDArray[np.float32], float]:
@@ -146,20 +152,47 @@ class PytorchNeuralNetwork:
         total_loss.backward()
         self.optimizer.step()
 
-    def save(self, generation: int) -> None:
+    def save(self) -> None:
+        gen = self.generation
         network_weights = self.resnet.state_dict()
         optimizer_state = self.optimizer.state_dict()
-        torch.save(network_weights, f"weights\model_weights_gen{generation:03d}.pt")
-        torch.save(optimizer_state, f"weights\optimizer_state_gen{generation:03d}.pt")
+        weights_file = self.directory / f"weights_{self.game.fullname}_gen{gen:03d}.pt"
+        optimizer_file = self.directory / f"optimizer_state_{self.game.fullname}_gen{gen:03d}.pt"
+        torch.save(network_weights, weights_file)
+        torch.save(optimizer_state, optimizer_file)
 
     @classmethod
-    def create(cls, game: Game, directory: str, load_latest: bool | int = True) -> Self:
+    def create(cls, game: Game, directory: str | Path, load_latest: bool | int = True) -> Self:
+        directory = Path(directory)
         game_parameters = game.config()
         obs_shape = game_parameters.observation_shape
         action_size = game_parameters.action_size
 
         net_params = AZNetworkParameters.defaults(game.fullname)
         resnet = ResNet(obs_shape, action_size, net_params.num_resnet_blocks, net_params.num_features)
-        optimizer = Adam(resnet.parameters(), lr=net_params.optimizer_learn_rate)
 
-        return PytorchNeuralNetwork(resnet, optimizer)
+        learning_rate = net_params.optimizer_learn_rate
+        l2_regularization = net_params.optimizer_weight_decay
+        optimizer = Adam(resnet.parameters(), lr=learning_rate, weight_decay=l2_regularization)
+
+        weights_regex = f"weights_{game.fullname}_gen*.pt"
+        optimizer_regex = f"optimizer_state_{game.fullname}_gen*.pt"
+        weights_files = [file_path for file_path in directory.glob(weights_regex)]
+        optim_files = [file_path for file_path in directory.glob(optimizer_regex)]
+
+        generation = 0
+        if load_latest:
+            if not isinstance(load_latest, bool):
+                weights_files = [f for f in weights_files if int(f.stem.split("gen")[1]) == load_latest]
+                optim_files = [f for f in optim_files if int(f.stem.split("gen")[1]) == load_latest]
+
+            if weights_files:
+                latest_weights_file = max(weights_files, key=lambda f: int(f.stem.split("gen")[1]))
+                resnet.load_state_dict(torch.load(latest_weights_file))
+                generation = int(latest_weights_file.stem.split("gen")[1])
+
+            if optim_files:
+                latest_optimiser_file = max(optim_files, key=lambda f: int(f.stem.split("gen")[1]))
+                optimizer.load_state_dict(torch.load(latest_optimiser_file))
+
+        return PytorchNeuralNetwork(resnet, optimizer, game, generation, directory)

@@ -20,6 +20,14 @@ class NeuralNetwork(Protocol):
     def game(self) -> Game:
         ...
 
+    @property
+    def action_size(self) -> int:
+        ...
+
+    @property
+    def generation(self) -> int:
+        ...
+
     def predict(self, state: State[TMove]) -> tuple[NDArray[np.float32], float]:
         ...
 
@@ -32,7 +40,7 @@ class NeuralNetwork(Protocol):
     def train(self, training_set: list[TrainingData]) -> None:
         ...
 
-    def save(self, generation: int) -> None:
+    def save(self) -> None:
         ...
 
 

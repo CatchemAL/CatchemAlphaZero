@@ -1,12 +1,12 @@
 from __future__ import annotations
-
+from dataclasses import dataclass
 import random
 from copy import copy
 from math import sqrt
 from typing import Generic, List, Self, TypeVar
 
 import numpy as np
-from tqdm import tqdm
+from tqdm import tqdm, trange
 
 from .alpha_zero_parameters import AZTrainingParameters
 
@@ -67,10 +67,10 @@ class Node(Generic[TMove]):
         return f"Node(move={self.move}, Q={self.q_value:.4}, prior={self.prior:.2%}))"
 
 
+@dataclass
 class AlphaZeroMctsSolver:
-    def __init__(self, neural_net: NeuralNetwork, num_mcts_sims: int = 1_000) -> None:
-        self.neural_net = neural_net
-        self.num_mcts_sims = num_mcts_sims
+    neural_net: NeuralNetwork
+    num_mcts_sims: int = 1_000
 
     def solve(self, root_state: State[TMove]) -> TMove:
         root = self.search(root_state)
@@ -80,7 +80,7 @@ class AlphaZeroMctsSolver:
     def policy(self, state: State[TMove]) -> np.ndarray:
         root = self.search(state)
 
-        policy = np.zeros(state.action_size, dtype=np.float32)
+        policy = np.zeros(self.neural_net.action_size, dtype=np.float32)
         visit_counts = [node.visit_count for node in root.children]
         moves = [node.move for node in root.children]
         policy[moves] = visit_counts
@@ -98,7 +98,7 @@ class AlphaZeroMctsSolver:
             # === Selection ===
             while node.has_children:
                 node = node.select_child()
-                state.play_bitmove(node.move)
+                state.play_move(node.move)
 
             status = state.status()
             if status.is_in_progress:
@@ -134,25 +134,26 @@ class AlphaZeroMctsSolver:
         return root
 
 
+@dataclass
 class AlphaZero:
-    def __init__(
-        self,
-        neural_net: NeuralNetwork,
-    ) -> None:
-        self.neural_net = neural_net
-        self.mcts = AlphaZeroMctsSolver(self.neural_net, num_mcts_sims)
+    neural_net: NeuralNetwork
 
-    def self_play(self, initial_state: str | list[int] | None = None) -> list[TrainingData]:
+    def self_play(
+        self, num_mcts_sims: int, initial_state: str | list[int] | None = None
+    ) -> list[TrainingData]:
         state: State = self.neural_net.game.initial_state(initial_state)
         status = state.status()
+        mcts = AlphaZeroMctsSolver(self.neural_net, num_mcts_sims)
 
         self.neural_net.set_to_eval()
         move_history: list[tuple[np.ndarray, np.ndarray, int]] = []
 
+        temperature = 1
         while status.is_in_progress:
             encoded_state = state.to_numpy()
-            policy = self.mcts.policy(state)
-            move = np.random.choice(len(policy), p=policy)
+            policy = mcts.policy(state)
+            temperature_policy = policy ** (1 / temperature)
+            move = np.random.choice(len(policy), p=temperature_policy)
             state.play_move(move)
             move_history.append((encoded_state, policy, state.played_by))
             status = state.status()
@@ -176,23 +177,16 @@ class AlphaZero:
     def self_learn(
         self, training_params: AZTrainingParameters, initial_state: str | list[int] | None = None
     ) -> None:
-        outer_progress = tqdm(total=training_params.num_generations, desc="Generations")
-        for generation in range(training_params.num_generations):
+        for _ in trange(training_params.num_generations, desc="Generations"):
             training_set: list[TrainingData] = []
 
-            with tqdm(
-                total=training_params.games_per_generation, desc="- Self-play", leave=False
-            ) as inner_bar:
-                for _ in range(training_params.games_per_generation):
-                    inner_bar.update(1)
-                    game_training_set = self.self_play(initial_state)
-                    training_set += game_training_set
+            for _ in trange(training_params.games_per_generation, desc="- Self-play", leave=False):
+                game_training_set = self.self_play(training_params.num_mcts_sims, initial_state)
+                training_set += game_training_set
 
             self.neural_net.set_to_train()
-            with tqdm(total=training_params.num_epochs, desc=" - Training", leave=False) as inner_bar:
-                for _ in range(training_params.num_epochs):
-                    inner_bar.update(1)
-                    self.train(training_set, training_params.minibatch_size)
+            for _ in trange(training_params.num_epochs, desc=" - Training", leave=False):
+                self.train(training_set, training_params.minibatch_size)
 
-            self.neural_net.save(generation)
-            outer_progress.update(1)
+            self.neural_net.generation += 1
+            self.neural_net.save()
