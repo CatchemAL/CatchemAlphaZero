@@ -81,9 +81,6 @@ def learn(args: Namespace) -> None:
 
 
 def main() -> None:
-    mcts_az()
-    tictactoe()
-    mcts()
     return
     run_kaggle()
 
