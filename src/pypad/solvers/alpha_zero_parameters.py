@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-
 from typing import Self
 
 
@@ -21,12 +20,12 @@ class AZTrainingParameters:
                 params = {
                     "num_generations": 5,
                     "num_epochs": 5,
-                    "games_per_generation": 1_0,
+                    "games_per_generation": 1_000,
                     "num_mcts_sims": 200,
                     "minibatch_size": 64,
                     "temperature": 1.25,
                     "dirichlet_epsilon": 0.25,
-                    "dirichlet_alpha": 0.3,
+                    "dirichlet_alpha": 0.9,
                 }
 
                 return cls(**params)

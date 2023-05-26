@@ -1,17 +1,16 @@
 from __future__ import annotations
-from dataclasses import dataclass
+
 import random
 from copy import copy
+from dataclasses import dataclass
 from math import sqrt
-from typing import Generic, List, Self, TypeVar
+from typing import Generic, List, TypeVar
 
 import numpy as np
-from tqdm import tqdm, trange
+from tqdm import trange
 
-from .alpha_zero_parameters import AZTrainingParameters
-
-from ..games import Game
 from ..states import State
+from .alpha_zero_parameters import AZTrainingParameters
 from .network import NeuralNetwork, TrainingData
 
 TMove = TypeVar("TMove")
@@ -36,10 +35,6 @@ class Node(Generic[TMove]):
         self.visit_count: int = 0
 
         self.children: List[Node[TMove]] = []
-
-    @property
-    def has_legal_moves(self) -> bool:
-        return bool(self.children or self.unexplored_moves)
 
     @property
     def has_children(self) -> bool:
@@ -70,7 +65,9 @@ class Node(Generic[TMove]):
 @dataclass
 class AlphaZeroMctsSolver:
     neural_net: NeuralNetwork
-    num_mcts_sims: int = 1_000
+    num_mcts_sims: int
+    dirichlet_epsilon: float
+    dirichlet_alpha: float
 
     def solve(self, root_state: State[TMove]) -> TMove:
         root = self.search(root_state)
@@ -91,7 +88,7 @@ class AlphaZeroMctsSolver:
     def search(self, root_state: State[TMove]) -> Node:
         root: Node[TMove] = Node(root_state, None, None)
 
-        for _ in range(self.num_mcts_sims):
+        for i in range(self.num_mcts_sims):
             node = root
             state = copy(root_state)
 
@@ -103,6 +100,12 @@ class AlphaZeroMctsSolver:
             status = state.status()
             if status.is_in_progress:
                 raw_policy, value = self.neural_net.predict(state)
+
+                if i == 0:
+                    ε = self.dirichlet_epsilon
+                    alpha = self.dirichlet_alpha
+                    noise = np.random.dirichlet([alpha] * len(raw_policy))
+                    raw_policy = (1 - ε) * raw_policy + ε * noise
 
                 # Filter out illegal moves
                 legal_moves = status.legal_moves
@@ -139,20 +142,26 @@ class AlphaZero:
     neural_net: NeuralNetwork
 
     def self_play(
-        self, num_mcts_sims: int, initial_state: str | list[int] | None = None
+        self, training_params: AZTrainingParameters, initial_state: str | list[int] | None = None
     ) -> list[TrainingData]:
+        mcts = AlphaZeroMctsSolver(
+            self.neural_net,
+            training_params.num_mcts_sims,
+            training_params.dirichlet_epsilon,
+            training_params.dirichlet_alpha,
+        )
+
         state: State = self.neural_net.game.initial_state(initial_state)
         status = state.status()
-        mcts = AlphaZeroMctsSolver(self.neural_net, num_mcts_sims)
 
         self.neural_net.set_to_eval()
         move_history: list[tuple[np.ndarray, np.ndarray, int]] = []
 
-        temperature = 1
         while status.is_in_progress:
             encoded_state = state.to_numpy()
             policy = mcts.policy(state)
-            temperature_policy = policy ** (1 / temperature)
+            temperature_policy = policy ** (1 / training_params.temperature)
+            temperature_policy /= temperature_policy.sum()
             move = np.random.choice(len(policy), p=temperature_policy)
             state.play_move(move)
             move_history.append((encoded_state, policy, state.played_by))
@@ -181,8 +190,7 @@ class AlphaZero:
             training_set: list[TrainingData] = []
 
             for _ in trange(training_params.games_per_generation, desc="- Self-play", leave=False):
-                game_training_set = self.self_play(training_params.num_mcts_sims, initial_state)
-                training_set += game_training_set
+                training_set += self.self_play(training_params, initial_state)
 
             self.neural_net.set_to_train()
             for _ in trange(training_params.num_epochs, desc=" - Training", leave=False):

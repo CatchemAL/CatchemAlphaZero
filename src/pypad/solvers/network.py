@@ -4,8 +4,8 @@ from typing import Protocol
 import numpy as np
 from numpy.typing import NDArray
 
-from ..states import State, TMove
 from ..games import Game
+from ..states import State, TMove
 
 
 @dataclass

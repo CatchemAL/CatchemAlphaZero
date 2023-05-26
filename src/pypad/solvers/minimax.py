@@ -9,7 +9,7 @@ class Solver:
             return 0
 
         win_mask = state.win_mask()
-        possible_moves = state.possible_moves_mask()
+        possible_moves = state._possible_bitmoves_mask()
         if win_mask & possible_moves:
             return (state.num_slots - state.num_moves + 1) // 2
 
@@ -20,9 +20,9 @@ class Solver:
         alpha = -100_000_000
         beta = min(beta, max_possible_score)
 
-        for move in state.possible_moves():
+        for move in state.possible_bitmoves():
             b = copy(state)
-            b.play_move(move)
+            b.play_bitmove(move)
             score = -self.minimax(b, -beta, -alpha)
             alpha = max(alpha, score)
             if score >= beta:

@@ -4,11 +4,9 @@ from typing import Sequence
 
 import numpy as np
 
-from .solvers.alpha_zero_parameters import AZTrainingParameters
-
-from .games import Game, GameType, get_game
+from .games import GameType, get_game
 from .solvers import AgentType, Solver
-from .solvers.network import DummyNeuralNetwork
+from .solvers.alpha_zero_parameters import AZTrainingParameters
 
 # from .factory import create_agent, get_controller, load_player
 

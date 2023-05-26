@@ -1,9 +1,4 @@
-from dataclasses import dataclass
 from pathlib import Path
-
-from .alpha_zero_parameters import AZNetworkParameters
-
-from torch.optim import Adam
 from typing import Self
 
 import numpy as np
@@ -11,24 +6,15 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from numpy.typing import NDArray
-from torch.optim import Optimizer
+from torch.optim import Adam, Optimizer
 
-from .network import TrainingData
-from ..states import State, TMove
 from ..games import Game
+from ..states import State, TMove
+from .alpha_zero_parameters import AZNetworkParameters
+from .network import TrainingData
 
 KERNEL_SIZE = 3
 PADDING = (KERNEL_SIZE - 1) // 2
-
-num_res_blocks_by_game = {
-    "TicTacToe": 4,
-    "Connect4": 9,
-}
-
-num_features_by_game = {
-    "TicTacToe": 64,
-    "Connect4": 128,
-}
 
 
 class ResNet(nn.Module):
