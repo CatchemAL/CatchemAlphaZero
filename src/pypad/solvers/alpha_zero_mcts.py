@@ -8,6 +8,7 @@ from typing import Generic, List, TypeVar
 import numpy as np
 from tqdm import trange
 
+from ..games import Game
 from ..states import State
 from .alpha_zero_parameters import AZTrainingParameters
 from .network import NeuralNetwork, TrainingData
@@ -58,7 +59,7 @@ class Node(Generic[TMove]):
         return self.q_value + c * self.prior * exploration_param
 
     def __repr__(self):
-        return f"Node(move={self.move}, Q={self.q_value:.4}, prior={self.prior:.2%}))"
+        return f"Node(move={self.move}, Q={self.q_value:.3}, prior={self.prior:.2%}, visit_count={self.visit_count}, UCB={self.ucb():.3}))"
 
 
 @dataclass
@@ -140,6 +141,10 @@ class AlphaZeroMctsSolver:
 class AlphaZero:
     neural_net: NeuralNetwork
 
+    @property
+    def game(self) -> Game:
+        return self.neural_net.game
+
     def self_play(
         self, training_params: AZTrainingParameters, initial_state: str | list[int] | None = None
     ) -> list[TrainingData]:
@@ -150,7 +155,7 @@ class AlphaZero:
             training_params.dirichlet_alpha,
         )
 
-        state: State = self.neural_net.game.initial_state(initial_state)
+        state: State = self.game.initial_state(initial_state)
         status = state.status()
 
         self.neural_net.set_to_eval()
@@ -184,8 +189,18 @@ class AlphaZero:
             for _ in trange(training_params.games_per_generation, desc="- Self-play", leave=False):
                 training_set += self.self_play(training_params, initial_state)
 
-            for _ in trange(training_params.num_epochs, desc=" - Training", leave=False):
-                self.neural_net.train(training_set, training_params.minibatch_size)
+            extended_training_set = self.exploit_symmetries(training_set)
 
+            for _ in trange(training_params.num_epochs, desc=" - Training", leave=False):
+                self.neural_net.train(extended_training_set, training_params.minibatch_size)
+
+            self.neural_net.set_to_eval()
             self.neural_net.generation += 1
             self.neural_net.save()
+
+    def exploit_symmetries(self, training_set: list[TrainingData]) -> list[TrainingData]:
+        def all_sets(data: TrainingData) -> list[TrainingData]:
+            symmetries = self.game.symmetries(data.encoded_state, data.policy)
+            return (TrainingData(state, pol, data.outcome) for state, pol in symmetries)
+
+        return [sym_data for training_data in training_set for sym_data in all_sets(training_data)]
