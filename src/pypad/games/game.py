@@ -56,6 +56,12 @@ class Game(ABC, Generic[TState]):
         return get_best_move
 
     @abstractmethod
+    def symmetries(
+        self, encoded_state: np.ndarray, policy: np.ndarray
+    ) -> list[tuple[np.ndarray, np.ndarray]]:
+        ...
+
+    @abstractmethod
     def display(self, state: TState) -> None:
         ...
 
@@ -138,6 +144,25 @@ class TicTacToe(Game[TicTacToeState]):
         grid = np.asarray(obs.board).reshape(self.ROWS, self.COLS)
         state = TicTacToeState.from_grid(grid)
         return state
+
+    def symmetries(
+        self, encoded_state: np.ndarray, policy: np.ndarray
+    ) -> list[tuple[np.ndarray, np.ndarray]]:
+        syms: list[tuple[np.ndarray, np.ndarray]] = []
+        for rot in range(4):
+            state = np.rot90(encoded_state, axes=(1, 2), k=rot)
+            pol = np.rot90(policy.reshape(self.ROWS, self.COLS), k=rot).flatten()
+            syms.append((state, pol))
+
+        flipped_state = encoded_state[:, :, ::-1]
+        flipped_policy = np.fliplr(policy.reshape(3, 3)).flatten()
+
+        for rot in range(4):
+            state = np.rot90(flipped_state, axes=(1, 2), k=rot)
+            pol = np.rot90(flipped_policy.reshape(self.ROWS, self.COLS), k=rot).flatten()
+            syms.append((state, pol))
+
+        return syms
 
     def display(self, state: TicTacToeState) -> None:
         self.view.display(state)
