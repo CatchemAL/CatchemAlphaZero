@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import random
 from copy import copy
 from dataclasses import dataclass
 from math import sqrt
@@ -177,11 +176,7 @@ class AlphaZero:
         return training_set
 
     def train(self, training_set: list[TrainingData], minibatch_size: int) -> None:
-        random.shuffle(training_set)
-
-        for idx in range(0, len(training_set), minibatch_size):
-            minibatch = training_set[idx : idx + minibatch_size]
-            self.neural_net.train(minibatch)
+        self.neural_net.train(training_set, minibatch_size)
 
     def self_learn(
         self, training_params: AZTrainingParameters, initial_state: str | list[int] | None = None
@@ -192,7 +187,6 @@ class AlphaZero:
             for _ in trange(training_params.games_per_generation, desc="- Self-play", leave=False):
                 training_set += self.self_play(training_params, initial_state)
 
-            self.neural_net.set_to_train()
             for _ in trange(training_params.num_epochs, desc=" - Training", leave=False):
                 self.train(training_set, training_params.minibatch_size)
 

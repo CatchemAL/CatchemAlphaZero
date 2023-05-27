@@ -34,10 +34,7 @@ class NeuralNetwork(Protocol):
     def set_to_eval(self) -> None:
         ...
 
-    def set_to_train(self) -> None:
-        ...
-
-    def train(self, training_set: list[TrainingData]) -> None:
+    def train(self, training_set: list[TrainingData], minibatch_size: int) -> None:
         ...
 
     def save(self) -> None:
@@ -50,9 +47,6 @@ class DummyNeuralNetwork:
         return policy / policy.sum(), 0.0
 
     def set_to_eval(self) -> None:
-        pass
-
-    def set_to_train(self) -> None:
         pass
 
     def train(self, training_set: list[TrainingData]) -> None:

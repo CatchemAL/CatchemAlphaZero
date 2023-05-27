@@ -20,7 +20,7 @@ class AZTrainingParameters:
                 params = {
                     "num_generations": 5,
                     "num_epochs": 5,
-                    "games_per_generation": 1_000,
+                    "games_per_generation": 1_0,
                     "num_mcts_sims": 200,
                     "minibatch_size": 64,
                     "temperature": 1.25,

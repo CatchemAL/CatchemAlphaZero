@@ -7,6 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from numpy.typing import NDArray
 from torch.optim import Adam, Optimizer
+from torch.utils.data import DataLoader, TensorDataset
 
 from ..games import Game
 from ..states import State, TMove
@@ -118,25 +119,26 @@ class PytorchNeuralNetwork:
     def set_to_eval(self) -> None:
         self.resnet.eval()
 
-    def set_to_train(self) -> None:
+    def train(self, training_set: list[TrainingData], minibatch_size: int) -> None:
         self.resnet.train()
 
-    def train(self, training_set: list[TrainingData]) -> None:
-        states = torch.tensor(np.array([d.encoded_state for d in training_set]), dtype=torch.float32)
-        policies = torch.tensor(np.array([d.policy for d in training_set]), dtype=torch.float32)
-        outcomes = torch.tensor(
-            np.array([d.outcome for d in training_set]).reshape(-1, 1), dtype=torch.float32
-        )
+        states = torch.from_numpy(np.array([d.encoded_state for d in training_set]))
+        policies = torch.from_numpy(np.array([d.policy for d in training_set]))
+        outcomes = torch.tensor([d.outcome for d in training_set], dtype=torch.float32).reshape(-1, 1)
 
-        predicted_policies, predicted_outcomes = self.resnet(states)
+        data_set = TensorDataset(states, policies, outcomes)
+        data_loader = DataLoader(data_set, batch_size=minibatch_size, shuffle=True)
 
-        policy_loss = F.cross_entropy(predicted_policies, policies)
-        outcome_loss = F.mse_loss(predicted_outcomes, outcomes)
-        total_loss = policy_loss + outcome_loss
+        for batch_states, batch_policies, batch_outcomes in data_loader:
+            predicted_policies, predicted_outcomes = self.resnet(batch_states)
 
-        self.optimizer.zero_grad()
-        total_loss.backward()
-        self.optimizer.step()
+            policy_loss = F.cross_entropy(predicted_policies, batch_policies)
+            outcome_loss = F.mse_loss(predicted_outcomes, batch_outcomes)
+            total_loss = policy_loss + outcome_loss
+
+            self.optimizer.zero_grad()
+            total_loss.backward()
+            self.optimizer.step()
 
     def save(self) -> None:
         gen = self.generation
