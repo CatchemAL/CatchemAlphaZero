@@ -175,9 +175,6 @@ class AlphaZero:
 
         return training_set
 
-    def train(self, training_set: list[TrainingData], minibatch_size: int) -> None:
-        self.neural_net.train(training_set, minibatch_size)
-
     def self_learn(
         self, training_params: AZTrainingParameters, initial_state: str | list[int] | None = None
     ) -> None:
@@ -188,7 +185,7 @@ class AlphaZero:
                 training_set += self.self_play(training_params, initial_state)
 
             for _ in trange(training_params.num_epochs, desc=" - Training", leave=False):
-                self.train(training_set, training_params.minibatch_size)
+                self.neural_net.train(training_set, training_params.minibatch_size)
 
             self.neural_net.generation += 1
             self.neural_net.save()
