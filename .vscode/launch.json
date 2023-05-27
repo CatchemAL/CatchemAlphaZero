@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Learn (Tic)",
+            "name": "AlphaZero (Tic)",
             "type": "python",
             "request": "launch",
             "module": "src.pypad",
@@ -13,6 +13,17 @@
             "args": [
                 "learn",
                 "--game=tic",
+            ]
+        },
+        {
+            "name": "AlphaZero (ConnectX)",
+            "type": "python",
+            "request": "launch",
+            "module": "src.pypad",
+            "justMyCode": true,
+            "args": [
+                "learn",
+                "--game=connectx",
             ]
         },
         {
