@@ -58,10 +58,8 @@ def kaggle(args: Namespace) -> None:
 
 
 def learn(args: Namespace) -> None:
-    from torch.optim import Adam
-
     from .solvers.alpha_zero_mcts import AlphaZero
-    from .solvers.network_torch import PytorchNeuralNetwork, ResNet
+    from .solvers.network_torch import PytorchNeuralNetwork
 
     game_type: GameType = args.game
     init: str = args.init
