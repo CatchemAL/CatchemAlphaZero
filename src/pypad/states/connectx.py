@@ -176,8 +176,8 @@ class ConnectXState(State[int]):
 
         player_1 = self.position
         player_2 = self.position ^ self.mask
-        r = np.sign(player_1 & powers).astype(np.int8)
-        g = np.sign(player_2 & powers).astype(np.int8)
+        r = np.sign(player_1 & powers).astype(np.float32)
+        g = np.sign(player_2 & powers).astype(np.float32)
         b = 1 - r - g
         return np.stack((r, g, b))
 

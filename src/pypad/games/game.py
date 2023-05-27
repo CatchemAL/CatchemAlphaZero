@@ -104,6 +104,19 @@ class ConnectX(Game[ConnectXState]):
         state = ConnectXState.from_grid(grid)
         return state
 
+    def symmetries(
+        self, encoded_state: np.ndarray, policy: np.ndarray
+    ) -> list[tuple[np.ndarray, np.ndarray]]:
+        syms: list[tuple[np.ndarray, np.ndarray]] = []
+
+        flipped_state = encoded_state[:, :, ::-1]
+        flipped_policy = policy[::-1]
+
+        syms.append((encoded_state, policy))
+        syms.append((flipped_state, flipped_policy))
+
+        return syms
+
     def display(self, state: ConnectXState) -> None:
         self.view.display(state)
 

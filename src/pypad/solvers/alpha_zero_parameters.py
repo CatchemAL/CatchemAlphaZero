@@ -29,6 +29,19 @@ class AZTrainingParameters:
                 }
 
                 return cls(**params)
+            case "ConnectX_6x7":
+                params = {
+                    "num_generations": 50,
+                    "num_epochs": 10,
+                    "games_per_generation": 500,
+                    "num_mcts_sims": 800,
+                    "minibatch_size": 64,
+                    "temperature": 1.25,
+                    "dirichlet_epsilon": 0.25,
+                    "dirichlet_alpha": 0.9,
+                }
+
+                return cls(**params)
 
 
 @dataclass
@@ -50,3 +63,15 @@ class AZNetworkParameters:
                 }
 
                 return cls(**params)
+
+            case "ConnectX_6x7":
+                params = {
+                    "num_resnet_blocks": 9,
+                    "num_features": 128,
+                    "optimizer_learn_rate": 0.001,
+                    "optimizer_weight_decay": 0.0001,
+                }
+
+                return cls(**params)
+            case _:
+                raise NotImplementedError(f"Network defaults for {fullname} not supported.")
