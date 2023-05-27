@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Generator, List, Tuple
 
 import numpy as np
 
@@ -31,7 +30,7 @@ class TicTacToeState(State[int]):
         return 3
 
     @property
-    def shape(self) -> Tuple[int, int]:
+    def shape(self) -> tuple[int, int]:
         return self.rows, self.cols
 
     @property
@@ -150,7 +149,7 @@ class TicTacToeState(State[int]):
         return board
 
     @classmethod
-    def create(cls, moves: str | List[int] | None = None) -> "TicTacToeState":
+    def create(cls, moves: str | list[int] | None = None) -> "TicTacToeState":
         mask = BitboardUtil(3 + 1, 3)
         board = cls(mask, 0, 0, 0)
         moves = moves or []
