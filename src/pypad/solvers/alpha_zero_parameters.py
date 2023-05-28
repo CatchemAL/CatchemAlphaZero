@@ -33,8 +33,8 @@ class AZTrainingParameters:
                 params = {
                     "num_generations": 50,
                     "num_epochs": 10,
-                    "games_per_generation": 500,
-                    "num_mcts_sims": 800,
+                    "games_per_generation": 200,
+                    "num_mcts_sims": 600,
                     "minibatch_size": 64,
                     "temperature": 1.25,
                     "dirichlet_epsilon": 0.25,
