@@ -135,7 +135,7 @@ class MctsNodeHtmlBuilder:
         return html
 
     @staticmethod
-    def _get_labels(node: Node) -> Tuple[str, str]:
+    def _get_labels(node: Node) -> tuple[str, str]:
         win_label = f"N={node.visit_count}, W={node.wins}"
         ucb_label = f"UCB={node.ucb():.4}" if node.parent else "root"
         return win_label, ucb_label
