@@ -63,6 +63,11 @@ class ConnectXState(State[int]):
         self.mask |= move
         self.num_moves += 1
 
+    def select_move(self, policy: np.ndarray, temperature: float) -> int:
+        temperature_policy = policy ** (1 / temperature)
+        temperature_policy /= temperature_policy.sum()
+        return np.random.choice(len(policy), p=temperature_policy)
+
     def key(self) -> int:
         return (self.mask + self.bitboard_util.BOTTOM_ROW) | self.position
 
@@ -155,11 +160,15 @@ class ConnectXState(State[int]):
         b = 1 - r - g
         return np.stack((r, g, b))
 
-    def html(self, is_tiny_repr: bool = False) -> str:
+    def html(self, policy: np.ndarray | None = None, is_tiny_repr: bool = False) -> str:
         from ..views.html import ConnectXHtmlBuilder
 
         html_printer = ConnectXHtmlBuilder()
-        return html_printer.build_tiny_html(self) if is_tiny_repr else html_printer.build_html(self)
+
+        if is_tiny_repr:
+            return html_printer.build_tiny_html(self)
+
+        return html_printer.build_html(self, policy)
 
     def plot(self):
         from ..views.plot import plot_state

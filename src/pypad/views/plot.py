@@ -29,9 +29,9 @@ def checker_pattern_color(i, j):
 
 
 def heatmap_color(value: float) -> str:
-    cmap = plt.get_cmap("viridis")
+    cmap = plt.get_cmap("summer")
 
-    normalized_value = max(0, min(1, value))
+    normalized_value = 1 - max(0, min(1, value))
     colormap_index = normalized_value * (cmap.N - 1)
     rgb_value = cmap(int(colormap_index))
 

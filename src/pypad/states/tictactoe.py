@@ -61,6 +61,11 @@ class TicTacToeState(State[int]):
         self.mask |= bitmove
         self.num_moves += 1
 
+    def select_move(self, policy: np.ndarray, temperature: float) -> int:
+        temperature_policy = policy ** (1 / temperature)
+        temperature_policy /= temperature_policy.sum()
+        return np.random.choice(len(policy), p=temperature_policy)
+
     def is_won(self) -> bool:
         rows = self.rows + 1
         directions = (1, rows - 1, rows, rows + 1)
@@ -87,11 +92,15 @@ class TicTacToeState(State[int]):
         g = np.sign(player_2 & POWERS)
         return np.asarray(r + 2 * g, dtype=np.int8)
 
-    def html(self, is_tiny_repr: bool = False) -> str:
+    def html(self, policy: np.ndarray | None = None, is_tiny_repr: bool = False) -> str:
         from ..views.html import TicTacToeHtmlBuilder
 
         html_printer = TicTacToeHtmlBuilder()
-        return html_printer.build_tiny_html(self) if is_tiny_repr else html_printer.build_html(self)
+
+        if is_tiny_repr:
+            return html_printer.build_tiny_html(self)
+
+        return html_printer.build_html(self, policy)
 
     def plot(self):
         from ..views.plot import plot_state

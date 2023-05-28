@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Generic, Tuple
+from typing import Generic
 
 import numpy as np
 
@@ -21,8 +21,13 @@ class HtmlBuilder(ABC, Generic[TState]):
     def display(self, state: TState) -> None:
         ...
 
-    def _html(self, grid: np.ndarray, has_numeric_cols: bool) -> str:
-        tiny_html = self._tiny_html(grid, include_headers=True, has_numeric_cols=has_numeric_cols)
+    def _html(self, grid: np.ndarray, policy: np.ndarray | None, has_numeric_cols: bool) -> str:
+        tiny_html = self._tiny_html(
+            grid,
+            heatmap_values=policy,
+            include_headers=True,
+            has_numeric_cols=has_numeric_cols,
+        )
 
         html_table = f"""
         <table class="ttt-board" style="margin:auto;text-align:center;float:left">
@@ -62,7 +67,7 @@ class HtmlBuilder(ABC, Generic[TState]):
     def _tiny_html(
         self,
         grid: np.ndarray,
-        heatmap_values: np.ndarray = None,
+        heatmap_values: np.ndarray | None = None,
         include_headers: bool = False,
         has_numeric_cols: bool = False,
     ) -> str:
@@ -70,7 +75,7 @@ class HtmlBuilder(ABC, Generic[TState]):
 
         pieces = np.vectorize(HtmlBuilder.piece)(grid)
 
-        if heatmap_values:
+        if heatmap_values is not None:
             colors = heatmap_checker_colors(heatmap_values)
         else:
             colors = light_checker_colors(grid.shape)
@@ -113,7 +118,7 @@ class MctsNodeHtmlBuilder:
 
         win_label, ucb_label = MctsNodeHtmlBuilder._get_labels(node)
 
-        tiny = state.html(True)
+        tiny = state.html(is_tiny_repr=True)
         html = f"""<<table cellborder="0" cellspacing="0" border="0">
             {tiny}
             <tr>
@@ -127,8 +132,7 @@ class MctsNodeHtmlBuilder:
             </tr>
         </table>>"""
 
-        soup = BeautifulSoup(html, "html.parser")
-        return soup.prettify()
+        return html
 
     @staticmethod
     def _get_labels(node: Node) -> Tuple[str, str]:
@@ -148,9 +152,9 @@ class TicTacToeHtmlBuilder(HtmlBuilder[TicTacToeState]):
         grid = state.to_grid()
         return self._tiny_html(grid)
 
-    def build_html(self, state: TicTacToeState) -> str:
+    def build_html(self, state: TicTacToeState, policy: np.ndarray | None = None) -> str:
         grid = state.to_grid()
-        return self._html(grid, has_numeric_cols=False)
+        return self._html(grid, policy=policy, has_numeric_cols=False)
 
 
 class ConnectXHtmlBuilder(HtmlBuilder[ConnectXState]):
@@ -164,9 +168,9 @@ class ConnectXHtmlBuilder(HtmlBuilder[ConnectXState]):
         grid = state.to_grid()
         return self._tiny_html(grid)
 
-    def build_html(self, state: ConnectXState) -> str:
+    def build_html(self, state: ConnectXState, policy: np.ndarray | None = None) -> str:
         grid = state.to_grid()
-        return self._html(grid, has_numeric_cols=True)
+        return self._html(grid, policy=policy, has_numeric_cols=True)
 
 
 class ChessHtmlView:

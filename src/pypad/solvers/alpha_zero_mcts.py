@@ -3,7 +3,7 @@ from __future__ import annotations
 from copy import copy
 from dataclasses import dataclass
 from math import sqrt
-from typing import Generic, List, TypeVar
+from typing import Generic, TypeVar
 
 import numpy as np
 from tqdm import trange
@@ -34,7 +34,7 @@ class Node(Generic[TMove]):
         self.value_sum: int = 0
         self.visit_count: int = 0
 
-        self.children: List[Node[TMove]] = []
+        self.children: list[Node[TMove]] = []
 
     @property
     def has_children(self) -> bool:
@@ -164,9 +164,7 @@ class AlphaZero:
         while status.is_in_progress:
             encoded_state = state.to_numpy()
             policy = mcts.policy(state)
-            temperature_policy = policy ** (1 / training_params.temperature)
-            temperature_policy /= temperature_policy.sum()
-            move = np.random.choice(len(policy), p=temperature_policy)
+            move = state.select_move(policy, training_params.temperature)
             state.play_move(move)
             move_history.append((encoded_state, policy, state.played_by))
             status = state.status()

@@ -4,7 +4,7 @@ import random
 from copy import copy
 from dataclasses import dataclass
 from math import log, sqrt
-from typing import Generic, List
+from typing import Generic
 
 from ..states import State, Status, TMove, TState
 from . import Solver
@@ -23,8 +23,8 @@ class Node(Generic[TMove]):
         self.wins: int = 0
         self.visit_count: int = 0
 
-        self.children: List[Node[TMove]] = []
-        self.unexplored_moves: List[TMove] = status.legal_moves
+        self.children: list[Node[TMove]] = []
+        self.unexplored_moves: list[TMove] = status.legal_moves
 
     @property
     def has_legal_moves(self) -> bool:

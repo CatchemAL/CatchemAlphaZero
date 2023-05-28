@@ -40,6 +40,10 @@ class State(ABC, Generic[TMove]):
         ...
 
     @abstractmethod
+    def select_move(self, policy: np.ndarray, temperature: float) -> TMove:
+        ...
+
+    @abstractmethod
     def is_won(self) -> bool:
         ...
 
