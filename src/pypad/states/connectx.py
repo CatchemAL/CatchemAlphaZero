@@ -100,29 +100,6 @@ class ConnectXState(State[int]):
 
         return self._possible_bitmoves_unchecked()
 
-    def _possible_moves_unchecked(self) -> Generator[int, None, None]:
-        possible_moves_mask = self._possible_bitmoves_mask()
-        move_order = self.bitboard_util.move_order()
-
-        for col in move_order:
-            col_mask = self.bitboard_util.get_col_mask(col)
-            possible_move = possible_moves_mask & col_mask
-            if possible_move:
-                yield col
-
-    def _possible_bitmoves_unchecked(self) -> Generator[int, None, None]:
-        possible_moves_mask = self._possible_bitmoves_mask()
-        move_order = self.bitboard_util.move_order()
-
-        for col in move_order:
-            col_mask = self.bitboard_util.get_col_mask(col)
-            possible_move = possible_moves_mask & col_mask
-            if possible_move:
-                yield possible_move
-
-    def _possible_bitmoves_mask(self) -> int:
-        return (self.mask + self.bitboard_util.BOTTOM_ROW) & self.bitboard_util.BOARD_MASK
-
     def win_mask(self) -> int:
         H1 = self.bitboard_util.rows
         posn = self.position
@@ -151,9 +128,6 @@ class ConnectXState(State[int]):
         wm |= (posn << (H1 - 1)) & (posn << 2 * (H1 - 1)) & (posn << 3 * (H1 - 1))
 
         return wm & (self.bitboard_util.BOARD_MASK ^ self.mask)
-
-    def __copy__(self) -> "ConnectXState":
-        return ConnectXState(self.bitboard_util, self.mask, self.position, self.num_moves)
 
     def to_grid(self) -> np.ndarray:
         rows, cols = self.shape
@@ -187,8 +161,39 @@ class ConnectXState(State[int]):
         html_printer = ConnectXHtmlBuilder()
         return html_printer.build_tiny_html(self) if is_tiny_repr else html_printer.build_html(self)
 
+    def plot(self):
+        from ..views.plot import plot_state
+
+        plot_state(self, figsize=(4, 4))
+
+    def _possible_moves_unchecked(self) -> Generator[int, None, None]:
+        possible_moves_mask = self._possible_bitmoves_mask()
+        move_order = self.bitboard_util.move_order()
+
+        for col in move_order:
+            col_mask = self.bitboard_util.get_col_mask(col)
+            possible_move = possible_moves_mask & col_mask
+            if possible_move:
+                yield col
+
+    def _possible_bitmoves_unchecked(self) -> Generator[int, None, None]:
+        possible_moves_mask = self._possible_bitmoves_mask()
+        move_order = self.bitboard_util.move_order()
+
+        for col in move_order:
+            col_mask = self.bitboard_util.get_col_mask(col)
+            possible_move = possible_moves_mask & col_mask
+            if possible_move:
+                yield possible_move
+
+    def _possible_bitmoves_mask(self) -> int:
+        return (self.mask + self.bitboard_util.BOTTOM_ROW) & self.bitboard_util.BOARD_MASK
+
     def _repr_html_(self) -> str:
         return self.html()
+
+    def __copy__(self) -> "ConnectXState":
+        return ConnectXState(self.bitboard_util, self.mask, self.position, self.num_moves)
 
     @classmethod
     def from_grid(cls, grid: np.ndarray) -> Self:

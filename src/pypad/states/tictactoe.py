@@ -93,28 +93,10 @@ class TicTacToeState(State[int]):
         html_printer = TicTacToeHtmlBuilder()
         return html_printer.build_tiny_html(self) if is_tiny_repr else html_printer.build_html(self)
 
-    def plot(self) -> None:
-        import matplotlib.pyplot as plt
+    def plot(self):
+        from ..views.plot import plot_state
 
-        grid = self.to_grid()
-        r = (grid == 1).astype(np.float32)
-        g = (grid == 2).astype(np.float32)
-        b = (grid == 0).astype(np.float32)
-        planes = [r, g, b]
-        stacked = np.stack(planes)
-
-        _, ax = plt.subplots(figsize=(3, 2))
-        plt.imshow(stacked.transpose(1, 2, 0))
-        ax.set_xticks(np.arange(-0.5, grid.shape[0], 1), minor=True)
-        ax.set_yticks(np.arange(-0.5, grid.shape[1], 1), minor=True)
-        ax.grid(which="minor", color="black", linestyle="-", linewidth=0.5)
-        ax.set_xticks([])
-        ax.set_yticks([])
-        ax.set_title("Player 1 = Red\nPlayer 2 = Green", loc="left", fontsize=8, fontname="Monospace")
-        plt.show()
-
-    def __copy__(self) -> "TicTacToeState":
-        return TicTacToeState(self.bitboard_util, self.mask, self.position, self.num_moves)
+        plot_state(self, figsize=(3, 2), linewidth=1.5)
 
     def _possible_moves_unchecked(self) -> list[int]:
         possible_moves_mask = self._possible_bitmoves_mask()
@@ -125,6 +107,9 @@ class TicTacToeState(State[int]):
 
     def _repr_html_(self) -> str:
         return self.html()
+
+    def __copy__(self) -> "TicTacToeState":
+        return TicTacToeState(self.bitboard_util, self.mask, self.position, self.num_moves)
 
     @classmethod
     def from_grid(cls, grid: np.ndarray) -> "TicTacToeState":
