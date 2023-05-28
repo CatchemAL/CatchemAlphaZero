@@ -1,7 +1,7 @@
 from copy import copy
 from dataclasses import dataclass
 from enum import Enum
-from typing import Generator, Tuple
+from typing import Generator
 
 import numpy as np
 from colorama import Fore, Style
@@ -28,7 +28,7 @@ class KnapsackNumberLine:
         result = self._accessibles[self._number_line == target]
         return len(result) == 1 and result[0]
 
-    def _build_accessible_numbers(self) -> Tuple[np.ndarray, np.ndarray]:
+    def _build_accessible_numbers(self) -> tuple[np.ndarray, np.ndarray]:
         lower_bound, upper_bound = self.get_bounds()
         number_line = np.arange(lower_bound, upper_bound + 1)
         accessibles = number_line == 0
@@ -43,7 +43,7 @@ class KnapsackNumberLine:
 
         return (number_line, accessibles)
 
-    def get_bounds(self) -> Tuple[int, int]:
+    def get_bounds(self) -> tuple[int, int]:
         lower_bound = np.sum(self.numbers[self.numbers < 0])
         upper_bound = np.sum(self.numbers[self.numbers > 0])
         return lower_bound, upper_bound
@@ -76,7 +76,7 @@ class BoardVector:
         included = self.mask != EXCLUDE
         return np.sum(self.numbers[included])
 
-    def full_index(self, index: int) -> Tuple[int, int]:
+    def full_index(self, index: int) -> tuple[int, int]:
         if self.vector_type == VectorType.COLUMN:
             return index, self.index
         if self.vector_type == VectorType.ROW:
