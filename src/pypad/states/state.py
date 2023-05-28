@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
-from collections.abc import Generator
 from dataclasses import dataclass
-from typing import Generator, Generic, Tuple, TypeVar
+from typing import Generic, TypeVar
 
 import numpy as np
 
@@ -29,7 +28,7 @@ class State(ABC, Generic[TMove]):
 
     @property
     @abstractmethod
-    def shape(self) -> Tuple[int, int]:
+    def shape(self) -> tuple[int, int]:
         ...
 
     @abstractmethod

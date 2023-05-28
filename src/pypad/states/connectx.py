@@ -164,7 +164,7 @@ class ConnectXState(State[int]):
     def plot(self):
         from ..views.plot import plot_state
 
-        plot_state(self, figsize=(4, 4))
+        plot_state(self.to_numpy(), figsize=(4, 4))
 
     def _possible_moves_unchecked(self) -> Generator[int, None, None]:
         possible_moves_mask = self._possible_bitmoves_mask()

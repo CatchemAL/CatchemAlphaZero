@@ -96,7 +96,7 @@ class TicTacToeState(State[int]):
     def plot(self):
         from ..views.plot import plot_state
 
-        plot_state(self, figsize=(3, 2), linewidth=1.5)
+        plot_state(self.to_numpy(), figsize=(3, 2), linewidth=1.5)
 
     def _possible_moves_unchecked(self) -> list[int]:
         possible_moves_mask = self._possible_bitmoves_mask()

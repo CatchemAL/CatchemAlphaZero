@@ -3,10 +3,9 @@ from typing import Generic, Tuple
 
 import numpy as np
 
-from pypad.states import ConnectXState, TicTacToeState
-
 from ..solvers.mcts import Node
-from ..states import TState
+from ..states import ConnectXState, TicTacToeState, TState
+from .plot import heatmap_checker_colors, light_checker_colors
 
 
 class HtmlBuilder(ABC, Generic[TState]):
@@ -22,8 +21,8 @@ class HtmlBuilder(ABC, Generic[TState]):
     def display(self, state: TState) -> None:
         ...
 
-    def _html(self, grid: np.ndarray, is_col_ordinal: bool) -> str:
-        tiny_html = self._tiny_html(grid, True, is_col_ordinal)
+    def _html(self, grid: np.ndarray, has_numeric_cols: bool) -> str:
+        tiny_html = self._tiny_html(grid, include_headers=True, has_numeric_cols=has_numeric_cols)
 
         html_table = f"""
         <table class="ttt-board" style="margin:auto;text-align:center;float:left">
@@ -57,43 +56,55 @@ class HtmlBuilder(ABC, Generic[TState]):
 </html>
 """
         )
+
         return html_with_css
 
     def _tiny_html(
-        self, grid: np.ndarray, include_headers: bool = False, is_col_ordinal: bool = False
+        self,
+        grid: np.ndarray,
+        heatmap_values: np.ndarray = None,
+        include_headers: bool = False,
+        has_numeric_cols: bool = False,
     ) -> str:
         rows, cols = grid.shape
 
-        def piece(i: int, j: int) -> str:
-            mark = grid[i, j]
-            match mark:
-                case 1:
-                    return r'<font POINT-SIZE="12">⭕</font>'
-                case 2:
-                    return r'<font POINT-SIZE="12">✖️</font>'
-                case _:
-                    return ""
+        pieces = np.vectorize(HtmlBuilder.piece)(grid)
+
+        if heatmap_values:
+            colors = heatmap_checker_colors(heatmap_values)
+        else:
+            colors = light_checker_colors(grid.shape)
 
         table = ""
 
         if include_headers:
-            table += "        <tr>\n"
-            table += "            <th></th>\n"
+            table += "<tr>\n"
+            table += "<th></th>\n"
             for col in range(cols):
-                letter = col + 1 if is_col_ordinal else chr(ord("a") + col)
-                table += f"            <th><center>{letter}</center></th>\n"
-            table += "        </tr>\n"
+                letter = col + 1 if has_numeric_cols else chr(ord("a") + col)
+                table += f"<th><center>{letter}</center></th>\n"
+            table += "</tr>\n"
 
         for row in range(rows):
-            table += "        <tr>\n"
+            table += "<tr>\n"
             if include_headers:
-                table += f"            <th>{rows - row}</th>\n"
+                table += f"<th>{rows - row}</th>\n"
             for col in range(cols):
-                mark = piece(row, col)
-                color = "#FFFFFF" if (row + col) % 2 == 1 else "#EBEBEB"
-                table += f'            <td height="20" width="20" bgcolor="{color}">{mark}</td>\n'
-            table += "        </tr>\n"
+                mark = pieces[row, col]
+                color = colors[row, col]
+                table += f'<td height="20" width="20" bgcolor="{color}">{mark}</td>\n'
+            table += "</tr>\n"
         return table
+
+    @staticmethod
+    def piece(mark) -> str:
+        match mark:
+            case 1:
+                return r'<font POINT-SIZE="12">⭕</font>'
+            case 2:
+                return r'<font POINT-SIZE="12">✖️</font>'
+            case _:
+                return ""
 
 
 class MctsNodeHtmlBuilder:
@@ -116,7 +127,8 @@ class MctsNodeHtmlBuilder:
             </tr>
         </table>>"""
 
-        return html
+        soup = BeautifulSoup(html, "html.parser")
+        return soup.prettify()
 
     @staticmethod
     def _get_labels(node: Node) -> Tuple[str, str]:
@@ -138,7 +150,7 @@ class TicTacToeHtmlBuilder(HtmlBuilder[TicTacToeState]):
 
     def build_html(self, state: TicTacToeState) -> str:
         grid = state.to_grid()
-        return self._html(grid, False)
+        return self._html(grid, has_numeric_cols=False)
 
 
 class ConnectXHtmlBuilder(HtmlBuilder[ConnectXState]):
@@ -154,7 +166,7 @@ class ConnectXHtmlBuilder(HtmlBuilder[ConnectXState]):
 
     def build_html(self, state: ConnectXState) -> str:
         grid = state.to_grid()
-        return self._html(grid, True)
+        return self._html(grid, has_numeric_cols=True)
 
 
 class ChessHtmlView:
