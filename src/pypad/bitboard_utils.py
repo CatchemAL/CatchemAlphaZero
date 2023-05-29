@@ -1,6 +1,3 @@
-from typing import List
-
-
 class BitboardUtil:
     def __init__(self, rows: int, cols: int):
         self.rows: int = rows
@@ -31,8 +28,8 @@ class BitboardUtil:
         x = self.BOTTOM_ROW << (self.rows - 1)
         return x - self.BOTTOM_ROW
 
-    def move_order(self) -> List[int]:
-        order: List[int] = [0] * self.cols
+    def move_order(self) -> list[int]:
+        order: list[int] = [0] * self.cols
 
         for i in range(self.cols):
             if i % 2 == 0:
