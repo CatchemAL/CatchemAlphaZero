@@ -31,6 +31,9 @@ class NeuralNetwork(Protocol):
     def predict(self, state: State[TMove]) -> tuple[NDArray[np.float32], float]:
         ...
 
+    def predict_parallel(self, state: list[State]) -> tuple[NDArray[np.float32], NDArray[np.float32]]:
+        ...
+
     def set_to_eval(self) -> None:
         ...
 

@@ -7,6 +7,7 @@ class AZTrainingParameters:
     num_generations: int
     num_epochs: int
     games_per_generation: int
+    num_games_in_parallel: int
     num_mcts_sims: int
     minibatch_size: int
     temperature: float
@@ -21,6 +22,7 @@ class AZTrainingParameters:
                     "num_generations": 50,
                     "num_epochs": 10,
                     "games_per_generation": 100,
+                    "num_games_in_parallel": 50,
                     "num_mcts_sims": 500,
                     "minibatch_size": 64,
                     "temperature": 1.25,
@@ -34,6 +36,7 @@ class AZTrainingParameters:
                     "num_generations": 50,
                     "num_epochs": 10,
                     "games_per_generation": 200,
+                    "num_games_in_parallel": 100,
                     "num_mcts_sims": 600,
                     "minibatch_size": 64,
                     "temperature": 1.25,

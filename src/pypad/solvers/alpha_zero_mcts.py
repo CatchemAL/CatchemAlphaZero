@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from copy import copy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from math import sqrt
 from typing import Generic, TypeVar
 
@@ -46,9 +46,14 @@ class Node(Generic[TMove]):
             return 0.0
         return (1 + self.value_sum / self.visit_count) / 2
 
-    def update(self, outcome: int) -> None:
+    def update(self, outcome: float) -> None:
         self.visit_count += 1
         self.value_sum += outcome
+
+    def backpropagate(self, outcome: float) -> None:
+        self.update(outcome)
+        if self.parent:
+            self.parent.backpropagate(-outcome)
 
     def select_child(self) -> "Node[TMove]":
         return max(self.children, key=lambda c: c.ucb())
@@ -83,6 +88,19 @@ class AlphaZeroMctsSolver:
         policy[moves] = visit_counts
         policy /= policy.sum()
 
+        return policy
+
+    def policies(self, states: list[State[TMove]]) -> np.ndarray:
+        roots = self.search_parallel(states)
+
+        shape = len(states), self.neural_net.action_size
+        policy = np.zeros(shape, dtype=np.float32)
+        for i, root in enumerate(roots):
+            visit_counts = [node.visit_count for node in root.children]
+            moves = [node.move for node in root.children]
+            policy[i, moves] = visit_counts
+
+        policy /= policy.sum(axis=1)[:, np.newaxis]
         return policy
 
     def search(self, root_state: State[TMove]) -> Node:
@@ -122,19 +140,106 @@ class AlphaZeroMctsSolver:
                     node.children.append(child_node)
 
                 # === Simulation ===
-                # Here, the AlphaZero paper completely replaces the traditional
-                # rollout phase with a value estimation from the neural net.
-                ...
+                # Here, the AlphaZero paper completely replaces the traditional rollout phase with
+                # a value estimation from the neural net.
+                # Negate because the net gives an estimation from player whose turn it is next,
+                # rather than the player who has just moved
+                value *= -1
             else:
                 value = status.value
 
             # === Backpropagate ===
-            while node:
-                node.update(value)
-                node = node.parent
-                value *= -1
+            node.backpropagate(value)
 
         return root
+
+    def search_parallel(self, root_states: State[TMove]) -> list[Node]:
+        action_size = self.neural_net.action_size
+
+        roots: list[Node[TMove]] = [Node(root_state, None, None) for root_state in root_states]
+
+        for i in range(self.num_mcts_sims):
+            nodes = [root for root in roots]
+            states: list[State[TMove]] = [copy(root_state) for root_state in root_states]
+
+            # === Selection ===
+            for j in range(len(nodes)):
+                while nodes[j].has_children:
+                    nodes[j] = nodes[j].select_child()
+                    states[j].play_move(nodes[j].move)
+
+            statuses = [state.status() for state in states]
+            in_progress_idxs = [i for i, status in enumerate(statuses) if status.is_in_progress]
+            finished_idxs = [i for i, status in enumerate(statuses) if not status.is_in_progress]
+            num_in_progress = len(in_progress_idxs)
+            values = np.zeros(len(statuses), dtype=np.float32)
+
+            if num_in_progress > 0:
+                in_progress_states = [states[idx] for idx in in_progress_idxs]
+                raw_policies, predicted_values = self.neural_net.predict_parallel(in_progress_states)
+
+                if i == 0:
+                    ε = self.dirichlet_epsilon
+                    alpha = self.dirichlet_alpha
+                    noise = np.random.dirichlet([alpha] * action_size, (num_in_progress,))
+                    policies = (1 - ε) * raw_policies + ε * noise
+                else:
+                    policies = raw_policies.copy()
+
+                # Filter out illegal moves
+                legal_moves_mask = np.zeros((num_in_progress, action_size), dtype=bool)
+                for i, idx in enumerate(in_progress_idxs):
+                    legal_moves = statuses[idx].legal_moves
+                    legal_moves_mask[i, legal_moves] = True
+                policies[~legal_moves_mask] = 0
+                policies /= policies.sum(axis=1)[:, np.newaxis]
+
+                # === Expansion ===
+                for i, idx in enumerate(in_progress_idxs):
+                    legal_moves = statuses[idx].legal_moves
+                    for move in legal_moves:
+                        child_state = copy(states[idx])
+                        child_state.play_move(move)
+                        prior = policies[i, move]
+                        child_node = Node(child_state, parent=nodes[idx], move=move, prior=prior)
+                        nodes[idx].children.append(child_node)
+
+                # === Simulation ===
+                # Here, the AlphaZero paper completely replaces the traditional rollout phase with
+                # a value estimation from the neural net.
+                # Negate because the net gives an estimation from player whose turn it is next,
+                # rather than the player who has just moved
+                values[in_progress_idxs] = -1 * predicted_values
+
+            if finished_idxs:
+                values[finished_idxs] = [statuses[idx].value for idx in finished_idxs]
+
+            # === Backpropagate ===
+            for i, node in enumerate(nodes):
+                node.backpropagate(values[i])
+
+        return roots
+
+
+@dataclass
+class RecordedPolicy:
+    state_before: State
+    policy: np.ndarray
+    move: int
+    state_after: State
+
+
+@dataclass
+class ParallelGame:
+    idx: int
+    initial_state: State
+    policy_history: list[RecordedPolicy] = field(default_factory=list)
+
+    @property
+    def latest_state(self) -> State:
+        if self.policy_history:
+            return self.policy_history[-1].state_after
+        return self.initial_state
 
 
 @dataclass
@@ -159,22 +264,75 @@ class AlphaZero:
         status = state.status()
 
         self.neural_net.set_to_eval()
-        move_history: list[tuple[np.ndarray, np.ndarray, int]] = []
+        policy_history: list[RecordedPolicy] = []
 
         while status.is_in_progress:
-            encoded_state = state.to_numpy()
-            policy = mcts.policy(state)
-            move = state.select_move(policy, training_params.temperature)
+            state_before = state
+            policy = mcts.policy(state_before)
+            move = state_before.select_move(policy, training_params.temperature)
+            state = copy(state_before)
             state.play_move(move)
-            move_history.append((encoded_state, policy, state.played_by))
+            recorded_policy = RecordedPolicy(state_before, policy, move, state)
+            policy_history.append(recorded_policy)
             status = state.status()
 
         training_set: list[TrainingData] = []
-        for mh in move_history:
-            encoded_state, policy, player_to_move_next = mh
-            outcome = status.outcome(player_to_move_next)
-            training_data = TrainingData(encoded_state, policy, outcome)
+        for ph in policy_history:
+            encoded_state = ph.state_before.to_numpy()
+            perspective = ph.state_after.played_by
+            outcome = status.outcome(perspective)
+            training_data = TrainingData(encoded_state, ph.policy, outcome)
             training_set.append(training_data)
+
+        return training_set
+
+    def self_play_parallel(
+        self, training_params: AZTrainingParameters, initial_state: str | list[int] | None = None
+    ) -> list[TrainingData]:
+        init_state: State = self.game.initial_state(initial_state)
+        initial_status = init_state.status()
+        in_progress = initial_status.is_in_progress
+        if not in_progress:
+            return []
+
+        mcts = AlphaZeroMctsSolver(
+            self.neural_net,
+            training_params.num_mcts_sims,
+            training_params.dirichlet_epsilon,
+            training_params.dirichlet_alpha,
+        )
+
+        num_parallel = training_params.num_games_in_parallel
+        parallel_games = [ParallelGame(i, init_state) for i in range(num_parallel)]
+        in_progress_games = [pg for pg in parallel_games]
+
+        self.neural_net.set_to_eval()
+
+        while in_progress_games:
+            states = [pg.latest_state for pg in in_progress_games]
+            policies = mcts.policies(states)
+
+            for i, pg in enumerate(in_progress_games):
+                state_before = pg.latest_state
+                policy = policies[i]
+                move = state_before.select_move(policy, training_params.temperature)
+                state = copy(state_before)
+                state.play_move(move)
+                recorded_policy = RecordedPolicy(state_before, policy, move, state)
+                pg.policy_history.append(recorded_policy)
+
+            in_progress_games = [g for g in in_progress_games if g.latest_state.status().is_in_progress]
+
+        training_set: list[TrainingData] = []
+        for pg in parallel_games:
+            terminal_status = pg.latest_state.status()
+            policy_history = pg.policy_history
+            for ph in policy_history:
+                encoded_state = ph.state_before.to_numpy()
+                perspective = ph.state_after.played_by
+                outcome = terminal_status.outcome(perspective)
+                training_data = TrainingData(encoded_state, ph.policy, outcome)
+                training_set.append(training_data)
 
         return training_set
 
@@ -184,8 +342,10 @@ class AlphaZero:
         for _ in trange(training_params.num_generations, desc="Generations"):
             training_set: list[TrainingData] = []
 
-            for _ in trange(training_params.games_per_generation, desc="- Self-play", leave=False):
-                training_set += self.self_play(training_params, initial_state)
+            num_rounds = training_params.games_per_generation // training_params.num_games_in_parallel
+            for _ in trange(num_rounds, desc="- Self-play", leave=False):
+                # training_set += self.self_play(training_params, initial_state)
+                training_set += self.self_play_parallel(training_params, initial_state)
 
             extended_training_set = self.exploit_symmetries(training_set)
 

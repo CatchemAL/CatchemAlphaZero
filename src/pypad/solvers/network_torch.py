@@ -106,15 +106,19 @@ class PytorchNeuralNetwork:
         planes = state.to_numpy()
         tensor = torch.tensor(planes).unsqueeze(0)
 
-        # Fire the state through the net...
-        raw_policy, value = self.resnet(tensor)
+        predicted_policy, predicted_outcome = self.resnet(tensor)
+        normalized_policy = torch.softmax(predicted_policy, axis=1).squeeze().cpu().numpy()
 
-        # Surely we can put this in the network architecture instead of outside?
-        raw_policy = torch.softmax(raw_policy, axis=1).squeeze().cpu().numpy()
+        return normalized_policy, predicted_outcome.item()
 
-        value: float = value.item()
+    @torch.no_grad()
+    def predict_parallel(self, state: list[State]) -> tuple[NDArray[np.float32], NDArray[np.float32]]:
+        batch_states = torch.from_numpy(np.array([s.to_numpy() for s in state]))
 
-        return raw_policy, value
+        predicted_policies, predicted_outcomes = self.resnet(batch_states)
+        normalized_policies = torch.softmax(predicted_policies, axis=1).cpu().numpy()
+
+        return normalized_policies, predicted_outcomes.squeeze().cpu().numpy()
 
     def set_to_eval(self) -> None:
         self.resnet.eval()
