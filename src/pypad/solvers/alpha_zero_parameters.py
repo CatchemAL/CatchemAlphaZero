@@ -20,7 +20,7 @@ class AZTrainingParameters:
             case "TicTacToe":
                 params = {
                     "num_generations": 50,
-                    "num_epochs": 10,
+                    "num_epochs": 5,
                     "games_per_generation": 100,
                     "num_games_in_parallel": 50,
                     "num_mcts_sims": 500,
@@ -34,14 +34,14 @@ class AZTrainingParameters:
             case "ConnectX_6x7":
                 params = {
                     "num_generations": 50,
-                    "num_epochs": 10,
-                    "games_per_generation": 200,
+                    "num_epochs": 5,
+                    "games_per_generation": 400,
                     "num_games_in_parallel": 100,
                     "num_mcts_sims": 600,
-                    "minibatch_size": 64,
-                    "temperature": 1.25,
+                    "minibatch_size": 128,
+                    "temperature": 1.2,
                     "dirichlet_epsilon": 0.25,
-                    "dirichlet_alpha": 0.9,
+                    "dirichlet_alpha": 0.6,
                 }
 
                 return cls(**params)
