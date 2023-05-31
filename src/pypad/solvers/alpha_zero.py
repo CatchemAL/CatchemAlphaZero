@@ -38,10 +38,19 @@ class ParallelGame:
 class AlphaZero:
     def __init__(self, neural_net: NeuralNetwork) -> None:
         self.neural_net = neural_net
+        self.default_mcts_params = AZMctsParameters.defaults(self.game.fullname)
 
     @property
     def game(self) -> Game:
         return self.neural_net.game
+
+    @property
+    def num_mcts_sims(self):
+        return self.default_mcts_params.num_mcts_sims
+
+    @num_mcts_sims.setter
+    def num_mcts_sims(self, value):
+        self.default_mcts_params.num_mcts_sims = value
 
     def solve(self, state: State[TMove], num_mcts_sims: int | AZMctsParameters | None = None) -> TMove:
         self.neural_net.set_to_eval()
@@ -164,11 +173,11 @@ class AlphaZero:
 
     def mcts_solver(self, num_mcts_sims: int | AZMctsParameters | None = None) -> AlphaZeroMctsSolver:
         if num_mcts_sims is None:
-            params: AZMctsParameters = AZMctsParameters.defaults(self.game.fullname)
+            value_by_prop = asdict(self.default_mcts_params)
         elif isinstance(num_mcts_sims, int):
-            params: AZMctsParameters = AZMctsParameters.defaults(self.game.fullname)
-            params.num_mcts_sims = num_mcts_sims
+            value_by_prop = asdict(self.default_mcts_params)
+            value_by_prop["num_mcts_sims"] = num_mcts_sims
         else:
-            params: AZMctsParameters = num_mcts_sims
+            value_by_prop = asdict(num_mcts_sims)
 
-        return AlphaZeroMctsSolver(self.neural_net, **asdict(params))
+        return AlphaZeroMctsSolver(self.neural_net, **value_by_prop)
