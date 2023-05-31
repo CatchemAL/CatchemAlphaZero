@@ -3,19 +3,48 @@ from typing import Self
 
 
 @dataclass
+class AZMctsParameters:
+    num_mcts_sims: int
+    dirichlet_epsilon: float
+    dirichlet_alpha: float
+    discount_factor: float
+
+    @classmethod
+    def defaults(cls, fullname: str) -> Self:
+        match fullname:
+            case "TicTacToe":
+                params = {
+                    "num_mcts_sims": 500,
+                    "dirichlet_epsilon": 0.25,
+                    "dirichlet_alpha": 0.9,
+                    "discount_factor": 0.99,
+                }
+
+                return cls(**params)
+            case "ConnectX_6x7":
+                params = {
+                    "num_mcts_sims": 600,
+                    "dirichlet_epsilon": 0.25,
+                    "dirichlet_alpha": 0.6,
+                    "discount_factor": 0.98,
+                }
+
+                return cls(**params)
+
+
+@dataclass
 class AZTrainingParameters:
     num_generations: int
     num_epochs: int
     games_per_generation: int
     num_games_in_parallel: int
-    num_mcts_sims: int
     minibatch_size: int
     temperature: float
-    dirichlet_epsilon: float
-    dirichlet_alpha: float
+    mcts_parameters: AZMctsParameters
 
     @classmethod
     def defaults(cls, fullname: str) -> Self:
+        mcts_parameters = AZMctsParameters.defaults(fullname)
         match fullname:
             case "TicTacToe":
                 params = {
@@ -23,11 +52,9 @@ class AZTrainingParameters:
                     "num_epochs": 5,
                     "games_per_generation": 100,
                     "num_games_in_parallel": 50,
-                    "num_mcts_sims": 500,
                     "minibatch_size": 64,
                     "temperature": 1.25,
-                    "dirichlet_epsilon": 0.25,
-                    "dirichlet_alpha": 0.9,
+                    "mcts_parameters": mcts_parameters,
                 }
 
                 return cls(**params)
@@ -37,11 +64,9 @@ class AZTrainingParameters:
                     "num_epochs": 5,
                     "games_per_generation": 400,
                     "num_games_in_parallel": 100,
-                    "num_mcts_sims": 600,
                     "minibatch_size": 128,
                     "temperature": 1.2,
-                    "dirichlet_epsilon": 0.25,
-                    "dirichlet_alpha": 0.6,
+                    "mcts_parameters": mcts_parameters,
                 }
 
                 return cls(**params)
