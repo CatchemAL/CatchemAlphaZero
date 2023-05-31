@@ -27,6 +27,14 @@
             ]
         },
         {
+            "name": "MNIST Examples",
+            "type": "python",
+            "request": "launch",
+            "module": "src.pypad.mnist",
+            "justMyCode": true,
+            "args": []
+        },
+        {
             "name": "Run TicTacToe (MCTS)",
             "type": "python",
             "request": "launch",
