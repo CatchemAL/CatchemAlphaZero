@@ -58,7 +58,7 @@ def kaggle(args: Namespace) -> None:
 
 
 def learn(args: Namespace) -> None:
-    from .solvers.alpha_zero_mcts import AlphaZero
+    from .solvers.alpha_zero import AlphaZero
     from .solvers.network_torch import PytorchNeuralNetwork
 
     game_type: GameType = args.game
@@ -88,13 +88,6 @@ def main() -> None:
     board = ConnectX.create(ROWS, COLS, moves)
     solver = Solver()
     solver.minimax(board, -np.inf, np.inf)
-
-    run_torch()
-    return
-    mlp_run()
-    svm_baseline()
-
-    print("Hello world")
 
 
 def main() -> None:
