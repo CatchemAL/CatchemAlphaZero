@@ -1,9 +1,13 @@
 import torch
 import torch.nn as nn
+import torchvision
 import torch.optim as optim
 
 from .mnist_loader import load_data
 from .mnist_pytorch_loader import load_torch_data
+
+
+from torch.utils.tensorboard import SummaryWriter
 
 
 # Define the MLP model
@@ -64,6 +68,15 @@ def run_torch():
     cost_function = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=alpha)
 
+    # default `log_dir` is "runs" - we'll be more specific here
+    tensorboard = SummaryWriter("runs")
+
+    with torch.no_grad():
+        images, _ = next(iter(train_loader))
+        grid = torchvision.utils.make_grid(images)
+        tensorboard.add_image("images", grid, 0)
+        tensorboard.add_graph(model, images)
+
     for epoch in range(num_epochs):
         # Train the model
         train(model, optimizer, cost_function, train_loader)
@@ -72,3 +85,7 @@ def run_torch():
         num_correct = test(model, test_loader)
         accuracy = num_correct / len(test_loader.dataset)
         print(f"Epoch {epoch+1}: {accuracy*100:.2f}% accuracy")
+
+        tensorboard.add_scalar("Accuracy", accuracy, epoch + 1)
+
+    tensorboard.close()

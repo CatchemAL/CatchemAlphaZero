@@ -3,7 +3,6 @@ A classifier program for recognizing handwritten digits from the MNIST
 data set, using an SVM classifier."""
 
 import matplotlib.pyplot as plt
-import pandas as pd
 from sklearn import metrics
 from sklearn.neural_network import MLPClassifier
 
