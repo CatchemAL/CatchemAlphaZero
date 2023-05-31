@@ -1,19 +1,14 @@
 from __future__ import annotations
 
 from copy import copy
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from math import sqrt
-from typing import Generic, TypeVar
+from typing import Generic
 
 import numpy as np
-from tqdm import trange
 
-from ..games import Game
-from ..states import State
-from .alpha_zero_parameters import AZTrainingParameters
-from .network import NeuralNetwork, TrainingData
-
-TMove = TypeVar("TMove")
+from ..states import State, TMove
+from .network import NeuralNetwork
 
 
 class Node(Generic[TMove]):
@@ -24,14 +19,14 @@ class Node(Generic[TMove]):
         state: State[TMove],
         parent: Node[TMove] | None = None,
         move: TMove | None = None,
-        prior: np.float32 = 1,
+        prior: np.float32 = 1.0,
     ):
         self.move = move
         self.parent = parent
         self.played_by = state.played_by
         self.prior = prior
 
-        self.value_sum: int = 0
+        self.value_sum: float = 0.0
         self.visit_count: int = 0
 
         self.children: list[Node[TMove]] = []
@@ -43,17 +38,24 @@ class Node(Generic[TMove]):
     @property
     def q_value(self) -> float:
         if self.visit_count == 0:
-            return 0.0
+            if self.parent is None:
+                return 0
+
+            first_play_urgency = 0.44
+            q_from_parent = 1 - self.parent.q_value
+            estimated_q_value = q_from_parent - first_play_urgency
+            return max(estimated_q_value, 0)
+
         return (1 + self.value_sum / self.visit_count) / 2
 
     def update(self, outcome: float) -> None:
         self.visit_count += 1
         self.value_sum += outcome
 
-    def backpropagate(self, outcome: float) -> None:
+    def backpropagate(self, outcome: float, discount_factor: float) -> None:
         self.update(outcome)
         if self.parent:
-            self.parent.backpropagate(-outcome)
+            self.parent.backpropagate(-outcome * discount_factor, discount_factor)
 
     def select_child(self) -> "Node[TMove]":
         return max(self.children, key=lambda c: c.ucb())
@@ -64,7 +66,9 @@ class Node(Generic[TMove]):
         return self.q_value + c * self.prior * exploration_param
 
     def __repr__(self):
-        return f"Node(move={self.move}, Q={self.q_value:.3}, prior={self.prior:.2%}, visit_count={self.visit_count}, UCB={self.ucb():.3}))"
+        if self.parent:
+            return f"Node(move={self.move}, Q={self.q_value:.1%}, prior={self.prior:.2%}, visit_count={self.visit_count}, UCB={self.ucb():.3})"
+        return f"Node(move={self.move}, Q={self.q_value:.1%}, prior={self.prior:.2%}, visit_count={self.visit_count})"
 
 
 @dataclass
@@ -73,14 +77,21 @@ class AlphaZeroMctsSolver:
     num_mcts_sims: int
     dirichlet_epsilon: float
     dirichlet_alpha: float
+    discount_factor: float
 
     def solve(self, root_state: State[TMove]) -> TMove:
         root = self.search(root_state)
         max_child = max(root.children, key=lambda c: c.visit_count)
         return max_child.move
 
-    def policy(self, state: State[TMove]) -> np.ndarray:
+    def policy(self, state: State[TMove], is_raw_policy: bool = False) -> tuple[np.ndarray, float]:
+        if is_raw_policy:
+            raw_policy, value = self.neural_net.predict(state)
+            return raw_policy, value
+
         root = self.search(state)
+        root_q = 1 - root.q_value
+        value = root_q * 2 - 1
 
         policy = np.zeros(self.neural_net.action_size, dtype=np.float32)
         visit_counts = [node.visit_count for node in root.children]
@@ -88,7 +99,7 @@ class AlphaZeroMctsSolver:
         policy[moves] = visit_counts
         policy /= policy.sum()
 
-        return policy
+        return policy, value
 
     def policies(self, states: list[State[TMove]]) -> np.ndarray:
         roots = self.search_parallel(states)
@@ -149,7 +160,7 @@ class AlphaZeroMctsSolver:
                 value = status.value
 
             # === Backpropagate ===
-            node.backpropagate(value)
+            node.backpropagate(value, self.discount_factor)
 
         return root
 
@@ -216,149 +227,6 @@ class AlphaZeroMctsSolver:
 
             # === Backpropagate ===
             for i, node in enumerate(nodes):
-                node.backpropagate(values[i])
+                node.backpropagate(values[i], self.discount_factor)
 
         return roots
-
-
-@dataclass
-class RecordedPolicy:
-    state_before: State
-    policy: np.ndarray
-    move: int
-    state_after: State
-
-
-@dataclass
-class ParallelGame:
-    idx: int
-    initial_state: State
-    policy_history: list[RecordedPolicy] = field(default_factory=list)
-
-    @property
-    def latest_state(self) -> State:
-        if self.policy_history:
-            return self.policy_history[-1].state_after
-        return self.initial_state
-
-
-@dataclass
-class AlphaZero:
-    neural_net: NeuralNetwork
-
-    @property
-    def game(self) -> Game:
-        return self.neural_net.game
-
-    def self_play(
-        self, training_params: AZTrainingParameters, initial_state: str | list[int] | None = None
-    ) -> list[TrainingData]:
-        mcts = AlphaZeroMctsSolver(
-            self.neural_net,
-            training_params.num_mcts_sims,
-            training_params.dirichlet_epsilon,
-            training_params.dirichlet_alpha,
-        )
-
-        state: State = self.game.initial_state(initial_state)
-        status = state.status()
-
-        self.neural_net.set_to_eval()
-        policy_history: list[RecordedPolicy] = []
-
-        while status.is_in_progress:
-            state_before = state
-            policy = mcts.policy(state_before)
-            move = state_before.select_move(policy, training_params.temperature)
-            state = copy(state_before)
-            state.play_move(move)
-            recorded_policy = RecordedPolicy(state_before, policy, move, state)
-            policy_history.append(recorded_policy)
-            status = state.status()
-
-        training_set: list[TrainingData] = []
-        for ph in policy_history:
-            encoded_state = ph.state_before.to_numpy()
-            perspective = ph.state_after.played_by
-            outcome = status.outcome(perspective)
-            training_data = TrainingData(encoded_state, ph.policy, outcome)
-            training_set.append(training_data)
-
-        return training_set
-
-    def self_play_parallel(
-        self, training_params: AZTrainingParameters, initial_state: str | list[int] | None = None
-    ) -> list[TrainingData]:
-        init_state: State = self.game.initial_state(initial_state)
-        initial_status = init_state.status()
-        in_progress = initial_status.is_in_progress
-        if not in_progress:
-            return []
-
-        mcts = AlphaZeroMctsSolver(
-            self.neural_net,
-            training_params.num_mcts_sims,
-            training_params.dirichlet_epsilon,
-            training_params.dirichlet_alpha,
-        )
-
-        num_parallel = training_params.num_games_in_parallel
-        parallel_games = [ParallelGame(i, init_state) for i in range(num_parallel)]
-        in_progress_games = [pg for pg in parallel_games]
-
-        self.neural_net.set_to_eval()
-
-        while in_progress_games:
-            states = [pg.latest_state for pg in in_progress_games]
-            policies = mcts.policies(states)
-
-            for i, pg in enumerate(in_progress_games):
-                state_before = pg.latest_state
-                policy = policies[i]
-                move = state_before.select_move(policy, training_params.temperature)
-                state = copy(state_before)
-                state.play_move(move)
-                recorded_policy = RecordedPolicy(state_before, policy, move, state)
-                pg.policy_history.append(recorded_policy)
-
-            in_progress_games = [g for g in in_progress_games if g.latest_state.status().is_in_progress]
-
-        training_set: list[TrainingData] = []
-        for pg in parallel_games:
-            terminal_status = pg.latest_state.status()
-            policy_history = pg.policy_history
-            for ph in policy_history:
-                encoded_state = ph.state_before.to_numpy()
-                perspective = ph.state_after.played_by
-                outcome = terminal_status.outcome(perspective)
-                training_data = TrainingData(encoded_state, ph.policy, outcome)
-                training_set.append(training_data)
-
-        return training_set
-
-    def self_learn(
-        self, training_params: AZTrainingParameters, initial_state: str | list[int] | None = None
-    ) -> None:
-        for _ in trange(training_params.num_generations, desc="Generations"):
-            training_set: list[TrainingData] = []
-
-            num_rounds = training_params.games_per_generation // training_params.num_games_in_parallel
-            for _ in trange(num_rounds, desc="- Self-play", leave=False):
-                # training_set += self.self_play(training_params, initial_state)
-                training_set += self.self_play_parallel(training_params, initial_state)
-
-            extended_training_set = self.exploit_symmetries(training_set)
-
-            for _ in trange(training_params.num_epochs, desc=" - Training", leave=False):
-                self.neural_net.train(extended_training_set, training_params.minibatch_size)
-
-            self.neural_net.set_to_eval()
-            self.neural_net.generation += 1
-            self.neural_net.save()
-
-    def exploit_symmetries(self, training_set: list[TrainingData]) -> list[TrainingData]:
-        def all_sets(data: TrainingData) -> list[TrainingData]:
-            symmetries = self.game.symmetries(data.encoded_state, data.policy)
-            return (TrainingData(state, pol, data.outcome) for state, pol in symmetries)
-
-        return [sym_data for training_data in training_set for sym_data in all_sets(training_data)]
