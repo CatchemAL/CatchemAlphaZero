@@ -26,7 +26,7 @@ def show_tictactoe_policy(
         ax.spines["bottom"].set_edgecolor("black")
         ax.spines["left"].set_edgecolor("white")
         ax.set_yticks([])
-        ax.set_xlabel(f"Q value = {q_value:.0%}")
+        ax.set_xlabel(f"v ∈ (-1, +1) = {q_value:.2}")
 
         plt.bar(["a3", "b3", "c3", "a2", "b2", "c2", "a1", "b1", "c1"], policy, axes=ax)
 
@@ -47,7 +47,7 @@ def show_connectx_policy(
         ax.spines["left"].set_edgecolor("white")
         ax.set_yticks([])
         ax.set_xticks([])
-        ax.set_xlabel(f"Q value = {q_value:.0%}")
+        ax.set_xlabel(f"v ∈ (-1, +1) = {q_value:.2}")
 
     policy_grid = np.tile(policy, (self.rows, 1))
     return PoliciedState(self, policy_grid)
