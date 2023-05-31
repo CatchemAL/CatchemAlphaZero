@@ -1,13 +1,11 @@
 import torch
 import torch.nn as nn
-import torchvision
 import torch.optim as optim
+import torchvision
+from torch.utils.tensorboard import SummaryWriter
 
 from .mnist_loader import load_data
 from .mnist_pytorch_loader import load_torch_data
-
-
-from torch.utils.tensorboard import SummaryWriter
 
 
 # Define the MLP model
