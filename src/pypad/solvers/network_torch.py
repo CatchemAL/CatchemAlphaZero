@@ -9,6 +9,7 @@ import torch.nn.functional as F
 from numpy.typing import NDArray
 from torch.optim import Adam, Optimizer
 from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.tensorboard import SummaryWriter
 from tqdm import trange
 
 from ..games import Game
@@ -133,6 +134,11 @@ class PytorchNeuralNetwork:
         self.resnet.eval()
 
     def train(self, training_set: list[TrainingData], num_epochs: int, minibatch_size: int) -> None:
+        # Initialize TensorBoard writer
+        writer = SummaryWriter(log_dir=f"runs/{self.game.fullname}")
+        gen = self.generation
+        num_points = len(training_set)
+
         # Convert to numpy arrays for training
         states_np = np.array([d.encoded_state for d in training_set], dtype=np.float32)
         policies_np = np.array([d.policy for d in training_set], dtype=np.float32)
@@ -145,18 +151,64 @@ class PytorchNeuralNetwork:
         data_set = TensorDataset(states, policies, outcomes)
         data_loader = DataLoader(data_set, batch_size=minibatch_size, shuffle=True)
 
-        self.resnet.train()
-        for _ in trange(num_epochs, desc=" - Training", leave=False):
+        self.resnet.eval()
+        epoch_policy_loss = 0.0
+        epoch_outcome_loss = 0.0
+        epoch_total_loss = 0.0
+
+        with torch.no_grad():
             for batch_states, batch_policies, batch_outcomes in data_loader:
                 predicted_policies, predicted_outcomes = self.resnet(batch_states)
 
+                # Compute loss
                 policy_loss = F.cross_entropy(predicted_policies, batch_policies)
                 outcome_loss = F.mse_loss(predicted_outcomes, batch_outcomes)
                 total_loss = policy_loss + outcome_loss
 
+                # Store key metrics
+                epoch_policy_loss += policy_loss.item()
+                epoch_outcome_loss += outcome_loss.item()
+                epoch_total_loss += total_loss.item()
+
+        # Logging metrics to TensorBoard
+        writer.add_scalar(f"Generations/Total Loss", epoch_total_loss / num_points, gen)
+        writer.add_scalar(f"Generations/Policy Loss", epoch_policy_loss / num_points, gen)
+        writer.add_scalar(f"Generations/Outcome Loss", epoch_outcome_loss / num_points, gen)
+
+        self.resnet.train()
+        for epoch in trange(num_epochs, desc=" - Training", leave=False):
+            epoch_policy_loss = 0.0
+            epoch_outcome_loss = 0.0
+            epoch_total_loss = 0.0
+
+            for batch_states, batch_policies, batch_outcomes in data_loader:
+                # zero the parameter gradients
                 self.optimizer.zero_grad()
+
+                # Feed forwards
+                predicted_policies, predicted_outcomes = self.resnet(batch_states)
+
+                # Compute loss
+                policy_loss = F.cross_entropy(predicted_policies, batch_policies)
+                outcome_loss = F.mse_loss(predicted_outcomes, batch_outcomes)
+                total_loss = policy_loss + outcome_loss
+
+                # Backwards + optimize
                 total_loss.backward()
                 self.optimizer.step()
+
+                # Store key metrics
+                epoch_policy_loss += policy_loss.item()
+                epoch_outcome_loss += outcome_loss.item()
+                epoch_total_loss += total_loss.item()
+
+            # Logging metrics to TensorBoard
+            writer.add_scalar(f"Gen{gen:02d}/Total Loss", epoch_total_loss, epoch + 1)
+            writer.add_scalar(f"Gen{gen:02d}/Policy Loss", epoch_policy_loss, epoch + 1)
+            writer.add_scalar(f"Gen{gen:02d}/Outcome Loss", epoch_outcome_loss, epoch + 1)
+
+        # Close TensorBoard writer
+        writer.close()
 
     def save_training_data(self, training_set: list[TrainingData]) -> None:
         gen = self.generation
