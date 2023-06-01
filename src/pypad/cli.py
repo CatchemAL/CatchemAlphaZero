@@ -8,12 +8,6 @@ from .games import GameType, get_game
 from .solvers import AgentType, Solver
 from .solvers.alpha_zero_parameters import AZTrainingParameters
 
-# from .factory import create_agent, get_controller, load_player
-
-# from .mnist.mnist_mlp import mlp_run
-# from .mnist.mnist_svm import svm_baseline
-# from .mnist.mnist_torch import run_torch
-
 
 def run(args: Namespace) -> None:
     game_type: GameType = args.game
