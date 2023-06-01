@@ -67,7 +67,7 @@ def learn(args: Namespace) -> None:
     game = get_game(game_type)
 
     # Build alpha zero with latest weights
-    neural_net = PytorchNeuralNetwork.create(game, "./weights")
+    neural_net = PytorchNeuralNetwork.create(game, ".")
     alpha_zero = AlphaZero(neural_net)
 
     training_params = AZTrainingParameters.defaults(game.fullname)
