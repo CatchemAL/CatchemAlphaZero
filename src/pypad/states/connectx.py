@@ -4,7 +4,7 @@ from typing import Generator, Self
 import numpy as np
 
 from ..bitboard_utils import BitboardUtil
-from .state import State, Status
+from .state import State, Status, TemperatureSchedule
 
 
 @dataclass
@@ -63,7 +63,11 @@ class ConnectXState(State[int]):
         self.mask |= move
         self.num_moves += 1
 
-    def select_move(self, policy: np.ndarray, temperature: float) -> int:
+    def select_move(self, policy: np.ndarray, temperature_schedule: TemperatureSchedule) -> int:
+        temperature = temperature_schedule.get_temperature(self.num_moves)
+        if temperature < 0.001:
+            return np.argmax(policy)
+
         temperature_policy = policy ** (1 / temperature)
         temperature_policy /= temperature_policy.sum()
         return np.random.choice(len(policy), p=temperature_policy)

@@ -10,6 +10,15 @@ TState_co = TypeVar("TState_co", bound="State[+TMove]", covariant=True)
 
 
 @dataclass
+class TemperatureSchedule:
+    cutoff: int
+    temperature: float
+
+    def get_temperature(self, move_count) -> float:
+        return self.temperature if move_count < self.cutoff else 1e-12
+
+
+@dataclass
 class Status(Generic[TMove]):
     is_in_progress: bool
     played_by: int
@@ -40,7 +49,7 @@ class State(ABC, Generic[TMove]):
         ...
 
     @abstractmethod
-    def select_move(self, policy: np.ndarray, temperature: float) -> TMove:
+    def select_move(self, policy: np.ndarray, temperature_schedule: TemperatureSchedule) -> TMove:
         ...
 
     @abstractmethod
