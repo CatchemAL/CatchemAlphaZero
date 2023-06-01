@@ -101,8 +101,11 @@ class AlphaZeroMctsSolver:
 
         return policy, value
 
-    def policies(self, states: list[State[TMove]]) -> np.ndarray:
+    def policies(self, states: list[State[TMove]]) -> tuple[np.ndarray, np.ndarray]:
         roots = self.search_parallel(states)
+
+        root_q = np.array([1 - root.q_value for root in roots])
+        values = root_q * 2 - 1
 
         shape = len(states), self.neural_net.action_size
         policy = np.zeros(shape, dtype=np.float32)
@@ -112,7 +115,7 @@ class AlphaZeroMctsSolver:
             policy[i, moves] = visit_counts
 
         policy /= policy.sum(axis=1)[:, np.newaxis]
-        return policy
+        return policy, values
 
     def search(self, root_state: State[TMove]) -> Node:
         root: Node[TMove] = Node(root_state, None, None)
