@@ -72,23 +72,14 @@ class Node(Generic[TMove]):
 
 
 @dataclass
-class AlphaZeroMctsSolver:
+class AlphaZeroMcts:
     neural_net: NeuralNetwork
     num_mcts_sims: int
     dirichlet_epsilon: float
     dirichlet_alpha: float
     discount_factor: float
 
-    def solve(self, root_state: State[TMove]) -> TMove:
-        root = self.search(root_state)
-        max_child = max(root.children, key=lambda c: c.visit_count)
-        return max_child.move
-
-    def policy(self, state: State[TMove], is_raw_policy: bool = False) -> tuple[np.ndarray, float]:
-        if is_raw_policy:
-            raw_policy, value = self.neural_net.predict(state)
-            return raw_policy, value
-
+    def policy(self, state: State[TMove]) -> tuple[np.ndarray, float]:
         root = self.search(state)
         root_q = 1 - root.q_value
         value = root_q * 2 - 1

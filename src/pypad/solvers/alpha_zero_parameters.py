@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Self
 
+from ..states.state import TemperatureSchedule
+
 
 @dataclass
 class AZMctsParameters:
@@ -39,7 +41,7 @@ class AZTrainingParameters:
     games_per_generation: int
     num_games_in_parallel: int
     minibatch_size: int
-    temperature: float
+    temperature: TemperatureSchedule
     mcts_parameters: AZMctsParameters
 
     @classmethod
@@ -53,7 +55,7 @@ class AZTrainingParameters:
                     "games_per_generation": 100,
                     "num_games_in_parallel": 50,
                     "minibatch_size": 64,
-                    "temperature": 1.25,
+                    "temperature": TemperatureSchedule(4, 1.25),
                     "mcts_parameters": mcts_parameters,
                 }
 
@@ -64,8 +66,8 @@ class AZTrainingParameters:
                     "num_epochs": 5,
                     "games_per_generation": 400,
                     "num_games_in_parallel": 100,
-                    "minibatch_size": 128,
-                    "temperature": 1.2,
+                    "minibatch_size": 512,
+                    "temperature": TemperatureSchedule(12, 1.2),
                     "mcts_parameters": mcts_parameters,
                 }
 
@@ -96,7 +98,7 @@ class AZNetworkParameters:
                 params = {
                     "num_resnet_blocks": 9,
                     "num_features": 128,
-                    "optimizer_learn_rate": 0.001,
+                    "optimizer_learn_rate": 0.0001,
                     "optimizer_weight_decay": 0.0001,
                 }
 

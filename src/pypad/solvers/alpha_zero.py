@@ -8,7 +8,8 @@ from tqdm import trange
 
 from ..games import Game
 from ..states import State, TMove
-from .alpha_zero_mcts import AlphaZeroMctsSolver
+from ..states.state import TemperatureSchedule
+from .alpha_zero_mcts import AlphaZeroMcts
 from .alpha_zero_parameters import AZMctsParameters, AZTrainingParameters
 from .network import NeuralNetwork, TrainingData
 
@@ -23,7 +24,6 @@ class RecordedPolicy:
 
 @dataclass
 class ParallelGame:
-    idx: int
     initial_state: State
     policy_history: list[RecordedPolicy] = field(default_factory=list)
 
@@ -38,50 +38,74 @@ class ParallelGame:
 class AlphaZero:
     def __init__(self, neural_net: NeuralNetwork) -> None:
         self.neural_net = neural_net
-        self.default_mcts_params = AZMctsParameters.defaults(self.game.fullname)
 
     @property
     def game(self) -> Game:
         return self.neural_net.game
 
-    @property
-    def num_mcts_sims(self):
-        return self.default_mcts_params.num_mcts_sims
-
-    @num_mcts_sims.setter
-    def num_mcts_sims(self, value):
-        self.default_mcts_params.num_mcts_sims = value
-
-    def solve(self, state: State[TMove], num_mcts_sims: int | AZMctsParameters | None = None) -> TMove:
-        self.neural_net.set_to_eval()
-        solver = self.mcts_solver(num_mcts_sims)
-        return solver.solve(state)
-
     def policy(
-        self,
-        state: State[TMove],
-        num_mcts_sims: int | AZMctsParameters | None = None,
-        is_raw_policy: bool = False,
-    ) -> TMove:
+        self, state: State[TMove], num_mcts_sims: int | AZMctsParameters
+    ) -> tuple[np.ndarray, float]:
         self.neural_net.set_to_eval()
-        solver = self.mcts_solver(num_mcts_sims)
-        return solver.policy(state, is_raw_policy)
+        mcts = self._get_mcts(num_mcts_sims)
+        return mcts.policy(state)
+
+    def policies(
+        self, states: list[State[TMove]], num_mcts_sims: int | AZMctsParameters
+    ) -> tuple[np.ndarray, np.ndarray]:
+        self.neural_net.set_to_eval()
+        mcts = self._get_mcts(num_mcts_sims)
+        return mcts.policies(states)
+
+    def raw_policy(self, state: State[TMove]) -> tuple[np.ndarray, float]:
+        self.neural_net.set_to_eval()
+        policy, value = self.neural_net.predict(state)
+        return policy, value
+
+    def self_learn(
+        self, training_params: AZTrainingParameters, initial_state: str | list[int] | None = None
+    ) -> None:
+        mcts = self._get_mcts(training_params.mcts_parameters)
+
+        for _ in trange(training_params.num_generations, desc="Generations"):
+            training_set: list[TrainingData] = []
+
+            num_rounds = training_params.games_per_generation // training_params.num_games_in_parallel
+            for _ in trange(num_rounds, desc="- Self-play", leave=False):
+                # training_set += self.self_play(mcts, training_params.temperature, initial_state)
+                training_set += self.self_play_parallel(
+                    mcts,
+                    training_params.num_games_in_parallel,
+                    training_params.temperature,
+                    initial_state,
+                )
+
+            extended_training_set = self._exploit_symmetries(training_set)
+
+            # Train against the newly generated games
+            num_epochs, minibatch_size = training_params.num_epochs, training_params.minibatch_size
+            self.neural_net.save_training_data(extended_training_set)
+            self.neural_net.train(extended_training_set, num_epochs, minibatch_size)
+
+            self.neural_net.generation += 1
+            self.neural_net.save()
 
     def self_play(
-        self, training_params: AZTrainingParameters, initial_state: str | list[int] | None = None
+        self,
+        mcts: AlphaZeroMcts,
+        temperature_schedule: TemperatureSchedule,
+        initial_state: str | list[int] | None = None,
     ) -> list[TrainingData]:
         state: State = self.game.initial_state(initial_state)
         status = state.status()
-
-        solver = self.mcts_solver(training_params.mcts_parameters)
 
         self.neural_net.set_to_eval()
         policy_history: list[RecordedPolicy] = []
 
         while status.is_in_progress:
             state_before = state
-            policy, _ = solver.policy(state_before)
-            move = state_before.select_move(policy, training_params.temperature)
+            policy, _ = mcts.policy(state_before)
+            move = state_before.select_move(policy, temperature_schedule)
             state = copy(state_before)
             state.play_move(move)
             recorded_policy = RecordedPolicy(state_before, policy, move, state)
@@ -99,7 +123,11 @@ class AlphaZero:
         return training_set
 
     def self_play_parallel(
-        self, training_params: AZTrainingParameters, initial_state: str | list[int] | None = None
+        self,
+        solver: AlphaZeroMcts,
+        num_parallel: int,
+        temperature_schedule: TemperatureSchedule,
+        initial_state: str | list[int] | None = None,
     ) -> list[TrainingData]:
         init_state: State = self.game.initial_state(initial_state)
         initial_status = init_state.status()
@@ -107,10 +135,7 @@ class AlphaZero:
         if not in_progress:
             return []
 
-        solver = self.mcts_solver(training_params.mcts_parameters)
-
-        num_parallel = training_params.num_games_in_parallel
-        parallel_games = [ParallelGame(i, init_state) for i in range(num_parallel)]
+        parallel_games = [ParallelGame(init_state) for _ in range(num_parallel)]
         in_progress_games = [pg for pg in parallel_games]
 
         self.neural_net.set_to_eval()
@@ -122,7 +147,7 @@ class AlphaZero:
             for i, pg in enumerate(in_progress_games):
                 state_before = pg.latest_state
                 policy = policies[i]
-                move = state_before.select_move(policy, training_params.temperature)
+                move = state_before.select_move(policy, temperature_schedule)
                 state = copy(state_before)
                 state.play_move(move)
                 recorded_policy = RecordedPolicy(state_before, policy, move, state)
@@ -143,28 +168,15 @@ class AlphaZero:
 
         return training_set
 
-    def self_learn(
-        self,
-        train_params: AZTrainingParameters,
-        initial_state: str | list[int] | None = None,
-    ) -> None:
-        for generation in trange(train_params.num_generations, desc="Generations"):
-            training_set: list[TrainingData] = []
+    def _get_mcts(self, num_mcts_sims: int | AZMctsParameters) -> AlphaZeroMcts:
+        if isinstance(num_mcts_sims, int):
+            default_params = AZMctsParameters.defaults(self.game.fullname)
+            value_by_prop = asdict(default_params)
+            value_by_prop["num_mcts_sims"] = num_mcts_sims
+        else:
+            value_by_prop = asdict(num_mcts_sims)
 
-            num_rounds = train_params.games_per_generation // train_params.num_games_in_parallel
-            for _ in trange(num_rounds, desc="- Self-play", leave=False):
-                # training_set += self.self_play(train_params, initial_state)
-                training_set += self.self_play_parallel(train_params, initial_state)
-
-            extended_training_set = self._exploit_symmetries(training_set)
-
-            # Train against the newly generated games
-            num_epochs, minibatch_size = train_params.num_epochs, train_params.minibatch_size
-            self.neural_net.save_training_data(extended_training_set)
-            self.neural_net.train(extended_training_set, num_epochs, minibatch_size)
-
-            self.neural_net.generation += 1
-            self.neural_net.save()
+        return AlphaZeroMcts(self.neural_net, **value_by_prop)
 
     def _exploit_symmetries(self, training_set: list[TrainingData]) -> list[TrainingData]:
         def all_sets(data: TrainingData) -> list[TrainingData]:
@@ -172,14 +184,3 @@ class AlphaZero:
             return (TrainingData(state, pol, data.outcome) for state, pol in symmetries)
 
         return [sym_data for training_data in training_set for sym_data in all_sets(training_data)]
-
-    def mcts_solver(self, num_mcts_sims: int | AZMctsParameters | None = None) -> AlphaZeroMctsSolver:
-        if num_mcts_sims is None:
-            value_by_prop = asdict(self.default_mcts_params)
-        elif isinstance(num_mcts_sims, int):
-            value_by_prop = asdict(self.default_mcts_params)
-            value_by_prop["num_mcts_sims"] = num_mcts_sims
-        else:
-            value_by_prop = asdict(num_mcts_sims)
-
-        return AlphaZeroMctsSolver(self.neural_net, **value_by_prop)
