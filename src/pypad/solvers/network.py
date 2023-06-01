@@ -40,6 +40,9 @@ class NeuralNetwork(Protocol):
     def train(self, training_set: list[TrainingData], minibatch_size: int) -> None:
         ...
 
+    def save_training_data(self, training_set: list[TrainingData]) -> None:
+        ...
+
     def save(self) -> None:
         ...
 

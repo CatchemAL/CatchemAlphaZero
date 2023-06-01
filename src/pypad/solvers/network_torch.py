@@ -1,3 +1,4 @@
+import pickle
 from pathlib import Path
 from typing import Self
 
@@ -8,6 +9,7 @@ import torch.nn.functional as F
 from numpy.typing import NDArray
 from torch.optim import Adam, Optimizer
 from torch.utils.data import DataLoader, TensorDataset
+from tqdm import trange
 
 from ..games import Game
 from ..states import State, TMove
@@ -91,20 +93,26 @@ class ResNetBlock(nn.Module):
 
 class PytorchNeuralNetwork:
     def __init__(
-        self, resnet: ResNet, optimizer: Optimizer, game: Game, generation: int, directory: Path
+        self,
+        resnet: ResNet,
+        optimizer: Optimizer,
+        game: Game,
+        generation: int,
+        directory: Path,
     ) -> None:
         self.resnet = resnet
         self.optimizer = optimizer
         self.game = game
         self.directory = directory
         self.generation = generation
+        self.device = next(resnet.parameters()).device.type
         self.action_size = game.config().action_size
 
     @torch.no_grad()
     def predict(self, state: State[TMove]) -> tuple[NDArray[np.float32], float]:
         # Convert to [player, opponent, unplayed]
         planes = state.to_numpy()
-        tensor = torch.tensor(planes).unsqueeze(0)
+        tensor = torch.tensor(planes, device=self.device).unsqueeze(0)
 
         predicted_policy, predicted_outcome = self.resnet(tensor)
         normalized_policy = torch.softmax(predicted_policy, axis=1).squeeze().cpu().numpy()
@@ -112,10 +120,11 @@ class PytorchNeuralNetwork:
         return normalized_policy, predicted_outcome.item()
 
     @torch.no_grad()
-    def predict_parallel(self, state: list[State]) -> tuple[NDArray[np.float32], NDArray[np.float32]]:
-        batch_states = torch.from_numpy(np.array([s.to_numpy() for s in state]))
+    def predict_parallel(self, states: list[State]) -> tuple[NDArray[np.float32], NDArray[np.float32]]:
+        encoded_states = np.array([s.to_numpy() for s in states], dtype=np.float32)
+        torch_states = torch.tensor(encoded_states, device=self.device)
 
-        predicted_policies, predicted_outcomes = self.resnet(batch_states)
+        predicted_policies, predicted_outcomes = self.resnet(torch_states)
         normalized_policies = torch.softmax(predicted_policies, axis=1).cpu().numpy()
 
         return normalized_policies, predicted_outcomes.squeeze().cpu().numpy()
@@ -123,45 +132,70 @@ class PytorchNeuralNetwork:
     def set_to_eval(self) -> None:
         self.resnet.eval()
 
-    def train(self, training_set: list[TrainingData], minibatch_size: int) -> None:
-        self.resnet.train()
+    def train(self, training_set: list[TrainingData], num_epochs: int, minibatch_size: int) -> None:
+        # Convert to numpy arrays for training
+        states_np = np.array([d.encoded_state for d in training_set], dtype=np.float32)
+        policies_np = np.array([d.policy for d in training_set], dtype=np.float32)
+        outcomes_np = np.array([d.outcome for d in training_set], dtype=np.float32).reshape(-1, 1)
 
-        states = torch.from_numpy(np.array([d.encoded_state for d in training_set]))
-        policies = torch.from_numpy(np.array([d.policy for d in training_set]))
-        outcomes = torch.tensor([d.outcome for d in training_set], dtype=torch.float32).reshape(-1, 1)
+        states = torch.tensor(states_np, device=self.device)
+        policies = torch.tensor(policies_np, device=self.device)
+        outcomes = torch.tensor(outcomes_np, device=self.device)
 
         data_set = TensorDataset(states, policies, outcomes)
         data_loader = DataLoader(data_set, batch_size=minibatch_size, shuffle=True)
 
-        for batch_states, batch_policies, batch_outcomes in data_loader:
-            predicted_policies, predicted_outcomes = self.resnet(batch_states)
+        self.resnet.train()
+        for _ in trange(num_epochs, desc=" - Training", leave=False):
+            for batch_states, batch_policies, batch_outcomes in data_loader:
+                predicted_policies, predicted_outcomes = self.resnet(batch_states)
 
-            policy_loss = F.cross_entropy(predicted_policies, batch_policies)
-            outcome_loss = F.mse_loss(predicted_outcomes, batch_outcomes)
-            total_loss = policy_loss + outcome_loss
+                policy_loss = F.cross_entropy(predicted_policies, batch_policies)
+                outcome_loss = F.mse_loss(predicted_outcomes, batch_outcomes)
+                total_loss = policy_loss + outcome_loss
 
-            self.optimizer.zero_grad()
-            total_loss.backward()
-            self.optimizer.step()
+                self.optimizer.zero_grad()
+                total_loss.backward()
+                self.optimizer.step()
+
+    def save_training_data(self, training_set: list[TrainingData]) -> None:
+        gen = self.generation
+        data_directory = self.directory / "training_data"
+        data_file = data_directory / f"{self.game.fullname}_gen{gen:03d}.pkl"
+
+        with open(data_file, "wb") as f:
+            pickle.dump(training_set, f)
+
+    def load_training_data(self, gen: int) -> list[TrainingData]:
+        data_directory = self.directory / "training_data"
+        data_file = data_directory / f"{self.game.fullname}_gen{gen:03d}.pkl"
+
+        with open(data_file, "rb") as f:
+            return pickle.load(f)
 
     def save(self) -> None:
         gen = self.generation
+        weights_directory = self.directory / "weights"
         network_weights = self.resnet.state_dict()
         optimizer_state = self.optimizer.state_dict()
-        weights_file = self.directory / f"weights_{self.game.fullname}_gen{gen:03d}.pt"
-        optimizer_file = self.directory / f"optimizer_state_{self.game.fullname}_gen{gen:03d}.pt"
+        weights_file = weights_directory / f"weights_{self.game.fullname}_gen{gen:03d}.pt"
+        optimizer_file = weights_directory / f"optimizer_state_{self.game.fullname}_gen{gen:03d}.pt"
         torch.save(network_weights, weights_file)
         torch.save(optimizer_state, optimizer_file)
 
     @classmethod
-    def create(cls, game: Game, directory: str | Path, load_latest: bool | int = True) -> Self:
-        directory = Path(directory)
+    def create(cls, game: Game, root_directory: str | Path, load_latest: bool | int = True) -> Self:
+        root_directory = Path(root_directory)
+        directory = root_directory / "weights"
         game_parameters = game.config()
         obs_shape = game_parameters.observation_shape
         action_size = game_parameters.action_size
 
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+
         net_params = AZNetworkParameters.defaults(game.fullname)
         resnet = ResNet(obs_shape, action_size, net_params.num_resnet_blocks, net_params.num_features)
+        resnet = resnet.to(device)
 
         learning_rate = net_params.optimizer_learn_rate
         l2_regularization = net_params.optimizer_weight_decay
@@ -187,4 +221,4 @@ class PytorchNeuralNetwork:
                 latest_optimiser_file = max(optim_files, key=lambda f: int(f.stem.split("gen")[1]))
                 optimizer.load_state_dict(torch.load(latest_optimiser_file))
 
-        return PytorchNeuralNetwork(resnet, optimizer, game, generation, directory)
+        return PytorchNeuralNetwork(resnet, optimizer, game, generation, root_directory)

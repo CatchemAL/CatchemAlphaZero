@@ -117,7 +117,7 @@ class AlphaZero:
 
         while in_progress_games:
             states = [pg.latest_state for pg in in_progress_games]
-            policies = solver.policies(states)
+            policies, _ = solver.policies(states)
 
             for i, pg in enumerate(in_progress_games):
                 state_before = pg.latest_state
@@ -148,18 +148,20 @@ class AlphaZero:
         train_params: AZTrainingParameters,
         initial_state: str | list[int] | None = None,
     ) -> None:
-        for _ in trange(train_params.num_generations, desc="Generations"):
+        for generation in trange(train_params.num_generations, desc="Generations"):
             training_set: list[TrainingData] = []
 
             num_rounds = train_params.games_per_generation // train_params.num_games_in_parallel
             for _ in trange(num_rounds, desc="- Self-play", leave=False):
-                training_set += self.self_play(train_params, initial_state)
-                # training_set += self.self_play_parallel(train_params, initial_state)
+                # training_set += self.self_play(train_params, initial_state)
+                training_set += self.self_play_parallel(train_params, initial_state)
 
             extended_training_set = self._exploit_symmetries(training_set)
 
-            for _ in trange(train_params.num_epochs, desc=" - Training", leave=False):
-                self.neural_net.train(extended_training_set, train_params.minibatch_size)
+            # Train against the newly generated games
+            num_epochs, minibatch_size = train_params.num_epochs, train_params.minibatch_size
+            self.neural_net.save_training_data(extended_training_set)
+            self.neural_net.train(extended_training_set, num_epochs, minibatch_size)
 
             self.neural_net.generation += 1
             self.neural_net.save()
