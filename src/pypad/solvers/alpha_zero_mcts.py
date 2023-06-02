@@ -1,74 +1,14 @@
 from __future__ import annotations
 
 from copy import copy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from math import sqrt
-from typing import Generic
+from typing import Generic, Self
 
 import numpy as np
 
 from ..states import State, TMove
 from .network import NeuralNetwork
-
-
-class Node(Generic[TMove]):
-    __slots__ = ["move", "parent", "played_by", "value_sum", "visit_count", "children", "prior"]
-
-    def __init__(
-        self,
-        state: State[TMove],
-        parent: Node[TMove] | None = None,
-        move: TMove | None = None,
-        prior: np.float32 = 1.0,
-    ):
-        self.move = move
-        self.parent = parent
-        self.played_by = state.played_by
-        self.prior = prior
-
-        self.value_sum: float = 0.0
-        self.visit_count: int = 0
-
-        self.children: list[Node[TMove]] = []
-
-    @property
-    def has_children(self) -> bool:
-        return bool(self.children)
-
-    @property
-    def q_value(self) -> float:
-        if self.visit_count == 0:
-            if self.parent is None:
-                return 0
-
-            first_play_urgency = 0.44
-            q_from_parent = 1 - self.parent.q_value
-            estimated_q_value = q_from_parent - first_play_urgency
-            return max(estimated_q_value, 0)
-
-        return (1 + self.value_sum / self.visit_count) / 2
-
-    def update(self, outcome: float) -> None:
-        self.visit_count += 1
-        self.value_sum += outcome
-
-    def backpropagate(self, outcome: float, discount_factor: float) -> None:
-        self.update(outcome)
-        if self.parent:
-            self.parent.backpropagate(-outcome * discount_factor, discount_factor)
-
-    def select_child(self) -> "Node[TMove]":
-        return max(self.children, key=lambda c: c.ucb())
-
-    def ucb(self) -> float:
-        c = 2  # todo AlphaZero sets to.... 2?
-        exploration_param = sqrt(self.parent.visit_count) / (1 + self.visit_count)
-        return self.q_value + c * self.prior * exploration_param
-
-    def __repr__(self):
-        if self.parent:
-            return f"Node(move={self.move}, Q={self.q_value:.1%}, prior={self.prior:.2%}, visit_count={self.visit_count}, UCB={self.ucb():.3})"
-        return f"Node(move={self.move}, Q={self.q_value:.1%}, prior={self.prior:.2%}, visit_count={self.visit_count})"
 
 
 @dataclass
@@ -109,7 +49,7 @@ class AlphaZeroMcts:
         return policy, values
 
     def search(self, root_state: State[TMove]) -> Node:
-        root: Node[TMove] = Node(root_state, None, None)
+        root: Node[TMove] = Node(root_state.played_by)
 
         for i in range(self.num_mcts_sims):
             node = root
@@ -141,7 +81,7 @@ class AlphaZeroMcts:
                     child_state = copy(state)
                     child_state.play_move(move)
                     prior = policy[move]
-                    child_node = Node(child_state, parent=node, move=move, prior=prior)
+                    child_node = Node(child_state.played_by, parent=node, move=move, prior=prior)
                     node.children.append(child_node)
 
                 # === Simulation ===
@@ -158,10 +98,10 @@ class AlphaZeroMcts:
 
         return root
 
-    def search_parallel(self, root_states: State[TMove]) -> list[Node]:
+    def search_parallel(self, root_states: list[State[TMove]]) -> list[Node]:
         action_size = self.neural_net.action_size
 
-        roots: list[Node[TMove]] = [Node(root_state, None, None) for root_state in root_states]
+        roots = [Node(root_state.played_by) for root_state in root_states]
 
         for i in range(self.num_mcts_sims):
             nodes = [root for root in roots]
@@ -206,7 +146,7 @@ class AlphaZeroMcts:
                         child_state = copy(states[idx])
                         child_state.play_move(move)
                         prior = policies[i, move]
-                        child_node = Node(child_state, parent=nodes[idx], move=move, prior=prior)
+                        child_node = Node(child_state.played_by, nodes[idx], move, prior)
                         nodes[idx].children.append(child_node)
 
                 # === Simulation ===
@@ -224,3 +164,54 @@ class AlphaZeroMcts:
                 node.backpropagate(values[i], self.discount_factor)
 
         return roots
+
+
+@dataclass(slots=True)
+class Node(Generic[TMove]):
+    played_by: int
+    parent: Node[TMove] | None = None
+    move: TMove | None = None
+    prior: np.float32 = 1.0
+
+    value_sum: float = field(default_factory=float, init=False)
+    visit_count: int = field(default_factory=int, init=False)
+    children: list[Node[TMove]] = field(default_factory=list, init=False)
+
+    @property
+    def has_children(self) -> bool:
+        return bool(self.children)
+
+    @property
+    def q_value(self) -> float:
+        if self.visit_count == 0:
+            if self.parent is None:
+                return 0
+
+            first_play_urgency = 0.44
+            q_from_parent = 1 - self.parent.q_value
+            estimated_q_value = q_from_parent - first_play_urgency
+            return max(estimated_q_value, 0)
+
+        return (1 + self.value_sum / self.visit_count) / 2
+
+    def update(self, outcome: float) -> None:
+        self.visit_count += 1
+        self.value_sum += outcome
+
+    def backpropagate(self, outcome: float, discount_factor: float) -> None:
+        self.update(outcome)
+        if self.parent:
+            self.parent.backpropagate(-outcome * discount_factor, discount_factor)
+
+    def select_child(self) -> Self:
+        return max(self.children, key=lambda c: c.ucb())
+
+    def ucb(self) -> float:
+        c = 2  # todo AlphaZero sets to.... 2?
+        exploration_param = sqrt(self.parent.visit_count) / (1 + self.visit_count)
+        return self.q_value + c * self.prior * exploration_param
+
+    def __repr__(self):
+        if self.parent:
+            return f"Node(move={self.move}, Q={self.q_value:.1%}, prior={self.prior:.2%}, visit_count={self.visit_count}, UCB={self.ucb():.3})"
+        return f"Node(move={self.move}, Q={self.q_value:.1%}, prior={self.prior:.2%}, visit_count={self.visit_count})"
