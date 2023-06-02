@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Generic, TypeVar
+from typing import Generic, Self, TypeVar
 
 import numpy as np
 
@@ -15,7 +15,11 @@ class TemperatureSchedule:
     temperature: float
 
     def get_temperature(self, move_count) -> float:
-        return self.temperature if move_count < self.cutoff else 1e-12
+        return self.temperature if move_count < self.cutoff else 0
+
+    @classmethod
+    def competitive(cls) -> Self:
+        return cls(0, 0)
 
 
 @dataclass
