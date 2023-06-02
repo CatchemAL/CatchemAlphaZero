@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Self
 
 from ..states.state import TemperatureSchedule
@@ -35,28 +35,64 @@ class AZMctsParameters:
 
 
 @dataclass
+class AZArenaParameters:
+    num_games: int = 400
+    num_mcts_sims: int = 60
+    required_win_ratio: float = 0.55
+    temperature_schedule: TemperatureSchedule = field(
+        default_factory=lambda: TemperatureSchedule(4, 1.25)
+    )
+
+    @classmethod
+    def defaults(cls, fullname: str) -> Self:
+        match fullname:
+            case "TicTacToe":
+                params = {
+                    "num_mcts_sims": 500,
+                    "dirichlet_epsilon": 0.25,
+                    "dirichlet_alpha": 0.9,
+                    "discount_factor": 0.99,
+                }
+
+                return cls(**params)
+            case "ConnectX_6x7":
+                params = {
+                    "num_mcts_sims": 600,
+                    "dirichlet_epsilon": 0.25,
+                    "dirichlet_alpha": 0.6,
+                    "discount_factor": 0.98,
+                }
+
+                return cls(**params)
+
+
+@dataclass
 class AZTrainingParameters:
     num_generations: int
     num_epochs: int
     games_per_generation: int
-    num_games_in_parallel: int
+    num_parallel: int
     minibatch_size: int
     temperature: TemperatureSchedule
     mcts_parameters: AZMctsParameters
+    arena_parameters: AZArenaParameters
 
     @classmethod
     def defaults(cls, fullname: str) -> Self:
         mcts_parameters = AZMctsParameters.defaults(fullname)
+        arena_parameters = AZArenaParameters()
+
         match fullname:
             case "TicTacToe":
                 params = {
                     "num_generations": 50,
                     "num_epochs": 5,
                     "games_per_generation": 100,
-                    "num_games_in_parallel": 50,
+                    "num_parallel": 50,
                     "minibatch_size": 64,
                     "temperature": TemperatureSchedule(4, 1.25),
                     "mcts_parameters": mcts_parameters,
+                    "arena_parameters": arena_parameters,
                 }
 
                 return cls(**params)
@@ -65,10 +101,11 @@ class AZTrainingParameters:
                     "num_generations": 50,
                     "num_epochs": 5,
                     "games_per_generation": 400,
-                    "num_games_in_parallel": 100,
+                    "num_parallel": 100,
                     "minibatch_size": 512,
                     "temperature": TemperatureSchedule(12, 1.2),
                     "mcts_parameters": mcts_parameters,
+                    "arena_parameters": arena_parameters,
                 }
 
                 return cls(**params)
