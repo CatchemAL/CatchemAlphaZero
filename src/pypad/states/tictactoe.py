@@ -51,7 +51,7 @@ class TicTacToeState(State[int]):
         is_ended = is_won or self.is_full
 
         is_in_progress = not is_ended
-        value = 1 if is_won else 0
+        value = 1.0 if is_won else 0.0
         legal_moves = [] if is_ended else self._possible_moves_unchecked()
         return Status(is_in_progress, self.played_by, value, legal_moves)
 
@@ -64,11 +64,11 @@ class TicTacToeState(State[int]):
     def select_move(self, policy: np.ndarray, temperature_schedule: TemperatureSchedule) -> int:
         temperature = temperature_schedule.get_temperature(self.num_moves)
         if temperature < 0.001:
-            return np.argmax(policy)
+            return int(np.argmax(policy))
 
         temperature_policy = policy ** (1 / temperature)
         temperature_policy /= temperature_policy.sum()
-        return np.random.choice(len(policy), p=temperature_policy)
+        return int(np.random.choice(len(policy), p=temperature_policy))
 
     def is_won(self) -> bool:
         rows = self.rows + 1
