@@ -10,6 +10,7 @@ __pycache__/
 .Python
 build/
 weights/
+runs/
 training_data/
 develop-eggs/
 data/
