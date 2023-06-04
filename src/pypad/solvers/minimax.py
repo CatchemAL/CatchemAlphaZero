@@ -22,7 +22,7 @@ class Solver:
 
         for move in state.possible_bitmoves():
             b = copy(state)
-            b.play_bitmove(move)
+            b.set_bitmove(move)
             score = -self.minimax(b, -beta, -alpha)
             alpha = max(alpha, score)
             if score >= beta:

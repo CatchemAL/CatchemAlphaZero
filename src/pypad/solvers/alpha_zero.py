@@ -122,8 +122,7 @@ class AlphaZero:
             state_before = state
             policy, _ = mcts.policy(state_before)
             move = state_before.select_move(policy, temperature_schedule)
-            state = copy(state_before)
-            state.play_move(move)
+            state = state_before.play_move(move)
             recorded_action = RecordedAction(state_before, policy, move, state)
             recorded_actions.append(recorded_action)
             status = state.status()
@@ -162,8 +161,7 @@ class AlphaZero:
                 state_before = pg.latest_state
                 policy = policies[i]
                 move = state_before.select_move(policy, temperature_schedule)
-                state = copy(state_before)
-                state.play_move(move)
+                state = state_before.play_move(move)
                 recorded_action = RecordedAction(state_before, policy, move, state)
                 pg.recorded_actions.append(recorded_action)
 
@@ -261,19 +259,23 @@ class Arena:
         self, player1: AlphaZero, player2: AlphaZero, games_to_play: int
     ) -> tuple[float, float, float]:
         initial_states: list[State] = [self.game.initial_state() for _ in range(games_to_play)]
-        states = list(initial_states)
+
+        active_states = [state for state in initial_states if state.status().is_in_progress]
+        finished_states: list[State] = []
 
         player, opponent = player1, player2
-        while states:
-            moves = player.select_moves(states, self.num_mcts_sims, self.temperature_schedule)
-            for state, move in zip(states, moves):
-                state.play_move(move)
+        while active_states:
+            moves = player.select_moves(active_states, self.num_mcts_sims, self.temperature_schedule)
+            for i, move in enumerate(moves):
+                active_states[i] = active_states[i].play_move(move)
 
             player, opponent = opponent, player
 
-            states = [state for state in states if state.status().is_in_progress]
+            statuses = [state.status().is_in_progress for state in active_states]
+            finished_states += [s for s, in_progress in zip(active_states, statuses) if not in_progress]
+            active_states = [s for s, in_progress in zip(active_states, statuses) if in_progress]
 
-        outcomes = [state.status().outcome(1) for state in initial_states]
+        outcomes = [state.status().outcome(1) for state in finished_states]
         num_wins = len([outcome for outcome in outcomes if int(outcome) == 1])
         num_draws = len([outcome for outcome in outcomes if int(outcome) == 0])
         num_losses = games_to_play - num_wins - num_draws
@@ -289,6 +291,15 @@ class Arena:
         writer.add_scalar(f"Arena/Total Draws", arena_result.num_draws, gen)
         writer.add_scalar(f"Arena/Total Losses", arena_result.num_losses, gen)
         writer.close()
+
+
+@dataclass
+class InitialStateGenerator:
+    initial_state: State
+    depth: int
+
+    def generate(self):
+        pass
 
 
 @dataclass(slots=True)

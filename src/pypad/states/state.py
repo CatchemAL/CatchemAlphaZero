@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Generic, Self, TypeVar, Self
-from numpy.typing import NDArray
+from typing import Generic, Self, TypeVar
 
 import numpy as np
 
@@ -28,7 +27,11 @@ class State(ABC, Generic[TMove]):
         ...
 
     @abstractmethod
-    def play_move(self, move: TMove) -> None:
+    def play_move(self, move: TMove) -> Self:
+        ...
+
+    @abstractmethod
+    def set_move(self, move: TMove) -> None:
         ...
 
     @abstractmethod
@@ -44,7 +47,7 @@ class State(ABC, Generic[TMove]):
         ...
 
     @abstractmethod
-    def to_feature(self) -> NDArray[np.float32]:
+    def to_feature(self) -> np.ndarray:
         ...
 
     @abstractmethod

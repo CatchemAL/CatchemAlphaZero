@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Self
 
 import numpy as np
 
@@ -14,7 +15,7 @@ MOVES = [1 << 2, 1 << 6, 1 << 10, 1 << 1, 1 << 5, 1 << 9, 1 << 0, 1 << 4, 1 << 8
 POWERS = np.array(MOVES).reshape(3, 3)
 
 
-@dataclass
+@dataclass(slots=True)
 class TicTacToeState(State[int]):
     bitboard_util: BitboardUtil
     mask: int
@@ -55,7 +56,12 @@ class TicTacToeState(State[int]):
         legal_moves = [] if is_ended else self._possible_moves_unchecked()
         return Status(is_in_progress, self.played_by, value, legal_moves)
 
-    def play_move(self, move: int) -> None:
+    def play_move(self, move: int) -> Self:
+        state = self.__copy__()
+        state.set_move(move)
+        return state
+
+    def set_move(self, move: int) -> None:
         bitmove = MOVES[move]
         self.position ^= self.mask
         self.mask |= bitmove
@@ -149,7 +155,7 @@ class TicTacToeState(State[int]):
     @classmethod
     def create(cls, moves: str | list[int] | None = None) -> "TicTacToeState":
         mask = BitboardUtil(3 + 1, 3)
-        board = cls(mask, 0, 0, 0)
+        state = cls(mask, 0, 0, 0)
         moves = moves or []
 
         if isinstance(moves, str):
@@ -157,5 +163,5 @@ class TicTacToeState(State[int]):
             moves = [int(move) for move in move_array]
 
         for move in moves:
-            board.play_move(move)
-        return board
+            state.set_move(move)
+        return state

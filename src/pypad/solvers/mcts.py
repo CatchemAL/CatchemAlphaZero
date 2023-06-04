@@ -29,12 +29,12 @@ class MctsSolver(Solver):
             # Selection
             while not node.is_leaf_node and node.has_legal_moves:
                 node = node.select_child()
-                state.play_move(node.move)
+                state.set_move(node.move)
 
             # Expansion
             if node.unexplored_moves:
                 move = random.choice(node.unexplored_moves)
-                state.play_move(move)
+                state.set_move(move)
                 child_node = Node(state.status(), parent=node, move=move)
                 node.unexplored_moves.remove(move)
                 node.children.append(child_node)
@@ -43,7 +43,7 @@ class MctsSolver(Solver):
             # Simulation (aka rollout)
             while (status := state.status()).is_in_progress:
                 move = random.choice(status.legal_moves)
-                state.play_move(move)
+                state.set_move(move)
 
             # Backpropagate
             while node:
@@ -80,7 +80,7 @@ class Node(Generic[TMove]):
 
     def update(self, outcome: int) -> None:
         self.visit_count += 1
-        self.wins += (1 + outcome) / 2
+        self.wins += (1.0 + outcome) / 2.0
 
     def select_child(self) -> "Node[TMove]":
         return max(self.children, key=lambda c: c.ucb())

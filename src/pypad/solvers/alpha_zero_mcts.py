@@ -20,29 +20,29 @@ class AlphaZeroMcts:
     discount_factor: float
 
     def policy(self, state: State[TMove]) -> tuple[np.ndarray, float]:
-        root = self.search(state)
-        root_q = 1 - root.q_value
+        root_node = self.search(state)
+        root_q = 1 - root_node.q_value
         value = root_q * 2 - 1
 
         policy = np.zeros(self.neural_net.action_size, dtype=np.float32)
-        visit_counts = [node.visit_count for node in root.children]
-        moves = [node.move for node in root.children]
+        visit_counts = [node.visit_count for node in root_node.children]
+        moves = [child_node.move for child_node in root_node.children]
         policy[moves] = visit_counts
         policy /= policy.sum()
 
         return policy, value
 
     def policies(self, states: list[State[TMove]]) -> tuple[np.ndarray, np.ndarray]:
-        roots = self.search_parallel(states)
+        root_nodes = self.search_parallel(states)
 
-        root_q = np.array([1 - root.q_value for root in roots])
+        root_q = np.array([1 - root.q_value for root in root_nodes])
         values = root_q * 2 - 1
 
         shape = len(states), self.neural_net.action_size
         policy = np.zeros(shape, dtype=np.float32)
-        for i, root in enumerate(roots):
-            visit_counts = [node.visit_count for node in root.children]
-            moves = [node.move for node in root.children]
+        for i, root_node in enumerate(root_nodes):
+            visit_counts = [child_node.visit_count for child_node in root_node.children]
+            moves = [node.move for node in root_node.children]
             policy[i, moves] = visit_counts
 
         policy /= policy.sum(axis=1)[:, np.newaxis]
@@ -58,7 +58,7 @@ class AlphaZeroMcts:
             # === Selection ===
             while node.has_children:
                 node = node.select_child()
-                state.play_move(node.move)
+                state.set_move(node.move)
 
             status = state.status()
             if status.is_in_progress:
@@ -78,8 +78,7 @@ class AlphaZeroMcts:
 
                 # === Expansion ===
                 for move in legal_moves:
-                    child_state = copy(state)
-                    child_state.play_move(move)
+                    child_state = state.play_move(move)
                     prior = policy[move]
                     child_node = Node(child_state.played_by, parent=node, move=move, prior=prior)
                     node.children.append(child_node)
@@ -111,7 +110,7 @@ class AlphaZeroMcts:
             for j in range(len(nodes)):
                 while nodes[j].has_children:
                     nodes[j] = nodes[j].select_child()
-                    states[j].play_move(nodes[j].move)
+                    states[j].set_move(nodes[j].move)
 
             statuses = [state.status() for state in states]
             in_progress_idxs = [i for i, status in enumerate(statuses) if status.is_in_progress]
@@ -143,8 +142,7 @@ class AlphaZeroMcts:
                 for i, idx in enumerate(in_progress_idxs):
                     legal_moves = statuses[idx].legal_moves
                     for move in legal_moves:
-                        child_state = copy(states[idx])
-                        child_state.play_move(move)
+                        child_state = states[idx].play_move(move)
                         prior = policies[i, move]
                         child_node = Node(child_state.played_by, nodes[idx], move, prior)
                         nodes[idx].children.append(child_node)

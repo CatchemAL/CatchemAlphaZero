@@ -7,7 +7,7 @@ from ..bitboard_utils import BitboardUtil
 from .state import State, Status, TemperatureSchedule
 
 
-@dataclass
+@dataclass(slots=True)
 class ConnectXState(State[int]):
     bitboard_util: BitboardUtil
     mask: int
@@ -53,14 +53,20 @@ class ConnectXState(State[int]):
         top_col_bit = 1 << offset
         return (self.mask & top_col_bit) == 0
 
-    def play_move(self, col: int) -> None:
+    def play_move(self, col: int) -> Self:
+        state = self.__copy__()
+        state.set_move(col)
+        return state
+
+    def set_move(self, col: int) -> None:
         offset = self.bitboard_util.rows * col
         col_bit = 1 << offset
-        self.play_bitmove(self.mask + col_bit)
+        bitmove = self.mask + col_bit
+        self.set_bitmove(bitmove)
 
-    def play_bitmove(self, move: int) -> None:
+    def set_bitmove(self, bitmove: int) -> None:
         self.position ^= self.mask
-        self.mask |= move
+        self.mask |= bitmove
         self.num_moves += 1
 
     def select_move(self, policy: np.ndarray, temperature_schedule: TemperatureSchedule) -> int:
@@ -233,7 +239,7 @@ class ConnectXState(State[int]):
     @classmethod
     def create(cls, rows: int, cols: int, moves: str | list[int] | None = None) -> Self:
         util = BitboardUtil(rows + 1, cols)
-        board = cls(util, 0, 0, 0)
+        state = cls(util, 0, 0, 0)
         moves = moves or []
 
         if isinstance(moves, str):
@@ -241,5 +247,5 @@ class ConnectXState(State[int]):
             moves = [int(move) for move in move_array]
 
         for move in moves:
-            board.play_move(move - 1)
-        return board
+            state.set_move(move - 1)
+        return state

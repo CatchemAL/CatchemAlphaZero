@@ -46,7 +46,7 @@ def shallow_negamax(board: ConnectXState, alpha: int, beta: int, depth: int) -> 
 
     for move in board.possible_bitmoves():
         b = copy(board)
-        b.play_bitmove(move)
+        b.set_bitmove(move)
         score = -shallow_negamax(b, -beta, -alpha, depth - 1)
         alpha = max(alpha, score)
         if score >= beta:
