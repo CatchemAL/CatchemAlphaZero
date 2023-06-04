@@ -1,4 +1,6 @@
 class BitboardUtil:
+    __slots__ = ["rows", "cols", "num_slots", "BOTTOM_ROW", "BOARD_MASK"]
+
     def __init__(self, rows: int, cols: int):
         self.rows: int = rows
         self.cols: int = cols
