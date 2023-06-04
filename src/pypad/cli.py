@@ -6,7 +6,7 @@ import numpy as np
 
 from .games import GameType, get_game
 from .solvers import AgentType, Solver
-from .solvers.alpha_zero_parameters import AZTrainingParameters
+from .solvers.alpha_zero_parameters import AZArenaParameters, AZTrainingParameters
 
 
 def run(args: Namespace) -> None:
@@ -70,6 +70,24 @@ def learn(args: Namespace) -> None:
     print("done!")
 
 
+def hyper(args: Namespace) -> None:
+    from .solvers.alpha_zero import AlphaZero
+    from .solvers.network_torch import PytorchNeuralNetwork
+
+    generation: int = args.gen
+    game_type: GameType = args.game
+    game = get_game(game_type)
+
+    # Build alpha zero with latest weights
+    neural_net = PytorchNeuralNetwork.create(game, ".", generation)
+    alpha_zero = AlphaZero(neural_net)
+    arena_params = AZArenaParameters()
+
+    alpha_zero.explore_hyperparameters(generation, arena_params)
+
+    print("done!")
+
+
 def main() -> None:
     return
     run_kaggle()
@@ -112,6 +130,12 @@ def parse_args(args: Sequence[str]) -> None:
     run_parser.add_argument("--game", type=GameType.from_str, default=GameType.TICTACTOE)
     run_parser.add_argument("--init", type=str, default=None)
     run_parser.set_defaults(func=learn)
+
+    # Explores learning rate as a function of training hyperparameters
+    run_parser = subparsers.add_parser("hyper")
+    run_parser.add_argument("--game", type=GameType.from_str, default=GameType.TICTACTOE)
+    run_parser.add_argument("--gen", type=int, default=0)
+    run_parser.set_defaults(func=hyper)
 
     namespace = parser.parse_args(args)
     namespace.func(namespace)
