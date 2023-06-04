@@ -152,7 +152,7 @@ class PytorchNeuralNetwork:
         data_set = TensorDataset(states, policies, outcomes)
         data_loader = DataLoader(data_set, batch_size=minibatch_size, shuffle=True)
 
-        if False:
+        if gen == 0:
             with torch.no_grad():
                 batch_states, batch_policies, batch_outcomes = next(iter(data_loader))
                 grid = torchvision.utils.make_grid(batch_states)
