@@ -134,7 +134,13 @@ class PytorchNeuralNetwork:
     def set_to_eval(self) -> None:
         self.resnet.eval()
 
-    def train(self, training_set: list[TrainingData], num_epochs: int, minibatch_size: int) -> None:
+    def train(
+        self,
+        training_set: list[TrainingData],
+        num_epochs: int,
+        minibatch_size: int,
+        log_progress: bool = True,
+    ) -> None:
         # Initialize TensorBoard writer
         writer = SummaryWriter(log_dir=f"runs/{self.game.fullname}")
         gen = self.generation
@@ -152,7 +158,7 @@ class PytorchNeuralNetwork:
         data_set = TensorDataset(states, policies, outcomes)
         data_loader = DataLoader(data_set, batch_size=minibatch_size, shuffle=True)
 
-        if gen == 0:
+        if log_progress and gen == 0:
             with torch.no_grad():
                 batch_states, batch_policies, batch_outcomes = next(iter(data_loader))
                 grid = torchvision.utils.make_grid(batch_states)
@@ -181,9 +187,10 @@ class PytorchNeuralNetwork:
                 epoch_total_loss += total_loss.item()
 
         # Logging metrics to TensorBoard
-        writer.add_scalar(f"Generations/Total Loss", epoch_total_loss / num_points, gen)
-        writer.add_scalar(f"Generations/Policy Loss", epoch_policy_loss / num_points, gen)
-        writer.add_scalar(f"Generations/Outcome Loss", epoch_outcome_loss / num_points, gen)
+        if log_progress:
+            writer.add_scalar(f"Generations/Total Loss", epoch_total_loss / num_points, gen)
+            writer.add_scalar(f"Generations/Policy Loss", epoch_policy_loss / num_points, gen)
+            writer.add_scalar(f"Generations/Outcome Loss", epoch_outcome_loss / num_points, gen)
 
         self.resnet.train()
         for epoch in trange(num_epochs, desc=" - Training", leave=False):
@@ -213,9 +220,10 @@ class PytorchNeuralNetwork:
                 epoch_total_loss += total_loss.item()
 
             # Logging metrics to TensorBoard
-            writer.add_scalar(f"Gen{gen:02d}/Total Loss", epoch_total_loss, epoch + 1)
-            writer.add_scalar(f"Gen{gen:02d}/Policy Loss", epoch_policy_loss, epoch + 1)
-            writer.add_scalar(f"Gen{gen:02d}/Outcome Loss", epoch_outcome_loss, epoch + 1)
+            if log_progress:
+                writer.add_scalar(f"Gen{gen:02d}/Total Loss", epoch_total_loss, epoch + 1)
+                writer.add_scalar(f"Gen{gen:02d}/Policy Loss", epoch_policy_loss, epoch + 1)
+                writer.add_scalar(f"Gen{gen:02d}/Outcome Loss", epoch_outcome_loss, epoch + 1)
 
         # Close TensorBoard writer
         writer.close()

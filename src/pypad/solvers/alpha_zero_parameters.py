@@ -108,10 +108,10 @@ class AZTrainingParameters:
             case "ConnectX_6x7":
                 params = {
                     "num_generations": 50,
-                    "num_epochs": 5,
+                    "num_epochs": 4,
                     "games_per_generation": 400,
                     "num_parallel": 100,
-                    "minibatch_size": 512,
+                    "minibatch_size": 1024,
                     "random_start": random_start,
                     "temperature": TemperatureSchedule(12, 1.2),
                     "mcts_parameters": mcts_parameters,

@@ -37,10 +37,19 @@ class NeuralNetwork(Protocol):
     def set_to_eval(self) -> None:
         ...
 
-    def train(self, training_set: list[TrainingData], minibatch_size: int) -> None:
+    def train(
+        self,
+        training_set: list[TrainingData],
+        num_epochs: int,
+        minibatch_size: int,
+        log_progress: bool = True,
+    ) -> None:
         ...
 
     def save_training_data(self, training_set: list[TrainingData]) -> None:
+        ...
+
+    def load_training_data(self, int: generation) -> list[TrainingData]:
         ...
 
     def save(self) -> None:

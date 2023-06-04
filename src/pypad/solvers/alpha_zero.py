@@ -12,9 +12,12 @@ from ..solvers import Solver
 from ..states import State, TMove
 from ..states.state import TemperatureSchedule
 from .alpha_zero_mcts import AlphaZeroMcts
-from .alpha_zero_parameters import AZMctsParameters, AZTrainingParameters
+from .alpha_zero_parameters import AZMctsParameters, AZTrainingParameters, AZArenaParameters
 from .alpha_zero_training_models import ParallelGame, RecordedAction
 from .network import NeuralNetwork, TrainingData
+
+
+from itertools import product
 
 
 @dataclass
@@ -92,19 +95,17 @@ class AlphaZero:
             # Train against the newly generated games
             num_epochs, minibatch_size = training_params.num_epochs, training_params.minibatch_size
             self.neural_net.save_training_data(extended_training_set)
-            neural_net_before = deepcopy(self.neural_net)
-            self.neural_net.train(extended_training_set, num_epochs, minibatch_size)
-            self.neural_net.generation += 1
+            neural_net_after = deepcopy(self.neural_net)
+            neural_net_after.train(extended_training_set, num_epochs, minibatch_size)
+            neural_net_after.generation += 1
 
-            # Battle
-            if True:
-                arena = Arena(self.game, **training_params.arena_parameters.__dict__)
-                alpha_zero_before = AlphaZero(neural_net_before)
-                arena_result = arena.battle(alpha_zero_before, self)
-                if False and not arena_result.is_improvement:
-                    self.neural_net = neural_net_before
-
-            self.neural_net.save()
+            # Battle the newly trained net in the arena
+            arena = Arena(self.game, **training_params.arena_parameters.__dict__)
+            alpha_zero_after = AlphaZero(neural_net_after)
+            arena_result = arena.battle(self, alpha_zero_after)
+            if arena_result.is_improvement or not arena_result.must_improve:
+                self.neural_net = neural_net_after
+                self.neural_net.save()
 
     def self_play(
         self,
@@ -177,6 +178,31 @@ class AlphaZero:
 
         return training_set
 
+    def explore_hyperparameters(self, generation: int, arena_parameters: AZArenaParameters) -> None:
+        hps = {
+            "minibatch_size": [256, 512, 1024, 2048, 4096],
+            "num_epochs": [2, 4, 6, 8, 10, 12],
+            "learning_rate": [0.01, 0.001, 0.000_1, 0.000_01],
+        }
+
+        writer = SummaryWriter(log_dir=f"runs/{self.game.fullname}_Gen{generation:03d}")
+        arena = Arena(self.game, **arena_parameters.__dict__)
+        training_set = self.neural_net.load_training_data(generation)
+
+        for num_epochs, minibatch_size in product(hps["num_epochs"], hps["minibatch_size"]):
+            neural_net_after = deepcopy(self.neural_net)
+
+            # Train the network with the current hyperparameters
+            neural_net_after.train(training_set, num_epochs, minibatch_size, log_progress=False)
+            alpha_zero_after = AlphaZero(neural_net_after)
+            arena_result = arena.battle(self, alpha_zero_after, log_progress=False)
+
+            hparams = {"minibatch_size": minibatch_size, "num_epochs": num_epochs}
+            metrics = {"win_ratio": arena_result.win_ratio}
+            writer.add_hparams(hparams, metrics)
+
+        writer.close()
+
     def _get_mcts(self, num_mcts_sims: int | AZMctsParameters) -> AlphaZeroMcts:
         if isinstance(num_mcts_sims, int):
             default_params = AZMctsParameters.defaults(self.game.fullname)
@@ -235,7 +261,9 @@ class Arena:
         self.required_win_ratio = required_win_ratio
         self.temperature_schedule = temperature_schedule
 
-    def battle(self, current: AlphaZero, challenger: AlphaZero) -> ArenaResult:
+    def battle(
+        self, current: AlphaZero, challenger: AlphaZero, log_progress: bool = True
+    ) -> ArenaResult:
         games_to_play = self.num_games // 2
 
         num_wins1, num_draws1, num_losses1 = self.play_games(current, challenger, games_to_play)
@@ -249,7 +277,9 @@ class Arena:
             self.required_win_ratio,
         )
 
-        self._log_result(arena_result)
+        if log_progress:
+            self._log_result(arena_result)
+
         return arena_result
 
     def play_games(
@@ -306,6 +336,7 @@ class ArenaResult:
     num_draws: float
     num_losses: float
     required_ratio_cutoff: float
+    must_improve: bool = False
 
     @property
     def win_ratio(self) -> bool:
