@@ -5,6 +5,12 @@ from ..states.state import TemperatureSchedule
 
 
 @dataclass
+class RandomStart:
+    num_moves: int
+    probability: float
+
+
+@dataclass
 class AZMctsParameters:
     num_mcts_sims: int
     dirichlet_epsilon: float
@@ -73,6 +79,7 @@ class AZTrainingParameters:
     games_per_generation: int
     num_parallel: int
     minibatch_size: int
+    random_start: RandomStart
     temperature: TemperatureSchedule
     mcts_parameters: AZMctsParameters
     arena_parameters: AZArenaParameters
@@ -81,6 +88,7 @@ class AZTrainingParameters:
     def defaults(cls, fullname: str) -> Self:
         mcts_parameters = AZMctsParameters.defaults(fullname)
         arena_parameters = AZArenaParameters()
+        random_start = RandomStart(3, 0.3)
 
         match fullname:
             case "TicTacToe":
@@ -90,6 +98,7 @@ class AZTrainingParameters:
                     "games_per_generation": 100,
                     "num_parallel": 50,
                     "minibatch_size": 64,
+                    "random_start": random_start,
                     "temperature": TemperatureSchedule(4, 1.25),
                     "mcts_parameters": mcts_parameters,
                     "arena_parameters": arena_parameters,
@@ -103,6 +112,7 @@ class AZTrainingParameters:
                     "games_per_generation": 400,
                     "num_parallel": 100,
                     "minibatch_size": 512,
+                    "random_start": random_start,
                     "temperature": TemperatureSchedule(12, 1.2),
                     "mcts_parameters": mcts_parameters,
                     "arena_parameters": arena_parameters,
@@ -135,7 +145,7 @@ class AZNetworkParameters:
                 params = {
                     "num_resnet_blocks": 9,
                     "num_features": 128,
-                    "optimizer_learn_rate": 0.0001,
+                    "optimizer_learn_rate": 0.001,
                     "optimizer_weight_decay": 0.0001,
                 }
 

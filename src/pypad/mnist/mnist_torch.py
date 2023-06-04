@@ -67,7 +67,7 @@ def run_torch():
     optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=alpha)
 
     # default `log_dir` is "runs" - we'll be more specific here
-    tensorboard = SummaryWriter("runs")
+    tensorboard = SummaryWriter("runs/MNIST")
 
     with torch.no_grad():
         images, _ = next(iter(train_loader))

@@ -4,6 +4,7 @@ from copy import copy, deepcopy
 from dataclasses import asdict, dataclass
 
 import numpy as np
+from torch.utils.tensorboard import SummaryWriter
 from tqdm import trange
 
 from ..games import Game
@@ -14,7 +15,6 @@ from .alpha_zero_mcts import AlphaZeroMcts
 from .alpha_zero_parameters import AZMctsParameters, AZTrainingParameters
 from .alpha_zero_training_models import ParallelGame, RecordedAction
 from .network import NeuralNetwork, TrainingData
-from torch.utils.tensorboard import SummaryWriter
 
 
 @dataclass
@@ -198,6 +198,21 @@ class AlphaZero:
             return (TrainingData(state, pol, data.outcome) for state, pol in symmetries)
 
         return [sym_data for training_data in training_set for sym_data in all_sets(training_data)]
+
+    def _get_random_state(
+        self, num_moves: int, probability: float, initial_state: str | list[int] | None = None
+    ) -> State:
+        state: State = self.game.initial_state(initial_state)
+        if np.random.rand() > probability:
+            return state
+
+        for _ in range(num_moves):
+            status = state.status()
+            if status.is_in_progress:
+                move = np.random.choice(status.legal_moves)
+                state.play_move(move)
+
+        return state
 
 
 @dataclass(slots=True)
