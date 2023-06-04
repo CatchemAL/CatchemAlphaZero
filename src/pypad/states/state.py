@@ -43,6 +43,10 @@ class State(ABC, Generic[TMove]):
         ...
 
     @abstractmethod
+    def get_input_move(self) -> TMove:
+        ...
+
+    @abstractmethod
     def html(self, is_tiny_repr: bool = False) -> str:
         ...
 

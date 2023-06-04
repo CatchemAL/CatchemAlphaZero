@@ -102,6 +102,17 @@ class TicTacToeState(State[int]):
         g = np.sign(player_2 & POWERS)
         return np.asarray(r + 2 * g, dtype=np.int8)
 
+    def get_input_move(self) -> int:
+        while True:
+            response = input("Your turn to move. Please enter an integer: ")
+            try:
+                move = int(response)
+                if move in self.status().legal_moves:
+                    return move
+            except ValueError:
+                pass
+            print("Move was invalid. Please try again.")
+
     def html(self, policy: np.ndarray | None = None, is_tiny_repr: bool = False) -> str:
         from ..views.html import TicTacToeHtmlBuilder
 

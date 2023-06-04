@@ -170,6 +170,17 @@ class ConnectXState(State[int]):
         b = 1 - r - g
         return np.stack((r, g, b))
 
+    def get_input_move(self) -> int:
+        while True:
+            response = input("Your turn to move. Please enter an integer: ")
+            try:
+                move = int(response) - 1
+                if move in self.status().legal_moves:
+                    return move
+            except ValueError:
+                pass
+            print("Move was invalid. Please try again.")
+
     def html(self, policy: np.ndarray | None = None, is_tiny_repr: bool = False) -> str:
         from ..views.html import ConnectXHtmlBuilder
 
