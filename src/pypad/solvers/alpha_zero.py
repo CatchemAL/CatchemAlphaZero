@@ -144,12 +144,9 @@ class AlphaZero:
         temperature_schedule: TemperatureSchedule,
         initial_state: str | list[int] | None = None,
     ) -> list[TrainingData]:
-        init_state: State = self.game.initial_state(initial_state)
-        if not init_state.status().is_in_progress:
-            return []
-
-        parallel_games = [ParallelGame(init_state) for _ in range(num_parallel)]
-        in_progress_games = [pg for pg in parallel_games]
+        initial_states: list[State] = self.game.generate_states(2, num_parallel, initial_state)
+        parallel_games = [ParallelGame(s) for s in initial_states if s.status().is_in_progress]
+        in_progress_games = list(parallel_games)
 
         self.neural_net.set_to_eval()
 
@@ -258,7 +255,7 @@ class Arena:
     def play_games(
         self, player1: AlphaZero, player2: AlphaZero, games_to_play: int
     ) -> tuple[float, float, float]:
-        initial_states: list[State] = [self.game.initial_state() for _ in range(games_to_play)]
+        initial_states: list[State] = self.game.generate_states(2, games_to_play)
 
         active_states = [state for state in initial_states if state.status().is_in_progress]
         finished_states: list[State] = []

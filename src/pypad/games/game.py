@@ -69,6 +69,30 @@ class Game(ABC, Generic[TState]):
     def display_outcome(self, state: TState) -> None:
         ...
 
+    def generate_states(
+        self, depth: int, min_num_states: int = 1, start: str | list[int] | None = None
+    ) -> list[TState]:
+        state = self.initial_state(start)
+        states = Game._get_all_states(state, depth)
+        for _ in range(len(states), min_num_states):
+            states.append(self.initial_state(start))
+
+        return states
+
+    @staticmethod
+    def _get_all_states(state: TState, depth: int) -> list[TState]:
+        all_states = [state]
+        if depth == 0:
+            return all_states
+
+        legal_moves = state.status().legal_moves
+        for move in legal_moves:
+            new_state = state.play_move(move)
+            states_at_next_depth = Game._get_all_states(new_state, depth - 1)
+            all_states += states_at_next_depth
+
+        return all_states
+
 
 class ConnectX(Game[ConnectXState]):
     def __init__(self, rows: int = 6, cols: int = 7, view: View[ConnectXState] | None = None) -> None:
