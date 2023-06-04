@@ -130,7 +130,7 @@ class AlphaZero:
 
         training_set: list[TrainingData] = []
         for ph in recorded_actions:
-            encoded_state = ph.state_before.to_numpy()
+            encoded_state = ph.state_before.to_feature()
             perspective = ph.state_after.played_by
             outcome = status.outcome(perspective)
             training_data = TrainingData(encoded_state, ph.policy, outcome)
@@ -174,7 +174,7 @@ class AlphaZero:
             terminal_status = pg.latest_state.status()
             policy_history = pg.recorded_actions
             for ph in policy_history:
-                encoded_state = ph.state_before.to_numpy()
+                encoded_state = ph.state_before.to_feature()
                 perspective = ph.state_after.played_by
                 outcome = terminal_status.outcome(perspective)
                 training_data = TrainingData(encoded_state, ph.policy, outcome)

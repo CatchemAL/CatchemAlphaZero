@@ -151,7 +151,7 @@ class ConnectXState(State[int]):
         g = np.sign(player_2 & powers).astype(np.int8)
         return np.asarray(r + 2 * g)
 
-    def to_numpy(self) -> np.ndarray:
+    def to_feature(self) -> np.ndarray:
         rows, cols = self.shape
         sequence = np.arange((rows + 1) * cols, dtype=object)
         indices = np.flipud(sequence.reshape((cols, rows + 1)).T)
@@ -177,7 +177,7 @@ class ConnectXState(State[int]):
     def plot(self):
         from ..views.plot import plot_state
 
-        plot_state(self.to_numpy(), figsize=(4, 4))
+        plot_state(self.to_feature(), figsize=(4, 4))
 
     def _possible_moves_unchecked(self) -> Generator[int, None, None]:
         possible_moves_mask = self._possible_bitmoves_mask()

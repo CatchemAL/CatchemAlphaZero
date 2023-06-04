@@ -80,7 +80,7 @@ class TicTacToeState(State[int]):
 
         return False
 
-    def to_numpy(self) -> np.ndarray:
+    def to_feature(self) -> np.ndarray:
         player_to_move = self.position
         opponent_of_player_to_move = self.position ^ self.mask
         r = np.sign(player_to_move & POWERS, dtype=np.float32)
@@ -109,7 +109,7 @@ class TicTacToeState(State[int]):
     def plot(self):
         from ..views.plot import plot_state
 
-        plot_state(self.to_numpy(), figsize=(3, 2), linewidth=1.5)
+        plot_state(self.to_feature(), figsize=(3, 2), linewidth=1.5)
 
     def _possible_moves_unchecked(self) -> list[int]:
         possible_moves_mask = self._possible_bitmoves_mask()

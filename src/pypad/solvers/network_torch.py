@@ -6,6 +6,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torchvision
 from numpy.typing import NDArray
 from torch.optim import Adam, Optimizer
 from torch.utils.data import DataLoader, TensorDataset
@@ -112,7 +113,7 @@ class PytorchNeuralNetwork:
     @torch.no_grad()
     def predict(self, state: State[TMove]) -> tuple[NDArray[np.float32], float]:
         # Convert to [player, opponent, unplayed]
-        planes = state.to_numpy()
+        planes = state.to_feature()
         tensor = torch.tensor(planes, device=self.device).unsqueeze(0)
 
         predicted_policy, predicted_outcome = self.resnet(tensor)
@@ -122,7 +123,7 @@ class PytorchNeuralNetwork:
 
     @torch.no_grad()
     def predict_parallel(self, states: list[State]) -> tuple[NDArray[np.float32], NDArray[np.float32]]:
-        encoded_states = np.array([s.to_numpy() for s in states], dtype=np.float32)
+        encoded_states = np.array([s.to_feature() for s in states], dtype=np.float32)
         torch_states = torch.tensor(encoded_states, device=self.device)
 
         predicted_policies, predicted_outcomes = self.resnet(torch_states)
@@ -150,6 +151,15 @@ class PytorchNeuralNetwork:
 
         data_set = TensorDataset(states, policies, outcomes)
         data_loader = DataLoader(data_set, batch_size=minibatch_size, shuffle=True)
+
+        if False:
+            with torch.no_grad():
+                batch_states, batch_policies, batch_outcomes = next(iter(data_loader))
+                grid = torchvision.utils.make_grid(batch_states)
+                writer.add_image("images", grid, 0)
+                writer.add_graph(self.resnet, batch_states)
+
+            writer.close()
 
         self.resnet.eval()
         epoch_policy_loss = 0.0
