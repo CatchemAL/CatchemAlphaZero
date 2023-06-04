@@ -27,6 +27,30 @@
             ]
         },
         {
+            "name": "Hyper-parameters (TicTacToe)",
+            "type": "python",
+            "request": "launch",
+            "module": "src.pypad",
+            "justMyCode": true,
+            "args": [
+                "hyper",
+                "--game=tic",
+                "--gen=0",
+            ]
+        },
+        {
+            "name": "Hyper-parameters (ConnectX)",
+            "type": "python",
+            "request": "launch",
+            "module": "src.pypad",
+            "justMyCode": true,
+            "args": [
+                "hyper",
+                "--game=connectx",
+                "--gen=53",
+            ]
+        },
+        {
             "name": "MNIST Examples",
             "type": "python",
             "request": "launch",
