@@ -63,7 +63,7 @@ class AZArenaParameters:
                 return cls(**params)
             case "ConnectX_6x7":
                 params = {
-                    "num_mcts_sims": 600,
+                    "num_mcts_sims": 1600,
                     "dirichlet_epsilon": 0.25,
                     "dirichlet_alpha": 0.6,
                     "discount_factor": 0.98,
@@ -111,9 +111,9 @@ class AZTrainingParameters:
                     "num_epochs": 4,
                     "games_per_generation": 400,
                     "num_parallel": 100,
-                    "minibatch_size": 1024,
+                    "minibatch_size": 512,
                     "random_start": random_start,
-                    "temperature": TemperatureSchedule(12, 1.2),
+                    "temperature": TemperatureSchedule(10, 1.2),
                     "mcts_parameters": mcts_parameters,
                     "arena_parameters": arena_parameters,
                 }
