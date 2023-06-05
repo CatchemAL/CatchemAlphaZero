@@ -5,7 +5,7 @@ from dataclasses import asdict, dataclass
 
 import numpy as np
 from torch.utils.tensorboard import SummaryWriter
-from tqdm import trange
+from tqdm import trange, tqdm
 
 from ..games import Game
 from ..solvers import Solver
@@ -189,7 +189,8 @@ class AlphaZero:
         arena = Arena(self.game, **arena_parameters.__dict__)
         training_set = self.neural_net.load_training_data(generation)
 
-        for num_epochs, minibatch_size in product(hps["num_epochs"], hps["minibatch_size"]):
+        all_hyper_params = list(product(hps["num_epochs"], hps["minibatch_size"]))
+        for num_epochs, minibatch_size in trange(all_hyper_params, desc="Hyperparameter Search"):
             neural_net_after = deepcopy(self.neural_net)
 
             # Train the network with the current hyperparameters
