@@ -1,23 +1,21 @@
 from __future__ import annotations
 
-from copy import copy, deepcopy
+from copy import deepcopy
 from dataclasses import asdict, dataclass
+from itertools import product
 
 import numpy as np
 from torch.utils.tensorboard import SummaryWriter
-from tqdm import trange, tqdm
+from tqdm import trange
 
 from ..games import Game
 from ..solvers import Solver
 from ..states import State, TMove
 from ..states.state import TemperatureSchedule
 from .alpha_zero_mcts import AlphaZeroMcts
-from .alpha_zero_parameters import AZMctsParameters, AZTrainingParameters, AZArenaParameters
+from .alpha_zero_parameters import AZArenaParameters, AZMctsParameters, AZTrainingParameters
 from .alpha_zero_training_models import ParallelGame, RecordedAction
 from .network import NeuralNetwork, TrainingData
-
-
-from itertools import product
 
 
 @dataclass
@@ -93,9 +91,7 @@ class AlphaZero:
             extended_training_set = self._exploit_symmetries(training_set)
 
             broken = """
-            # Train against the newly generated games
-            num_epochs, minibatch_size = training_params.num_epochs, training_params.minibatch_size
-            self.neural_net.save_training_data(extended_training_set)
+
             neural_net_after = deepcopy(self.neural_net)
             neural_net_after.train(extended_training_set, num_epochs, minibatch_size)
             neural_net_after.generation += 1
