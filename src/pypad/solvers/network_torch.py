@@ -1,4 +1,5 @@
 import pickle
+from copy import deepcopy
 from pathlib import Path
 from typing import Self
 
@@ -170,6 +171,9 @@ class PytorchNeuralNetwork:
         # Record how well the previous generation predicts the next set of policies
         if log_progress:
             self.resnet.eval()
+            epoch_policy_loss = 0.0
+            epoch_outcome_loss = 0.0
+            epoch_total_loss = 0.0
             with torch.no_grad():
                 for batch_states, batch_policies, batch_outcomes in data_loader:
                     predicted_policies, predicted_outcomes = self.resnet(batch_states)
@@ -179,10 +183,15 @@ class PytorchNeuralNetwork:
                     outcome_loss = F.mse_loss(predicted_outcomes, batch_outcomes)
                     total_loss = policy_loss + outcome_loss
 
+                    # Store key metrics
+                    epoch_policy_loss += policy_loss.item()
+                    epoch_outcome_loss += outcome_loss.item()
+                    epoch_total_loss += total_loss.item()
+
             # Logging metrics to TensorBoard
-            writer.add_scalar(f"Generations/Total Loss", total_loss.item() / num_points, gen)
-            writer.add_scalar(f"Generations/Policy Loss", policy_loss.item() / num_points, gen)
-            writer.add_scalar(f"Generations/Outcome Loss", outcome_loss.item() / num_points, gen)
+            writer.add_scalar(f"Generations/Total Loss", epoch_total_loss / num_points, gen)
+            writer.add_scalar(f"Generations/Policy Loss", epoch_policy_loss / num_points, gen)
+            writer.add_scalar(f"Generations/Outcome Loss", epoch_outcome_loss / num_points, gen)
 
         self.resnet.train()
         for epoch in trange(num_epochs, desc=" - Training", leave=False):
@@ -244,6 +253,19 @@ class PytorchNeuralNetwork:
         optimizer_file = weights_directory / f"optimizer_state_{self.game.fullname}_gen{gen:03d}.pt"
         torch.save(network_weights, weights_file)
         torch.save(optimizer_state, optimizer_file)
+
+    def __deepcopy__(self, memo) -> Self:
+        # Deep copy the model and optimizer
+        resnet = deepcopy(self.resnet)
+        optimizer = type(self.optimizer)(resnet.parameters(), **self.optimizer.defaults)
+
+        resnet.load_state_dict(self.resnet.state_dict())
+        optimizer.load_state_dict(self.optimizer.state_dict())
+
+        game = deepcopy(self.game)
+        directory = deepcopy(self.directory)
+
+        return PytorchNeuralNetwork(resnet, optimizer, game, self.generation, directory)
 
     @classmethod
     def create(cls, game: Game, root_directory: str | Path, load_latest: bool | int = True) -> Self:
