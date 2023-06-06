@@ -92,6 +92,7 @@ class AlphaZero:
 
             extended_training_set = self._exploit_symmetries(training_set)
 
+            broken = """
             # Train against the newly generated games
             num_epochs, minibatch_size = training_params.num_epochs, training_params.minibatch_size
             self.neural_net.save_training_data(extended_training_set)
@@ -106,6 +107,24 @@ class AlphaZero:
             if arena_result.is_improvement or not arena_result.must_improve:
                 self.neural_net = neural_net_after
                 self.neural_net.save()
+            """
+
+            # Train against the newly generated games
+            num_epochs, minibatch_size = training_params.num_epochs, training_params.minibatch_size
+            self.neural_net.save_training_data(extended_training_set)
+            neural_net_before = deepcopy(self.neural_net)
+            self.neural_net.train(extended_training_set, num_epochs, minibatch_size)
+            self.neural_net.generation += 1
+
+            # Battle
+            if True:
+                arena = Arena(self.game, **training_params.arena_parameters.__dict__)
+                alpha_zero_before = AlphaZero(neural_net_before)
+                arena_result = arena.battle(alpha_zero_before, self)
+                if arena_result.must_improve and not arena_result.is_improvement:
+                    self.neural_net = neural_net_before
+
+            self.neural_net.save()
 
     def self_play(
         self,
