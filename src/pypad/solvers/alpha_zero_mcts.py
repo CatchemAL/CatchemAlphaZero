@@ -10,6 +10,8 @@ import numpy as np
 from ..states import State, TMove
 from .network import NeuralNetwork
 
+from ..states.state import Policy
+
 
 @dataclass
 class AlphaZeroMcts:
@@ -19,36 +21,48 @@ class AlphaZeroMcts:
     dirichlet_alpha: float
     discount_factor: float
 
-    def policy(self, state: State[TMove]) -> tuple[np.ndarray, float]:
+    def policy(self, state: State[TMove]) -> Policy[TMove]:
         root_node = self.search(state)
         root_q = 1 - root_node.q_value
         value = root_q * 2 - 1
 
-        policy = np.zeros(self.neural_net.action_size, dtype=np.float32)
-        visit_counts = [node.visit_count for node in root_node.children]
-        moves = [child_node.move for child_node in root_node.children]
-        policy[moves] = visit_counts
-        policy /= policy.sum()
+        moves = [node.move for node in root_node.children]
+        priors = np.array([node.visit_count for node in root_node.children], dtype=np.float32)
+        priors /= priors.sum()
 
-        return policy, value
+        policy_shape = self.neural_net.game.config().action_size
+        encoded_policy = np.zeros(policy_shape)
+        for move, prior in zip(moves, priors):
+            loc = state.policy_loc(move)
+            encoded_policy[loc] = prior
 
-    def policies(self, states: list[State[TMove]]) -> tuple[np.ndarray, np.ndarray]:
+        return Policy(moves, priors, encoded_policy, value)
+
+    def policies(self, states: list[State[TMove]]) -> list[Policy]:
         root_nodes = self.search_parallel(states)
 
-        root_q = np.array([1 - root.q_value for root in root_nodes])
-        values = root_q * 2 - 1
+        policies: list[Policy] = []
+        policy_shape = self.neural_net.game.config().action_size
 
-        shape = len(states), self.neural_net.action_size
-        policy = np.zeros(shape, dtype=np.float32)
-        for i, root_node in enumerate(root_nodes):
-            visit_counts = [child_node.visit_count for child_node in root_node.children]
+        for state, root_node in zip(states, root_nodes):
+            root_q = 1 - root_node.q_value
+            value = root_q * 2 - 1
+
             moves = [node.move for node in root_node.children]
-            policy[i, moves] = visit_counts
+            priors = np.array([node.visit_count for node in root_node.children], dtype=np.float32)
+            priors /= priors.sum()
 
-        policy /= policy.sum(axis=1)[:, np.newaxis]
-        return policy, values
+            encoded_policy = np.zeros(policy_shape)
+            for move, prior in zip(moves, priors):
+                loc = state.policy_loc(move)
+                encoded_policy[loc] = prior
 
-    def search(self, root_state: State[TMove]) -> Node:
+            policy = Policy(moves, priors, encoded_policy, value)
+            policies.append(policy)
+
+        return policies
+
+    def search(self, root_state: State[TMove]) -> Node[TMove]:
         root: Node[TMove] = Node(root_state.played_by)
 
         for i in range(self.num_mcts_sims):
@@ -70,16 +84,16 @@ class AlphaZeroMcts:
                     noise = np.random.dirichlet([alpha] * len(raw_policy))
                     raw_policy = (1 - ε) * raw_policy + ε * noise
 
-                # Filter out illegal moves
-                legal_moves = status.legal_moves
-                policy = raw_policy * 0
-                policy[legal_moves] = raw_policy[legal_moves]
-                policy /= np.sum(policy)
+                # Get the priors
+                priors = np.zeros(len(status.legal_moves))
+                for i, move in enumerate(status.legal_moves):
+                    loc = state.policy_loc(move)
+                    priors[i] = raw_policy[*loc]
+                priors /= np.sum(priors)
 
                 # === Expansion ===
-                for move in legal_moves:
+                for move, prior in zip(status.legal_moves, priors):
                     child_state = state.play_move(move)
-                    prior = policy[move]
                     child_node = Node(child_state.played_by, parent=node, move=move, prior=prior)
                     node.children.append(child_node)
 

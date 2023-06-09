@@ -20,6 +20,82 @@ BLACK_POWERS = 2**BLACK_IDXS
 PIECES = [chess.PAWN, chess.ROOK, chess.KNIGHT, chess.BISHOP, chess.QUEEN, chess.KING]
 
 
+class Planes:
+    QUEEN_N_1 = 0
+    QUEEN_NE_1 = 1
+    QUEEN_E_1 = 2
+    QUEEN_SE_1 = 3
+    QUEEN_S_1 = 4
+    QUEEN_SW_1 = 5
+    QUEEN_W_1 = 6
+    QUEEN_NW_1 = 7
+    QUEEN_N_2 = 8
+    QUEEN_NE_2 = 9
+    QUEEN_E_2 = 10
+    QUEEN_SE_2 = 11
+    QUEEN_S_2 = 12
+    QUEEN_SW_2 = 13
+    QUEEN_W_2 = 14
+    QUEEN_NW_2 = 15
+    QUEEN_N_3 = 16
+    QUEEN_NE_3 = 17
+    QUEEN_E_3 = 18
+    QUEEN_SE_3 = 19
+    QUEEN_S_3 = 20
+    QUEEN_SW_3 = 21
+    QUEEN_W_3 = 22
+    QUEEN_NW_3 = 23
+    QUEEN_N_4 = 24
+    QUEEN_NE_4 = 25
+    QUEEN_E_4 = 26
+    QUEEN_SE_4 = 27
+    QUEEN_S_4 = 28
+    QUEEN_SW_4 = 29
+    QUEEN_W_4 = 30
+    QUEEN_NW_4 = 31
+    QUEEN_N_5 = 32
+    QUEEN_NE_5 = 33
+    QUEEN_E_5 = 34
+    QUEEN_SE_5 = 35
+    QUEEN_S_5 = 36
+    QUEEN_SW_5 = 37
+    QUEEN_W_5 = 38
+    QUEEN_NW_5 = 39
+    QUEEN_N_6 = 40
+    QUEEN_NE_6 = 41
+    QUEEN_E_6 = 42
+    QUEEN_SE_6 = 43
+    QUEEN_S_6 = 44
+    QUEEN_SW_6 = 45
+    QUEEN_W_6 = 46
+    QUEEN_NW_6 = 47
+    QUEEN_N_7 = 48
+    QUEEN_NE_7 = 49
+    QUEEN_E_7 = 50
+    QUEEN_SE_7 = 51
+    QUEEN_S_7 = 52
+    QUEEN_SW_7 = 53
+    QUEEN_W_7 = 54
+    QUEEN_NW_7 = 55
+    KNIGHT_NNE = 56
+    KNIGHT_ENE = 57
+    KNIGHT_ESE = 58
+    KNIGHT_SSE = 59
+    KNIGHT_SSW = 60
+    KNIGHT_WSW = 61
+    KNIGHT_WNW = 62
+    KNIGHT_NNW = 63
+    PROMOTE_KNIGHT_NW = 64
+    PROMOTE_KNIGHT_N = 65
+    PROMOTE_KNIGHT_NE = 66
+    PROMOTE_ROOK_NW = 67
+    PROMOTE_ROOK_N = 68
+    PROMOTE_ROOK_NE = 69
+    PROMOTE_BISHOP_NW = 70
+    PROMOTE_BISHOP_N = 71
+    PROMOTE_BISHOP_NE = 72
+
+
 @dataclass(slots=True)
 class ChessState(State[Move]):
     board: Board
@@ -44,7 +120,7 @@ class ChessState(State[Move]):
         outcome = self.board.outcome()
         is_in_progress = outcome is None
 
-        value = 1.0 if outcome.termination == Termination.CHECKMATE else 0.0
+        value = 1.0 if outcome and (outcome.termination == Termination.CHECKMATE) else 0.0
         legal_moves = list(self.board.legal_moves) if is_in_progress else []
         return Status(is_in_progress, self.played_by, value, legal_moves)
 
@@ -56,14 +132,8 @@ class ChessState(State[Move]):
     def set_move(self, move: Move) -> None:
         self.board.push(move)
 
-    def select_move(self, policy: np.ndarray, temperature_schedule: TemperatureSchedule) -> int:
-        temperature = temperature_schedule.get_temperature(self.num_moves)
-        if temperature < 0.001:
-            return int(np.argmax(policy))
-
-        temperature_policy = policy ** (1 / temperature)
-        temperature_policy /= temperature_policy.sum()
-        return int(np.random.choice(len(policy), p=temperature_policy))
+    def policy_loc(self, move: Move) -> tuple[int, int, int]:
+        return move
 
     def to_feature(self) -> np.ndarray:
         PIECE_COUNT = 6

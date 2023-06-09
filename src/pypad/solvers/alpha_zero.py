@@ -11,7 +11,7 @@ from tqdm import trange
 from ..games import Game
 from ..solvers import Solver
 from ..states import State, TMove
-from ..states.state import TemperatureSchedule
+from ..states.state import TemperatureSchedule, Policy
 from .alpha_zero_mcts import AlphaZeroMcts
 from .alpha_zero_parameters import AZArenaParameters, AZMctsParameters, AZTrainingParameters
 from .alpha_zero_training_models import ParallelGame, RecordedAction
@@ -30,16 +30,14 @@ class AlphaZero:
     def as_solver(self, num_mcts_sims: int | AZMctsParameters) -> Solver:
         return AlphaZeroSolver(self, num_mcts_sims)
 
-    def policy(
-        self, state: State[TMove], num_mcts_sims: int | AZMctsParameters
-    ) -> tuple[np.ndarray, float]:
+    def policy(self, state: State[TMove], num_mcts_sims: int | AZMctsParameters) -> Policy:
         self.neural_net.set_to_eval()
         mcts = self._get_mcts(num_mcts_sims)
         return mcts.policy(state)
 
     def policies(
         self, states: list[State[TMove]], num_mcts_sims: int | AZMctsParameters
-    ) -> tuple[np.ndarray, np.ndarray]:
+    ) -> list[Policy]:
         self.neural_net.set_to_eval()
         mcts = self._get_mcts(num_mcts_sims)
         return mcts.policies(states)
@@ -56,8 +54,10 @@ class AlphaZero:
         temperature_schedule: TemperatureSchedule | None = None,
     ) -> TMove:
         schedule = temperature_schedule or TemperatureSchedule.competitive()
-        policy, _ = self.policy(state, num_mcts_sims)
-        return state.select_move(policy, schedule)
+        temperature = schedule.get_temperature(state.move_count)
+        policy = self.policy(state, num_mcts_sims)
+        move = policy.select_move(temperature)
+        return move
 
     def select_moves(
         self,
@@ -66,8 +66,10 @@ class AlphaZero:
         temperature_schedule: TemperatureSchedule | None = None,
     ) -> list[TMove]:
         schedule = temperature_schedule or TemperatureSchedule.competitive()
-        policies, _ = self.policies(states, num_mcts_sims)
-        return [state.select_move(policy, schedule) for state, policy in zip(states, policies)]
+        temperatures = [schedule.get_temperature(state.move_count) for state in states]
+        policies = self.policies(states, num_mcts_sims)
+        moves = [policy.select_move(temperature) for policy, temperature in zip(policies, temperatures)]
+        return moves
 
     def self_learn(
         self, training_params: AZTrainingParameters, initial_state: str | list[int] | None = None
@@ -80,7 +82,7 @@ class AlphaZero:
             training_set: list[TrainingData] = []
 
             for _ in trange(num_rounds, desc="- Self-play", leave=False):
-                # training_set += self.self_play(mcts, training_params.temperature, initial_state)
+                training_set += self.self_play(mcts, training_params.temperature, initial_state)
                 training_set += self.self_play_parallel(
                     mcts,
                     training_params.num_parallel,
@@ -136,10 +138,11 @@ class AlphaZero:
 
         while status.is_in_progress:
             state_before = state
-            policy, _ = mcts.policy(state_before)
-            move = state_before.select_move(policy, temperature_schedule)
+            policy = mcts.policy(state_before)
+            temperature = temperature_schedule.get_temperature(state_before.move_count)
+            move = policy.select_move(temperature)
             state = state_before.play_move(move)
-            recorded_action = RecordedAction(state_before, policy, move, state)
+            recorded_action = RecordedAction(state_before, policy.encoded_policy, move, state)
             recorded_actions.append(recorded_action)
             status = state.status()
 
@@ -168,14 +171,14 @@ class AlphaZero:
 
         while in_progress_games:
             states = [pg.latest_state for pg in in_progress_games]
-            policies, _ = solver.policies(states)
+            policies = solver.policies(states)
 
-            for i, pg in enumerate(in_progress_games):
+            for policy, pg in zip(policies, in_progress_games):
                 state_before = pg.latest_state
-                policy = policies[i]
-                move = state_before.select_move(policy, temperature_schedule)
+                temperature = temperature_schedule.get_temperature(state_before.move_count)
+                move = policy.select_move(temperature)
                 state = state_before.play_move(move)
-                recorded_action = RecordedAction(state_before, policy, move, state)
+                recorded_action = RecordedAction(state_before, policy.encoded_policy, move, state)
                 pg.recorded_actions.append(recorded_action)
 
             in_progress_games = [g for g in in_progress_games if g.latest_state.status().is_in_progress]

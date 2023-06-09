@@ -47,6 +47,10 @@ class TicTacToeState(State[int]):
         is_odd_num_moves = self.num_moves & 1
         return 2 - is_odd_num_moves
 
+    @property
+    def move_count(self) -> int:
+        return self.num_moves
+
     def status(self) -> Status[int]:
         is_won = self.is_won()
         is_ended = is_won or self.is_full
@@ -67,14 +71,8 @@ class TicTacToeState(State[int]):
         self.mask |= bitmove
         self.num_moves += 1
 
-    def select_move(self, policy: np.ndarray, temperature_schedule: TemperatureSchedule) -> int:
-        temperature = temperature_schedule.get_temperature(self.num_moves)
-        if temperature < 0.001:
-            return int(np.argmax(policy))
-
-        temperature_policy = policy ** (1 / temperature)
-        temperature_policy /= temperature_policy.sum()
-        return int(np.random.choice(len(policy), p=temperature_policy))
+    def policy_loc(self, move: int) -> tuple[int]:
+        return move
 
     def is_won(self) -> bool:
         rows = self.rows + 1

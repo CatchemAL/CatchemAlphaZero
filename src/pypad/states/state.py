@@ -11,10 +11,33 @@ TState = TypeVar("TState", bound="State[+TMove]")
 TState_co = TypeVar("TState_co", bound="State[+TMove]", covariant=True)
 
 
+@dataclass
+class Policy(Generic[TMove]):
+    moves: list[TMove]
+    priors: np.ndarray[np.float32]
+    encoded_policy: np.ndarray[np.float32]
+    value: float
+
+    def select_move(self, temperature: float) -> TMove:
+        if temperature <= 0.001:
+            idx = np.argmax(self.priors)
+        else:
+            temperature_policy = self.priors ** (1 / temperature)
+            temperature_policy /= temperature_policy.sum()
+            idx = np.random.choice(len(self.priors), p=temperature_policy)
+
+        return self.moves[idx]
+
+
 class State(ABC, Generic[TMove]):
     @property
     @abstractmethod
     def played_by(self) -> int:
+        ...
+
+    @property
+    @abstractmethod
+    def move_count(self) -> int:
         ...
 
     @property
@@ -35,11 +58,7 @@ class State(ABC, Generic[TMove]):
         ...
 
     @abstractmethod
-    def select_move(self, policy: np.ndarray, schedule: TemperatureSchedule) -> TMove:
-        ...
-
-    @abstractmethod
-    def is_won(self) -> bool:
+    def policy_loc(self, move: TMove) -> tuple[int, ...]:
         ...
 
     @abstractmethod
@@ -64,7 +83,7 @@ class TemperatureSchedule:
     cutoff: int
     temperature: float
 
-    def get_temperature(self, move_count) -> float:
+    def get_temperature(self, move_count: int) -> float:
         return self.temperature if move_count < self.cutoff else 0
 
     @classmethod
