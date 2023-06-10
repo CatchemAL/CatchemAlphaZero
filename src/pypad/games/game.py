@@ -119,7 +119,7 @@ class ConnectX(Game[ConnectXState]):
         NUM_PLANES = 3
 
         shape = self.shape
-        observation_shape = self.rows, self.cols, NUM_PLANES
+        observation_shape = NUM_PLANES, self.rows, self.cols
         action_size = self.cols
         return GameParameters(shape, observation_shape, action_size)
 
@@ -173,7 +173,7 @@ class TicTacToe(Game[TicTacToeState]):
         NUM_PLANES = 3
 
         shape = self.shape
-        observation_shape = self.ROWS, self.COLS, NUM_PLANES
+        observation_shape = NUM_PLANES, self.ROWS, self.COLS
         action_size = self.ROWS * self.COLS
         return GameParameters(shape, observation_shape, action_size)
 
@@ -208,15 +208,15 @@ class TicTacToe(Game[TicTacToeState]):
         self.view.display_outcome(state)
 
 
-class Chess:
-    pass
-
-
 def get_game(game_type: GameType) -> TicTacToe | ConnectX:
     match game_type:
         case GameType.TICTACTOE:
             return TicTacToe()
         case GameType.CONNECTX:
             return ConnectX()
+        case GameType.CHESS:
+            from .chess import Chess
+
+            return Chess()
         case _:
             raise ValueError(f"Invalid game type: {game_type}")
