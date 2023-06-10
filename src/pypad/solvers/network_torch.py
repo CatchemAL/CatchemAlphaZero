@@ -162,8 +162,9 @@ class PytorchNeuralNetwork:
             with torch.no_grad():
                 batch_states, batch_policies, batch_outcomes = next(iter(data_loader))
                 grid = torchvision.utils.make_grid(batch_states)
-                writer.add_image("images", grid, 0)
                 writer.add_graph(self.resnet, batch_states)
+                if batch_states.shape[1] == 3:
+                    writer.add_image("images", grid, 0)
 
             writer.close()
 
