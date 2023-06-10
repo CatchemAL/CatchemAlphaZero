@@ -33,7 +33,7 @@ class ResNet(nn.Module):
     ) -> None:
         super().__init__()
 
-        rows, cols, num_planes = observation_shape
+        num_planes, rows, cols = observation_shape
 
         # We start with a convolutional layer
         self.start_block = nn.Sequential(
@@ -109,7 +109,6 @@ class PytorchNeuralNetwork:
         self.directory = directory
         self.generation = generation
         self.device = next(resnet.parameters()).device.type
-        self.action_size = game.config().action_size
 
     @torch.no_grad()
     def predict(self, state: State[TMove]) -> tuple[NDArray[np.float32], float]:
@@ -118,7 +117,7 @@ class PytorchNeuralNetwork:
         tensor = torch.tensor(planes, device=self.device).unsqueeze(0)
 
         predicted_policy, predicted_outcome = self.resnet(tensor)
-        normalized_policy = torch.softmax(predicted_policy, axis=1).squeeze().cpu().numpy()
+        normalized_policy = F.softmax(predicted_policy.squeeze(), dim=0).cpu().numpy()
 
         return normalized_policy, predicted_outcome.item()
 

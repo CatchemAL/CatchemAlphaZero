@@ -87,7 +87,7 @@ class AlphaZeroMcts:
                 priors = np.zeros(len(status.legal_moves))
                 for i, move in enumerate(status.legal_moves):
                     loc = state.policy_loc(move)
-                    priors[i] = raw_policy[*loc]
+                    priors[i] = raw_policy[loc]
                 priors /= np.sum(priors)
 
                 # === Expansion ===
