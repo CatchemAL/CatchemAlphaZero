@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from pypad.games.chess import Chess, ChessState, ObsPlanes, Planes
+from pypad.games.chess import Chess, ChessState, ObsPlanes, ActionPlanes
 
 from . import chess_games
 

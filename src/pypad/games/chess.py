@@ -41,7 +41,7 @@ class ObsPlanes:
     EN_PASSANT_SQ = 18
 
 
-class Planes:
+class ActionPlanes:
     QUEEN_N_1 = 0
     QUEEN_NE_1 = 1
     QUEEN_E_1 = 2
