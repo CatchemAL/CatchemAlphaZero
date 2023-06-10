@@ -29,8 +29,8 @@ class AlphaZeroMcts:
         priors = np.array([node.visit_count for node in root_node.children], dtype=np.float32)
         priors /= priors.sum()
 
-        policy_shape = self.neural_net.game.config().action_size
-        encoded_policy = np.zeros(policy_shape)
+        policy_size = self.neural_net.game.config().action_size
+        encoded_policy = np.zeros(policy_size)
         for move, prior in zip(moves, priors):
             loc = state.policy_loc(move)
             encoded_policy[loc] = prior
@@ -92,8 +92,8 @@ class AlphaZeroMcts:
 
                 # === Expansion ===
                 for move, prior in zip(status.legal_moves, priors):
-                    child_state = state.play_move(move)
-                    child_node = Node(child_state.played_by, parent=node, move=move, prior=prior)
+                    child_played_by = 2 if state.played_by == 1 else 1
+                    child_node = Node(child_played_by, parent=node, move=move, prior=prior)
                     node.children.append(child_node)
 
                 # === Simulation ===
@@ -155,9 +155,9 @@ class AlphaZeroMcts:
                 for i, idx in enumerate(in_progress_idxs):
                     legal_moves = statuses[idx].legal_moves
                     for move in legal_moves:
-                        child_state = states[idx].play_move(move)
+                        child_played_by = 2 if states[idx].played_by == 1 else 1
                         prior = policies[i, move]
-                        child_node = Node(child_state.played_by, nodes[idx], move, prior)
+                        child_node = Node(child_played_by, nodes[idx], move, prior)
                         nodes[idx].children.append(child_node)
 
                 # === Simulation ===
@@ -198,9 +198,9 @@ class Node(Generic[TMove]):
             if self.parent is None:
                 return 0
 
-            first_play_urgency = 0.44
+            FIRST_PLAY_URGENCY = 0.1 # 0.44
             q_from_parent = 1 - self.parent.q_value
-            estimated_q_value = q_from_parent - first_play_urgency
+            estimated_q_value = q_from_parent - FIRST_PLAY_URGENCY
             return max(estimated_q_value, 0)
 
         return (1 + self.value_sum / self.visit_count) / 2
