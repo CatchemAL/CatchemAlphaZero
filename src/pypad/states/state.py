@@ -58,7 +58,7 @@ class State(ABC, Generic[TMove]):
         ...
 
     @abstractmethod
-    def policy_loc(self, move: TMove) -> tuple[int, ...]:
+    def policy_loc(self, move: TMove) -> int:
         ...
 
     @abstractmethod

@@ -71,7 +71,7 @@ class TicTacToeState(State[int]):
         self.mask |= bitmove
         self.num_moves += 1
 
-    def policy_loc(self, move: int) -> tuple[int]:
+    def policy_loc(self, move: int) -> int:
         return move
 
     def is_won(self) -> bool:
