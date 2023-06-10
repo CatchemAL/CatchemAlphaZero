@@ -36,6 +36,13 @@ class AZMctsParameters:
                     "dirichlet_alpha": 0.6,
                     "discount_factor": 0.98,
                 }
+            case "Chess":
+                params = {
+                    "num_mcts_sims": 800,
+                    "dirichlet_epsilon": 0.25,
+                    "dirichlet_alpha": 0.3,
+                    "discount_factor": 0.98,
+                }
 
                 return cls(**params)
 
@@ -117,7 +124,18 @@ class AZTrainingParameters:
                     "mcts_parameters": mcts_parameters,
                     "arena_parameters": arena_parameters,
                 }
-
+            case "Chess":
+                params = {
+                    "num_generations": 50,
+                    "num_epochs": 4,
+                    "games_per_generation": 400,
+                    "num_parallel": 100,
+                    "minibatch_size": 512,
+                    "random_start": random_start,
+                    "temperature": TemperatureSchedule(10, 1.2),
+                    "mcts_parameters": mcts_parameters,
+                    "arena_parameters": arena_parameters,
+                }
                 return cls(**params)
 
 
@@ -145,6 +163,14 @@ class AZNetworkParameters:
                 params = {
                     "num_resnet_blocks": 9,
                     "num_features": 128,
+                    "optimizer_learn_rate": 0.001,
+                    "optimizer_weight_decay": 0.0001,
+                }
+
+            case "Chess":
+                params = {
+                    "num_resnet_blocks": 19,
+                    "num_features": 256,
                     "optimizer_learn_rate": 0.001,
                     "optimizer_weight_decay": 0.0001,
                 }
