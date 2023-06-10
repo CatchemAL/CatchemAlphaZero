@@ -27,6 +27,17 @@
             ]
         },
         {
+            "name": "AlphaZero (Chess)",
+            "type": "python",
+            "request": "launch",
+            "module": "src.pypad",
+            "justMyCode": true,
+            "args": [
+                "learn",
+                "--game=chess",
+            ]
+        },
+        {
             "name": "Hyper-parameters (TicTacToe)",
             "type": "python",
             "request": "launch",
