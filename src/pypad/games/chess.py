@@ -6,18 +6,39 @@ import numpy as np
 from chess import Board, Move, Termination
 
 from ..kaggle_types import Configuration, Observation
-from ..states.state import State, Status, TemperatureSchedule
+from ..states.state import State, Status
 from ..views import View
 from .game import Game, GameParameters
-
 
 WHITE_IDXS = np.flipud(np.arange(64, dtype=np.uint64).reshape(8, 8))
 WHITE_POWERS = 2**WHITE_IDXS
 
-BLACK_IDXS = np.fliplr(np.arange(64, dtype=np.uint64).reshape(8, 8))
+BLACK_IDXS = np.rot90(WHITE_IDXS, 2)
 BLACK_POWERS = 2**BLACK_IDXS
 
-PIECES = [chess.PAWN, chess.ROOK, chess.KNIGHT, chess.BISHOP, chess.QUEEN, chess.KING]
+
+class ObsPlanes:
+    PIECES = [chess.PAWN, chess.ROOK, chess.KNIGHT, chess.BISHOP, chess.QUEEN, chess.KING]
+
+    PLAYER_PAWN = 0
+    PLAYER_ROOK = 1
+    PLAYER_KNIGHT = 2
+    PLAYER_BISHOP = 3
+    PLAYER_QUEEN = 4
+    PLAYER_KING = 5
+    OPP_PAWN = 6
+    OPP_ROOK = 7
+    OPP_KNIGHT = 8
+    OPP_BISHOP = 9
+    OPP_QUEEN = 10
+    OPP_KING = 11
+    TURN = 12
+    CAN_PLAYER_KINGSIDE = 13
+    CAN_PLAYER_QUEENSIDE = 14
+    CAN_OPP_KINGSIDE = 15
+    CAN_OPP_QUEENSIDE = 16
+    HALFMOVE_CLOCK = 17
+    EN_PASSANT_SQ = 18
 
 
 class Planes:
@@ -116,6 +137,10 @@ class ChessState(State[Move]):
     def played_by(self) -> int:
         return 1 + self.board.turn
 
+    @property
+    def move_count(self) -> int:
+        return len(self.board.move_stack)
+
     def status(self) -> Status[int]:
         outcome = self.board.outcome()
         is_in_progress = outcome is None
@@ -138,45 +163,47 @@ class ChessState(State[Move]):
     def to_feature(self) -> np.ndarray:
         PIECE_COUNT = 6
         COL = 1
-        COUNT = 1
         CASTLING = 2
         NO_PROG = 1
-        PLANES = 2 * PIECE_COUNT + COL + COUNT + 2 * CASTLING + NO_PROG
+        EN_PASSANT = 1
+        PLANES = 2 * PIECE_COUNT + COL + 2 * CASTLING + NO_PROG + EN_PASSANT
 
-        is_white_queen_castle = np.sign(self.board.castling_rights & chess.BB_A1)
-        is_white_king_castle = np.sign(self.board.castling_rights & chess.BB_H1)
-        is_black_queen_castle = np.sign(self.board.castling_rights & chess.BB_A8)
-        is_black_king_castle = np.sign(self.board.castling_rights & chess.BB_H8)
+        can_white_queen_castle = np.sign(self.board.castling_rights & chess.BB_A1)
+        can_white_king_castle = np.sign(self.board.castling_rights & chess.BB_H1)
+        can_black_queen_castle = np.sign(self.board.castling_rights & chess.BB_A8)
+        can_black_king_castle = np.sign(self.board.castling_rights & chess.BB_H8)
 
         if self.board.turn == chess.WHITE:
+            player_idxs = WHITE_IDXS
             player_powers = WHITE_POWERS
-            is_player_queenside = is_white_queen_castle
-            is_player_kingside = is_white_king_castle
-            is_opponent_queenside = is_black_queen_castle
-            is_opponent_kingside = is_black_king_castle
+            can_player_queenside = can_white_queen_castle
+            can_player_kingside = can_white_king_castle
+            can_opponent_queenside = can_black_queen_castle
+            can_opponent_kingside = can_black_king_castle
         else:
+            player_idxs = BLACK_IDXS
             player_powers = BLACK_POWERS
-            is_player_queenside = is_black_queen_castle
-            is_player_kingside = is_black_king_castle
-            is_opponent_queenside = is_white_queen_castle
-            is_opponent_kingside = is_white_king_castle
+            can_player_queenside = can_black_queen_castle
+            can_player_kingside = can_black_king_castle
+            can_opponent_queenside = can_white_queen_castle
+            can_opponent_kingside = can_white_king_castle
 
         feature = np.zeros((PLANES, 8, 8), dtype=np.float32)
-        for i, piece in enumerate(PIECES):
+        for i, piece in enumerate(ObsPlanes.PIECES):
             player_pieces = self.board.pieces_mask(piece, self.board.turn)
             feature[i, :, :] = np.sign(player_powers & player_pieces)
 
-        for i, piece in enumerate(PIECES):
+        for i, piece in enumerate(ObsPlanes.PIECES):
             opponent_pieces = self.board.pieces_mask(piece, not self.board.turn)
             feature[PIECE_COUNT + i, :, :] = np.sign(player_powers & opponent_pieces)
 
-        feature[12, :, :] = self.board.turn
-        feature[13, :, :] = len(self.board.move_stack)
-        feature[14, :, :] = is_player_queenside
-        feature[15, :, :] = is_player_kingside
-        feature[16, :, :] = is_opponent_queenside
-        feature[17, :, :] = is_opponent_kingside
-        feature[18, :, :] = self.board.halfmove_clock
+        feature[ObsPlanes.TURN, :, :] = self.board.turn
+        feature[ObsPlanes.CAN_PLAYER_KINGSIDE, :, :] = can_player_kingside
+        feature[ObsPlanes.CAN_PLAYER_QUEENSIDE, :, :] = can_player_queenside
+        feature[ObsPlanes.CAN_OPP_KINGSIDE, :, :] = can_opponent_kingside
+        feature[ObsPlanes.CAN_OPP_QUEENSIDE, :, :] = can_opponent_queenside
+        feature[ObsPlanes.HALFMOVE_CLOCK, :, :] = self.board.halfmove_clock
+        feature[ObsPlanes.EN_PASSANT_SQ, :, :] = self.board.ep_square == player_idxs
 
         return feature
 
@@ -205,10 +232,14 @@ class ChessState(State[Move]):
         return ChessState(board)
 
     @classmethod
-    def create(cls, fen: str | None = None) -> "ChessState":
+    def create(cls, fen: str | list[str] | None = None) -> "ChessState":
         board = Board()
         if fen:
-            board.set_fen(fen)
+            if isinstance(fen, str):
+                board.set_fen(fen)
+            elif isinstance(fen, list):
+                for san in fen:
+                    board.push_san(san)
 
         return ChessState(board)
 

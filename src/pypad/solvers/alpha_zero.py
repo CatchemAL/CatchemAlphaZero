@@ -11,7 +11,7 @@ from tqdm import trange
 from ..games import Game
 from ..solvers import Solver
 from ..states import State, TMove
-from ..states.state import TemperatureSchedule, Policy
+from ..states.state import Policy, TemperatureSchedule
 from .alpha_zero_mcts import AlphaZeroMcts
 from .alpha_zero_parameters import AZArenaParameters, AZMctsParameters, AZTrainingParameters
 from .alpha_zero_training_models import ParallelGame, RecordedAction

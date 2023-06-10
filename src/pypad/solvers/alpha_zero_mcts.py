@@ -8,9 +8,8 @@ from typing import Generic, Self
 import numpy as np
 
 from ..states import State, TMove
-from .network import NeuralNetwork
-
 from ..states.state import Policy
+from .network import NeuralNetwork
 
 
 @dataclass
