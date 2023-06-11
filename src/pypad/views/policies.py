@@ -5,6 +5,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from ..states import ConnectXState, State, TicTacToeState
+from ..states.state import Policy
 
 
 @dataclass
@@ -17,8 +18,11 @@ class PoliciedState:
 
 
 def show_tictactoe_policy(
-    self: TicTacToeState, policy: np.ndarray[np.float32], q_value: float, include_chart: bool = True
+    self: TicTacToeState, policy: Policy, include_chart: bool = True
 ) -> PoliciedState:
+    encoded_policy = policy.encoded_policy
+    q_value = policy.value
+
     if include_chart:
         _, ax = plt.subplots(figsize=(5, 2))
         ax.spines["top"].set_edgecolor("white")
@@ -28,18 +32,21 @@ def show_tictactoe_policy(
         ax.set_yticks([])
         ax.set_xlabel(f"v ∈ (-1, +1) = {q_value:.2}")
 
-        plt.bar(["a3", "b3", "c3", "a2", "b2", "c2", "a1", "b1", "c1"], policy, axes=ax)
+        plt.bar(["a3", "b3", "c3", "a2", "b2", "c2", "a1", "b1", "c1"], encoded_policy, axes=ax)
 
-    policy_grid = policy.reshape((self.rows, self.cols))
+    policy_grid = encoded_policy.reshape((self.rows, self.cols))
     return PoliciedState(self, policy_grid)
 
 
 def show_connectx_policy(
-    self: ConnectXState, policy: np.ndarray[np.float32], q_value: float, include_chart: bool = True
+    self: ConnectXState, policy: Policy, include_chart: bool = True
 ) -> PoliciedState:
+    encoded_policy = policy.encoded_policy
+    q_value = policy.value
+
     if include_chart:
         _, ax = plt.subplots(figsize=(4.34, 2))
-        plt.bar(range(1, self.cols + 1), policy, axes=ax)
+        plt.bar(range(1, self.cols + 1), encoded_policy, axes=ax)
 
         ax.spines["top"].set_edgecolor("white")
         ax.spines["right"].set_edgecolor("white")
@@ -49,7 +56,7 @@ def show_connectx_policy(
         ax.set_xticks([])
         ax.set_xlabel(f"v ∈ (-1, +1) = {q_value:.2}")
 
-    policy_grid = np.tile(policy, (self.rows, 1))
+    policy_grid = np.tile(encoded_policy, (self.rows, 1))
     return PoliciedState(self, policy_grid)
 
 
