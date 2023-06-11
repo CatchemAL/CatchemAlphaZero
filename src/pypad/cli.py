@@ -70,6 +70,29 @@ def learn(args: Namespace) -> None:
     print("done!")
 
 
+def supervised_learning(args: Namespace) -> None:
+    import chess
+
+    from .solvers.alpha_zero import AlphaZero
+    from .solvers.network_torch import PytorchNeuralNetwork
+    from .solvers.supervised_learning import SupervisedTrainer
+
+    init: str = args.init
+
+    game = get_game(GameType.CHESS)
+    training_params = AZTrainingParameters.defaults(game.fullname)
+
+    # Build alpha zero with latest weights
+    neural_net = PytorchNeuralNetwork.create(game, ".")
+
+    path = r".\stockfish\stockfish-windows-2022-x86-64-avx2.exe"
+    with chess.engine.SimpleEngine.popen_uci(path) as stockfish:
+        trainer = SupervisedTrainer(neural_net, stockfish)
+        training_data = trainer.train(training_params)
+
+    print("done!")
+
+
 def hyper(args: Namespace) -> None:
     from .solvers.alpha_zero import AlphaZero
     from .solvers.network_torch import PytorchNeuralNetwork
@@ -130,6 +153,11 @@ def parse_args(args: Sequence[str]) -> None:
     run_parser.add_argument("--game", type=GameType.from_str, default=GameType.TICTACTOE)
     run_parser.add_argument("--init", type=str, default=None)
     run_parser.set_defaults(func=learn)
+
+    # Trains a deep neural net via supervised learning
+    run_parser = subparsers.add_parser("super")
+    run_parser.add_argument("--init", type=str, default=None)
+    run_parser.set_defaults(func=supervised_learning)
 
     # Explores learning rate as a function of training hyperparameters
     run_parser = subparsers.add_parser("hyper")

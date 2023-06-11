@@ -20,7 +20,6 @@ from .alpha_zero_training_models import ParallelGame, RecordedAction
 from .network import NeuralNetwork, TrainingData
 
 
-@dataclass
 class AlphaZero:
     def __init__(self, neural_net: NeuralNetwork) -> None:
         self.neural_net = neural_net

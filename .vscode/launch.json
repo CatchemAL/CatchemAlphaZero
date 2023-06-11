@@ -38,6 +38,16 @@
             ]
         },
         {
+            "name": "Supervised (Chess)",
+            "type": "python",
+            "request": "launch",
+            "module": "src.pypad",
+            "justMyCode": true,
+            "args": [
+                "super",
+            ]
+        },
+        {
             "name": "Hyper-parameters (TicTacToe)",
             "type": "python",
             "request": "launch",
