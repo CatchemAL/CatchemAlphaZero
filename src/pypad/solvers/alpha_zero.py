@@ -6,6 +6,7 @@ from itertools import product
 from typing import cast
 
 import numpy as np
+import tqdm
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import trange
 
@@ -170,6 +171,7 @@ class AlphaZero:
 
         self.neural_net.set_to_eval()
 
+        progress_bar = tqdm.tqdm(total=float("inf"), unit=" -- count:", leave=False)
         while in_progress_games:
             states = [pg.latest_state for pg in in_progress_games]
             policies = solver.policies(states)
@@ -184,6 +186,8 @@ class AlphaZero:
                 pg.recorded_actions.append(recorded_action)
 
             in_progress_games = [g for g in in_progress_games if g.latest_state.status().is_in_progress]
+            progress_bar.update(1)
+        progress_bar.close()
 
         training_set: list[TrainingData] = []
         for pg in parallel_games:

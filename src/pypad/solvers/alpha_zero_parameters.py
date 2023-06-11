@@ -125,6 +125,9 @@ class AZTrainingParameters:
                     "mcts_parameters": mcts_parameters,
                     "arena_parameters": arena_parameters,
                 }
+
+                return cls(**params)
+
             case "Chess":
                 params = {
                     "num_generations": 50,

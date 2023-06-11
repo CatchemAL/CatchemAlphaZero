@@ -19,7 +19,7 @@ BLACK_POWERS = 2**BLACK_IDXS
 
 
 class ObsPlanes:
-    SHAPE = 19, 8, 8
+    SHAPE = 20, 8, 8
     PIECES = [chess.PAWN, chess.ROOK, chess.KNIGHT, chess.BISHOP, chess.QUEEN, chess.KING]
 
     PLAYER_PAWN = 0
@@ -41,6 +41,7 @@ class ObsPlanes:
     CAN_OPP_QUEENSIDE = 16
     HALFMOVE_CLOCK = 17
     EN_PASSANT_SQ = 18
+    IS_TWOFOLD = 19
 
 
 class ActionPlanes:
@@ -146,12 +147,20 @@ class ChessState(State[Move]):
         return len(self.board.move_stack)
 
     def status(self) -> Status[int]:
-        outcome = self.board.outcome()
-        is_in_progress = outcome is None
+        board = self.board
+        if self.board.is_checkmate():
+            return Status(False, self.played_by, 1.0, [])
 
-        value = 1.0 if outcome and (outcome.termination == Termination.CHECKMATE) else 0.0
-        legal_moves = list(self.board.legal_moves) if is_in_progress else []
-        return Status(is_in_progress, self.played_by, value, legal_moves)
+        if board.is_fifty_moves() or board.is_insufficient_material() or board.is_repetition():
+            return Status(False, self.played_by, 0.0, [])
+
+        if board.is_repetition():
+            return Status(False, self.played_by, 0.0, [])
+
+        # Stalemate
+        legal_moves = list(self.board.legal_moves)
+        has_legal_moves = bool(legal_moves)
+        return Status(has_legal_moves, self.played_by, 0.0, legal_moves)
 
     def play_move(self, move: Move) -> Self:
         new_board = self.board.copy()
@@ -248,8 +257,9 @@ class ChessState(State[Move]):
         CASTLING = 2
         NO_PROG = 1
         EN_PASSANT = 1
+        TWOFOLD = 1
 
-        PLANES = 2 * PIECE_COUNT + COL + 2 * CASTLING + NO_PROG + EN_PASSANT
+        PLANES = 2 * PIECE_COUNT + COL + 2 * CASTLING + NO_PROG + EN_PASSANT + TWOFOLD
 
         can_white_queen_castle = np.sign(self.board.castling_rights & chess.BB_A1)
         can_white_king_castle = np.sign(self.board.castling_rights & chess.BB_H1)
@@ -280,6 +290,8 @@ class ChessState(State[Move]):
             opponent_pieces = self.board.pieces_mask(piece, not self.board.turn)
             feature[PIECE_COUNT + i, :, :] = np.sign(player_powers & opponent_pieces)
 
+        is_twofold = self.board.is_repetition(2)
+
         feature[ObsPlanes.TURN, :, :] = self.board.turn
         feature[ObsPlanes.CAN_PLAYER_KINGSIDE, :, :] = can_player_kingside
         feature[ObsPlanes.CAN_PLAYER_QUEENSIDE, :, :] = can_player_queenside
@@ -287,6 +299,7 @@ class ChessState(State[Move]):
         feature[ObsPlanes.CAN_OPP_QUEENSIDE, :, :] = can_opponent_queenside
         feature[ObsPlanes.HALFMOVE_CLOCK, :, :] = self.board.halfmove_clock
         feature[ObsPlanes.EN_PASSANT_SQ, :, :] = self.board.ep_square == player_idxs
+        feature[ObsPlanes.IS_TWOFOLD, :, :] = is_twofold
 
         return feature
 
