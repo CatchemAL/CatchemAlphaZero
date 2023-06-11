@@ -1,7 +1,6 @@
+import math
 from dataclasses import dataclass
 from typing import Self
-
-import math
 
 import chess
 import numpy as np
