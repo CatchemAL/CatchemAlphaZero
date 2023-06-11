@@ -134,7 +134,7 @@ class AZTrainingParameters:
                     "num_epochs": 4,
                     "games_per_generation": 400,
                     "num_parallel": 100,
-                    "minibatch_size": 512,
+                    "minibatch_size": 1024,
                     "random_start": random_start,
                     "temperature": TemperatureSchedule(20, 1.2),
                     "mcts_parameters": mcts_parameters,
