@@ -27,8 +27,8 @@ class AZMctsParameters:
                     "dirichlet_alpha": 0.9,
                     "discount_factor": 0.99,
                 }
-
                 return cls(**params)
+
             case "ConnectX_6x7":
                 params = {
                     "num_mcts_sims": 600,
@@ -36,14 +36,15 @@ class AZMctsParameters:
                     "dirichlet_alpha": 0.6,
                     "discount_factor": 0.98,
                 }
+                return cls(**params)
+
             case "Chess":
                 params = {
                     "num_mcts_sims": 800,
                     "dirichlet_epsilon": 0.25,
                     "dirichlet_alpha": 0.3,
-                    "discount_factor": 0.98,
+                    "discount_factor": 0.99,
                 }
-
                 return cls(**params)
 
 
@@ -166,6 +167,8 @@ class AZNetworkParameters:
                     "optimizer_learn_rate": 0.001,
                     "optimizer_weight_decay": 0.0001,
                 }
+
+                return cls(**params)
 
             case "Chess":
                 params = {
