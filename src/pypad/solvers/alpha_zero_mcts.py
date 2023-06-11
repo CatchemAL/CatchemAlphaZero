@@ -48,15 +48,15 @@ class AlphaZeroMcts:
             value = root_q * 2 - 1
 
             moves = [node.move for node in root_node.children]
-            priors = np.array([node.visit_count for node in root_node.children], dtype=np.float32)
-            priors /= priors.sum()
+            new_priors = np.array([node.visit_count for node in root_node.children], dtype=np.float32)
+            new_priors /= new_priors.sum()
 
             encoded_policy = np.zeros(policy_shape)
-            for move, prior in zip(moves, priors):
+            for move, prior in zip(moves, new_priors):
                 loc = state.policy_loc(move)
                 encoded_policy[loc] = prior
 
-            policy = Policy(moves, priors, encoded_policy, value)
+            policy = Policy(moves, new_priors, encoded_policy, value)
             policies.append(policy)
 
         return policies
@@ -64,7 +64,7 @@ class AlphaZeroMcts:
     def search(self, root_state: State[TMove]) -> Node[TMove]:
         root: Node[TMove] = Node(root_state.played_by)
 
-        for i in range(self.num_mcts_sims):
+        for n in range(self.num_mcts_sims):
             node = root
             state = copy(root_state)
 
@@ -77,7 +77,7 @@ class AlphaZeroMcts:
             if status.is_in_progress:
                 raw_policy, value = self.neural_net.predict(state)
 
-                if i == 0:
+                if n == 0:
                     ε = self.dirichlet_epsilon
                     alpha = self.dirichlet_alpha
                     noise = np.random.dirichlet([alpha] * len(raw_policy))
@@ -111,11 +111,9 @@ class AlphaZeroMcts:
         return root
 
     def search_parallel(self, root_states: list[State[TMove]]) -> list[Node]:
-        action_size = self.neural_net.action_size
-
         roots = [Node(root_state.played_by) for root_state in root_states]
 
-        for i in range(self.num_mcts_sims):
+        for n in range(self.num_mcts_sims):
             nodes = [root for root in roots]
             states: list[State[TMove]] = [copy(root_state) for root_state in root_states]
 
@@ -134,29 +132,30 @@ class AlphaZeroMcts:
             if num_in_progress > 0:
                 in_progress_states = [states[idx] for idx in in_progress_idxs]
                 raw_policies, predicted_values = self.neural_net.predict_parallel(in_progress_states)
+                _, action_size = raw_policies.shape
 
-                if i == 0:
+                if n == 0:
                     ε = self.dirichlet_epsilon
                     alpha = self.dirichlet_alpha
                     noise = np.random.dirichlet([alpha] * action_size, (num_in_progress,))
-                    policies = (1 - ε) * raw_policies + ε * noise
-                else:
-                    policies = raw_policies.copy()
+                    raw_policies = (1 - ε) * raw_policies + ε * noise
 
-                # Filter out illegal moves
-                legal_moves_mask = np.zeros((num_in_progress, action_size), dtype=bool)
                 for i, idx in enumerate(in_progress_idxs):
-                    legal_moves = statuses[idx].legal_moves
-                    legal_moves_mask[i, legal_moves] = True
-                policies[~legal_moves_mask] = 0
-                policies /= policies.sum(axis=1)[:, np.newaxis]
+                    state = states[idx]
+                    status = statuses[idx]
+                    raw_policy = raw_policies[i]
+                    legal_moves = status.legal_moves
 
-                # === Expansion ===
-                for i, idx in enumerate(in_progress_idxs):
-                    legal_moves = statuses[idx].legal_moves
-                    for move in legal_moves:
-                        child_played_by = 2 if states[idx].played_by == 1 else 1
-                        prior = policies[i, move]
+                    # Get the priors
+                    priors = np.zeros(len(legal_moves))
+                    for j, move in enumerate(legal_moves):
+                        loc = state.policy_loc(move)
+                        priors[j] = raw_policy[loc]
+                    priors /= np.sum(priors)
+
+                    # === Expansion ===
+                    for move, prior in zip(legal_moves, priors):
+                        child_played_by = 2 if state.played_by == 1 else 1
                         child_node = Node(child_played_by, nodes[idx], move, prior)
                         nodes[idx].children.append(child_node)
 
@@ -198,7 +197,7 @@ class Node(Generic[TMove]):
             if self.parent is None:
                 return 0
 
-            FIRST_PLAY_URGENCY = 0.1 # 0.44
+            FIRST_PLAY_URGENCY = 0.1  # 0.44
             q_from_parent = 1 - self.parent.q_value
             estimated_q_value = q_from_parent - FIRST_PLAY_URGENCY
             return max(estimated_q_value, 0)
