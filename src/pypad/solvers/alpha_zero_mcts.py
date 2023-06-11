@@ -77,18 +77,18 @@ class AlphaZeroMcts:
             if status.is_in_progress:
                 raw_policy, value = self.neural_net.predict(state)
 
-                if n == 0:
-                    ε = self.dirichlet_epsilon
-                    alpha = self.dirichlet_alpha
-                    noise = np.random.dirichlet([alpha] * len(raw_policy))
-                    raw_policy = (1 - ε) * raw_policy + ε * noise
-
                 # Get the priors
                 priors = np.zeros(len(status.legal_moves))
                 for i, move in enumerate(status.legal_moves):
                     loc = state.policy_loc(move)
                     priors[i] = raw_policy[loc]
                 priors /= np.sum(priors)
+
+                if n == 0:
+                    ε = self.dirichlet_epsilon
+                    alpha = self.dirichlet_alpha
+                    noise = np.random.dirichlet([alpha] * len(priors))
+                    priors = (1 - ε) * priors + ε * noise
 
                 # === Expansion ===
                 for move, prior in zip(status.legal_moves, priors):
@@ -132,13 +132,6 @@ class AlphaZeroMcts:
             if num_in_progress > 0:
                 in_progress_states = [states[idx] for idx in in_progress_idxs]
                 raw_policies, predicted_values = self.neural_net.predict_parallel(in_progress_states)
-                _, action_size = raw_policies.shape
-
-                if n == 0:
-                    ε = self.dirichlet_epsilon
-                    alpha = self.dirichlet_alpha
-                    noise = np.random.dirichlet([alpha] * action_size, (num_in_progress,))
-                    raw_policies = (1 - ε) * raw_policies + ε * noise
 
                 for i, idx in enumerate(in_progress_idxs):
                     state = states[idx]
@@ -152,6 +145,12 @@ class AlphaZeroMcts:
                         loc = state.policy_loc(move)
                         priors[j] = raw_policy[loc]
                     priors /= np.sum(priors)
+
+                    if n == 0:
+                        ε = self.dirichlet_epsilon
+                        alpha = self.dirichlet_alpha
+                        noise = np.random.dirichlet([alpha] * len(priors))
+                        priors = (1 - ε) * priors + ε * noise
 
                     # === Expansion ===
                     for move, prior in zip(legal_moves, priors):
