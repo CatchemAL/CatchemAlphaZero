@@ -104,9 +104,9 @@ class AZTrainingParameters:
                     "num_epochs": 5,
                     "games_per_generation": 100,
                     "num_parallel": 50,
-                    "minibatch_size": 64,
+                    "minibatch_size": 128,
                     "random_start": random_start,
-                    "temperature": TemperatureSchedule(4, 1.25),
+                    "temperature": TemperatureSchedule(2, 1.25),
                     "mcts_parameters": mcts_parameters,
                     "arena_parameters": arena_parameters,
                 }
@@ -132,7 +132,7 @@ class AZTrainingParameters:
                     "num_parallel": 100,
                     "minibatch_size": 512,
                     "random_start": random_start,
-                    "temperature": TemperatureSchedule(10, 1.2),
+                    "temperature": TemperatureSchedule(20, 1.2),
                     "mcts_parameters": mcts_parameters,
                     "arena_parameters": arena_parameters,
                 }
