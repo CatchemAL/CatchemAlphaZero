@@ -19,6 +19,9 @@ from ..states import State, TMove
 from .alpha_zero_parameters import AZNetworkParameters
 from .network import TrainingData
 
+VALUE_FILTERS = 1
+POLICY_FILTERS = 2
+HEAD_KERNEL_SIZE = 1
 KERNEL_SIZE = 3
 PADDING = (KERNEL_SIZE - 1) // 2
 
@@ -47,20 +50,22 @@ class ResNet(nn.Module):
 
         # The value head derives a value, v, for the current position. v ∈ [-1, +1]
         self.value_head = nn.Sequential(
-            nn.Conv2d(num_features, 3, kernel_size=KERNEL_SIZE, padding=PADDING),
-            nn.BatchNorm2d(3),
+            nn.Conv2d(num_features, VALUE_FILTERS, kernel_size=HEAD_KERNEL_SIZE),
+            nn.BatchNorm2d(VALUE_FILTERS),
             nn.ReLU(inplace=True),
             nn.Flatten(),
-            nn.Linear(3 * rows * cols, 1),
+            nn.Linear(VALUE_FILTERS * rows * cols, num_features),
+            nn.ReLU(inplace=True),
+            nn.Linear(num_features, 1),
             nn.Tanh(),
         )
 
         self.policy_head = nn.Sequential(
-            nn.Conv2d(num_features, 32, kernel_size=KERNEL_SIZE, padding=PADDING),
-            nn.BatchNorm2d(32),
+            nn.Conv2d(num_features, POLICY_FILTERS, kernel_size=HEAD_KERNEL_SIZE),
+            nn.BatchNorm2d(POLICY_FILTERS),
             nn.ReLU(inplace=True),
             nn.Flatten(),
-            nn.Linear(32 * rows * cols, action_size),
+            nn.Linear(POLICY_FILTERS * rows * cols, action_size),
         )
 
     def forward(self, x):
