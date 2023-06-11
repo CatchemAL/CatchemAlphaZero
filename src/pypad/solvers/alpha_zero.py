@@ -82,7 +82,7 @@ class AlphaZero:
             training_set: list[TrainingData] = []
 
             for _ in trange(num_rounds, desc="- Self-play", leave=False):
-                training_set += self.self_play(mcts, training_params.temperature, initial_state)
+                # training_set += self.self_play(mcts, training_params.temperature, initial_state)
                 training_set += self.self_play_parallel(
                     mcts,
                     training_params.num_parallel,
