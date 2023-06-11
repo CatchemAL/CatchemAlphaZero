@@ -3,6 +3,7 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import asdict, dataclass
 from itertools import product
+from typing import cast
 
 import numpy as np
 from torch.utils.tensorboard import SummaryWriter
@@ -174,6 +175,7 @@ class AlphaZero:
             policies = solver.policies(states)
 
             for policy, pg in zip(policies, in_progress_games):
+                policy, pg = cast(Policy, policy), cast(ParallelGame, pg)
                 state_before = pg.latest_state
                 temperature = temperature_schedule.get_temperature(state_before.move_count)
                 move = policy.select_move(temperature)
