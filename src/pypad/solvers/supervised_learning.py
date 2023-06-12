@@ -1,4 +1,5 @@
 import math
+import random
 
 import numpy as np
 from chess import Move
@@ -35,16 +36,27 @@ class SupervisedTrainer:
         return training_data
 
     def generate_training_data(self, min_num_points: int):
+        BLUNDER_PROBABILITY = 0.1
+
         training_set: list[TrainingData] = []
         while len(training_set) < min_num_points:
             state: ChessState = self.neural_net.game.initial_state()
-            while state.status().is_in_progress:
+            status = state.status()
+            while status.is_in_progress:
                 training_data, top_moves = self.to_data_point(state)
                 training_set.append(training_data)
 
-                idx = np.random.choice(len(top_moves))
-                top_move = top_moves[idx]
-                state.set_move(top_move)
+                if random.random() < BLUNDER_PROBABILITY:
+                    legal_moves = status.legal_moves
+                    idx = np.random.choice(len(legal_moves))
+                    move = legal_moves[idx]
+                    state.set_move(move)
+                else:
+                    idx = np.random.choice(len(top_moves))
+                    top_move = top_moves[idx]
+                    state.set_move(top_move)
+
+                status = state.status()
 
         return training_set
 
@@ -77,7 +89,7 @@ class SupervisedTrainer:
         score = top_scores.max()
         outcome = SupervisedTrainer.centipawns_to_q_value(score)
 
-        NOISE = 0.0025
+        NOISE = 0.002
         policy = self.build_policy(state, top_moves, top_scores, NOISE)
         training_data = TrainingData(encoded_state, policy, outcome)
         return training_data, top_moves
