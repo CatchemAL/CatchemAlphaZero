@@ -1,5 +1,5 @@
-from enum import IntEnum, Enum
 import math
+from enum import Enum, IntEnum
 
 
 class ObsPlanes(IntEnum):
