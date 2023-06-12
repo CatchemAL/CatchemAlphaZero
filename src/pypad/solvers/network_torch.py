@@ -181,10 +181,10 @@ class PytorchNeuralNetwork:
             epoch_total_loss = 0.0
             with torch.no_grad():
                 for batch_states, batch_policies, batch_outcomes in data_loader:
-                    predicted_policies, predicted_outcomes = self.resnet(batch_states)
+                    predicted_logits, predicted_outcomes = self.resnet(batch_states)
 
                     # Compute loss
-                    policy_loss = F.cross_entropy(predicted_policies, batch_policies)
+                    policy_loss = F.cross_entropy(predicted_logits, batch_policies)
                     outcome_loss = F.mse_loss(predicted_outcomes, batch_outcomes)
                     total_loss = policy_loss + outcome_loss
 
@@ -209,10 +209,10 @@ class PytorchNeuralNetwork:
                 self.optimizer.zero_grad()
 
                 # Feed forwards
-                predicted_policies, predicted_outcomes = self.resnet(batch_states)
+                predicted_logits, predicted_outcomes = self.resnet(batch_states)
 
                 # Compute loss
-                policy_loss = F.cross_entropy(predicted_policies, batch_policies)
+                policy_loss = F.cross_entropy(predicted_logits, batch_policies)
                 outcome_loss = F.mse_loss(predicted_outcomes, batch_outcomes)
                 total_loss = policy_loss + outcome_loss
 
