@@ -13,8 +13,8 @@ TState_co = TypeVar("TState_co", bound="State[+TMove]", covariant=True)
 
 @dataclass
 class Policy(Generic[TMove]):
-    moves: list[TMove]
-    priors: np.ndarray[np.float32]
+    moves: list[TMove] | None
+    priors: np.ndarray[np.float32] | None
     encoded_policy: np.ndarray[np.float32]
     value: float
 

@@ -43,10 +43,10 @@ class AlphaZero:
         mcts = self._get_mcts(num_mcts_sims)
         return mcts.policies(states)
 
-    def raw_policy(self, state: State[TMove]) -> tuple[np.ndarray, float]:
+    def raw_policy(self, state: State[TMove]) -> Policy:
         self.neural_net.set_to_eval()
-        policy, value = self.neural_net.predict(state)
-        return policy, value
+        encoded_policy, value = self.neural_net.predict(state)
+        return Policy(None, None, encoded_policy, value)
 
     def select_move(
         self,
