@@ -2,7 +2,7 @@ import math
 
 import numpy as np
 from chess import Move
-from chess.engine import Limit, Score, SimpleEngine
+from chess.engine import Limit, PovScore, Score, SimpleEngine
 from tqdm import trange
 
 from ..games.chess import Chess, ChessState
@@ -48,16 +48,16 @@ class SupervisedTrainer:
 
         return training_set
 
-    def build_policy(self, state: ChessState, top_moves: list[Move], noise: float) -> np.ndarray:
+    def build_policy(
+        self, state: ChessState, top_moves: list[Move], top_scores: np.ndarray, noise: float
+    ) -> np.ndarray:
         action_size = self.neural_net.game.config().action_size
         encoded_policy = np.zeros(action_size, dtype=np.float32)
 
-        prior = 1
-        decay = 0.8
-        for move in top_moves:
+        priors = SupervisedTrainer.policy_weights(top_scores)
+        for move, prior in zip(top_moves, priors):
             loc = state.policy_loc(move)
             encoded_policy[loc] = prior
-            prior *= decay
 
         for move in state.status().legal_moves:
             loc = state.policy_loc(move)
@@ -67,28 +67,39 @@ class SupervisedTrainer:
         return encoded_policy
 
     def to_data_point(self, state: ChessState) -> tuple[TrainingData, list[Move]]:
-        time_limit = Limit(time=0.01)
-
-        infos = self.engine.analyse(state.board, time_limit, multipv=5)
-        top_moves = [info["pv"][0] for info in infos]
         encoded_state = state.to_feature()
-        score = infos[0]["score"]
 
-        if score.relative.is_mate():
-            outcome = 1.0
-        else:
-            cp = score.relative.score()
-            outcome = SupervisedTrainer.centipawn_to_q_value(cp)
+        time_limit = Limit(time=0.01)
+        infos = self.engine.analyse(state.board, time_limit, multipv=5)
 
-        policy = self.build_policy(state, top_moves, 0.5)
+        top_moves = [info["pv"][0] for info in infos]
+        top_scores = np.array([SupervisedTrainer.score_to_centipawns(info["score"]) for info in infos])
+        score = top_scores.max()
+        outcome = SupervisedTrainer.centipawns_to_q_value(score)
+
+        NOISE = 0.0025
+        policy = self.build_policy(state, top_moves, top_scores, NOISE)
         training_data = TrainingData(encoded_state, policy, outcome)
         return training_data, top_moves
 
     @staticmethod
-    def centipawn_to_q_value(cp: int) -> float:
+    def score_to_centipawns(score: PovScore):
+        if score.is_mate():
+            value = 100_000 - (100 * np.abs(score.relative.moves))
+            return np.sign(score.relative.moves) * value
+        return score.relative.score()
+
+    @staticmethod
+    def policy_weights(scores: np.ndarray) -> np.ndarray:
+        drops = (scores.max() - scores) / 100.0
+        policies = 0.1**drops
+        return policies
+
+    @staticmethod
+    def centipawns_to_q_value(cp: int) -> float:
         return math.atan(cp / 111.714640912) / 1.5620688421
 
     @staticmethod
-    def q_value_to_centipawn(q: float) -> int:
+    def q_value_to_centipawns(q: float) -> int:
         cp = 111.714640912 * math.tan(1.5620688421 * q)
         return round(cp)
