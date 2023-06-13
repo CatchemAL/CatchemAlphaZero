@@ -25,18 +25,19 @@ class SupervisedTrainer:
             extended_training_set = self._exploit_symmetries(training_data)
 
             # Train against the newly generated games
-            if i <= 10 or i % 10 == 0:
-                self.neural_net.save_training_data(extended_training_set)
             self.neural_net.train(extended_training_set, num_epochs, minibatch_size)
             self.neural_net.generation += 1
-            self.neural_net.save()
+
+            if i % 10 == 0:
+                self.neural_net.save_training_data(extended_training_set)
+                self.neural_net.save()
 
     def _exploit_symmetries(self, training_data) -> list[TrainingData]:
         # todo
         return training_data
 
     def generate_training_data(self, min_num_points: int):
-        BLUNDER_PROBABILITY = 0.1
+        BLUNDER_PROBABILITY = 0.2
 
         training_set: list[TrainingData] = []
         while len(training_set) < min_num_points:
@@ -89,7 +90,7 @@ class SupervisedTrainer:
         score = top_scores.max()
         outcome = SupervisedTrainer.centipawns_to_q_value(score)
 
-        NOISE = 0.002
+        NOISE = 0.001
         policy = self.build_policy(state, top_moves, top_scores, NOISE)
         training_data = TrainingData(encoded_state, policy, outcome)
         return training_data, top_moves
@@ -104,7 +105,7 @@ class SupervisedTrainer:
     @staticmethod
     def policy_weights(scores: np.ndarray) -> np.ndarray:
         drops = (scores.max() - scores) / 100.0
-        policies = 0.1**drops
+        policies = 0.15**drops
         return policies
 
     @staticmethod
