@@ -2,6 +2,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
+def create_checkered_array(n: int) -> np.ndarray:
+    arr = np.ones((n, n), dtype=int)
+    arr[1::2, ::2] = 0
+    arr[::2, 1::2] = 0
+    return arr
+
+
+def checker_pattern_color(i, j):
+    is_white = (i + j) % 2 == 0
+    return "#FFFFFF" if is_white else "#000000"
+
+
 def plot_state(planes: np.ndarray, figsize: tuple[int, int], linewidth: float = 1) -> None:
     _, rows, cols = planes.shape
     _, ax = plt.subplots(figsize=figsize)
@@ -23,9 +35,30 @@ def plot_state(planes: np.ndarray, figsize: tuple[int, int], linewidth: float = 
     ax.set_title("Player   =   Red\nOpponent = Green", loc="right", fontname="Monospace", fontsize=9)
 
 
-def checker_pattern_color(i, j):
-    is_white = (i + j) % 2 == 0
-    return "#FFFFFF" if is_white else "#000000"
+def plot_chess_slice(
+    planes: np.ndarray, slice: int, figsize: tuple[int, int], linewidth: float = 2.0
+) -> None:
+    _, rows, cols = planes.shape
+    plane = planes[slice, :, :]
+
+    plane += 0.1 * create_checkered_array(rows)
+    _, ax = plt.subplots(figsize=figsize)
+
+    cmap = plt.get_cmap("inferno")
+    _ = ax.imshow(plane, cmap=cmap, vmin=0, vmax=1.1)
+
+    ax.set_xticks(np.arange(-0.5, rows, 1), minor=True)
+    ax.set_yticks(np.arange(-0.5, cols, 1), minor=True)
+    ax.grid(which="minor", color="white", linestyle="-", linewidth=linewidth)
+
+    ax.spines["top"].set_edgecolor("white")
+    ax.spines["right"].set_edgecolor("white")
+    ax.spines["bottom"].set_edgecolor("white")
+    ax.spines["left"].set_edgecolor("white")
+
+    ax.tick_params(axis="both", which="both", bottom=False, left=False)
+    ax.set_xticks([])
+    ax.set_yticks([])
 
 
 def heatmap_color(value: float) -> str:

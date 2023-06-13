@@ -218,8 +218,11 @@ class ChessState(State[Move]):
     def html(self, policy: np.ndarray | None = None, is_tiny_repr: bool = False) -> str:
         ...
 
-    def plot(self):
-        ...
+    def plot(self, observation_plane: ObsPlanes) -> None:
+        from ..views.plot import plot_chess_slice
+
+        input_feature = self.to_feature()
+        plot_chess_slice(input_feature, observation_plane, figsize=(3, 3))
 
     def __copy__(self) -> "ChessState":
         board = self.board.copy()
