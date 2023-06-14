@@ -130,7 +130,7 @@ class AZTrainingParameters:
 
             case "Chess":
                 params = {
-                    "num_generations": 50,
+                    "num_generations": 500,
                     "num_epochs": 4,
                     "games_per_generation": 400,
                     "num_parallel": 100,
@@ -177,7 +177,7 @@ class AZNetworkParameters:
                 params = {
                     "num_resnet_blocks": 19,
                     "num_features": 256,
-                    "optimizer_learn_rate": 0.001,
+                    "optimizer_learn_rate": 0.00025,
                     "optimizer_weight_decay": 0.0001,
                 }
 
