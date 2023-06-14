@@ -1,5 +1,6 @@
 import math
 from enum import Enum, IntEnum
+from typing import Self
 
 
 class ObsPlanes(IntEnum):
@@ -29,8 +30,12 @@ class ObsPlanes(IntEnum):
         return 20, 8, 8
 
     @classmethod
-    def get(cls, label: str) -> int:
+    def get(cls, label: str) -> Self:
         return cls.__members__[label.upper()].value
+
+    @classmethod
+    def labels(cls) -> list[str]:
+        return list(cls.__members__.keys())
 
 
 class ActionPlanes(IntEnum):
@@ -117,8 +122,12 @@ class ActionPlanes(IntEnum):
         return math.prod(cls.shape())
 
     @classmethod
-    def get(cls, label: str) -> int:
+    def get(cls, label: str) -> Self:
         return cls.__members__[label.upper()].value
+
+    @classmethod
+    def labels(cls) -> list[str]:
+        return list(cls.__members__.keys())
 
 
 class KeyGames(Enum):
@@ -706,5 +715,9 @@ class KeyGames(Enum):
     WHITE_CASLTED_BLACK_NOT_YET_SANS = ["e4", "e5", "Bc4", "Bc5", "Nf3", "Ne7", "O-O", "f6", "Ng5", "a6"]
 
     @classmethod
-    def get(cls, label: str) -> list[str]:
+    def get(cls, label: str) -> Self:
         return cls.__members__[label.upper()].value
+
+    @classmethod
+    def labels(cls) -> list[str]:
+        return list(cls.__members__.keys())
