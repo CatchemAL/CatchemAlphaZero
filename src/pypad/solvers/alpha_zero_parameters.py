@@ -131,7 +131,7 @@ class AZTrainingParameters:
             case "Chess":
                 params = {
                     "num_generations": 500,
-                    "num_epochs": 4,
+                    "num_epochs": 3,
                     "games_per_generation": 400,
                     "num_parallel": 100,
                     "minibatch_size": 1024,
