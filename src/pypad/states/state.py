@@ -17,6 +17,7 @@ class Policy(Generic[TMove]):
     priors: np.ndarray[np.float32] | None
     encoded_policy: np.ndarray[np.float32]
     value: float
+    node: "Node" | None = None
 
     def select_move(self, temperature: float) -> TMove:
         if temperature <= 0.001:

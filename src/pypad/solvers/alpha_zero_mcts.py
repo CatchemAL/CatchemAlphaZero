@@ -20,8 +20,8 @@ class AlphaZeroMcts:
     dirichlet_alpha: float
     discount_factor: float
 
-    def policy(self, state: State[TMove]) -> Policy[TMove]:
-        root_node = self.search(state)
+    def policy(self, state: State[TMove], root_node: Node[TMove] | None = None) -> Policy[TMove]:
+        root_node = self.search(state, root_node)
         root_q = 1 - root_node.q_value
         value = root_q * 2 - 1
 
@@ -35,10 +35,12 @@ class AlphaZeroMcts:
             loc = state.policy_loc(move)
             encoded_policy[loc] = prior
 
-        return Policy(moves, priors, encoded_policy, value)
+        return Policy(moves, priors, encoded_policy, value, root_node)
 
-    def policies(self, states: list[State[TMove]]) -> list[Policy]:
-        root_nodes = self.search_parallel(states)
+    def policies(
+        self, states: list[State[TMove]], root_nodes: list[Node[TMove]] | None = None
+    ) -> list[Policy]:
+        root_nodes = self.search_parallel(states, root_nodes)
 
         policies: list[Policy] = []
         policy_shape = self.neural_net.game.config().action_size
@@ -56,13 +58,23 @@ class AlphaZeroMcts:
                 loc = state.policy_loc(move)
                 encoded_policy[loc] = prior
 
-            policy = Policy(moves, new_priors, encoded_policy, value)
+            policy = Policy(moves, new_priors, encoded_policy, value, root_node)
             policies.append(policy)
 
         return policies
 
-    def search(self, root_state: State[TMove]) -> Node[TMove]:
-        root: Node[TMove] = Node(root_state.played_by)
+    def search(self, root_state: State[TMove], root_node: Node[TMove] | None = None) -> Node[TMove]:
+        root: Node[TMove] = root_node or Node(root_state.played_by)
+
+        if root_node:
+            # Add Dirchlet noise to the children if they are present
+            ε = self.dirichlet_epsilon
+            alpha = self.dirichlet_alpha
+            noise = np.random.dirichlet([alpha] * len(root.children))
+            for i, child_node in enumerate(root.children):
+                child_node.prior = (1 - ε) * child_node.prior + ε * noise[i]
+
+            root.parent = None  # free memory
 
         for n in range(self.num_mcts_sims):
             node = root
@@ -84,7 +96,7 @@ class AlphaZeroMcts:
                     priors[i] = raw_policy[loc]
                 priors /= np.sum(priors)
 
-                if n == 0:
+                if n == 0 and root_node is None:
                     ε = self.dirichlet_epsilon
                     alpha = self.dirichlet_alpha
                     noise = np.random.dirichlet([alpha] * len(priors))
@@ -110,8 +122,20 @@ class AlphaZeroMcts:
 
         return root
 
-    def search_parallel(self, root_states: list[State[TMove]]) -> list[Node]:
-        roots = [Node(root_state.played_by) for root_state in root_states]
+    def search_parallel(
+        self, root_states: list[State[TMove]], root_nodes: list[Node[TMove]] | None = None
+    ) -> list[Node]:
+        roots = root_nodes or [Node(root_state.played_by) for root_state in root_states]
+        if root_nodes:
+            for root in roots:
+                # Add Dirchlet noise to the children if they are present
+                ε = self.dirichlet_epsilon
+                alpha = self.dirichlet_alpha
+                noise = np.random.dirichlet([alpha] * len(root.children))
+                for i, child_node in enumerate(root.children):
+                    child_node.prior = (1 - ε) * child_node.prior + ε * noise[i]
+
+                root.parent = None  # free memory
 
         for n in range(self.num_mcts_sims):
             nodes = [root for root in roots]
@@ -146,7 +170,7 @@ class AlphaZeroMcts:
                         priors[j] = raw_policy[loc]
                     priors /= np.sum(priors)
 
-                    if n == 0:
+                    if n == 0 and root_nodes is None:
                         ε = self.dirichlet_epsilon
                         alpha = self.dirichlet_alpha
                         noise = np.random.dirichlet([alpha] * len(priors))

@@ -14,7 +14,7 @@ from ..games import Game
 from ..solvers import Solver
 from ..states import State, TMove
 from ..states.state import Policy, TemperatureSchedule
-from .alpha_zero_mcts import AlphaZeroMcts
+from .alpha_zero_mcts import AlphaZeroMcts, Node
 from .alpha_zero_parameters import AZArenaParameters, AZMctsParameters, AZTrainingParameters
 from .alpha_zero_training_models import ParallelGame, RecordedAction
 from .network import NeuralNetwork, TrainingData
@@ -131,6 +131,7 @@ class AlphaZero:
         temperature_schedule: TemperatureSchedule,
         initial_state: str | list[int] | None = None,
     ) -> list[TrainingData]:
+        node: Node[TMove] | None = None
         state: State = self.game.initial_state(initial_state)
         status = state.status()
 
@@ -139,9 +140,10 @@ class AlphaZero:
 
         while status.is_in_progress:
             state_before = state
-            policy = mcts.policy(state_before)
+            policy = mcts.policy(state_before, node)
             temperature = temperature_schedule.get_temperature(state_before.move_count)
             move = policy.select_move(temperature)
+            node = next(node for node in policy.node.children if node.move == move)
             state = state_before.play_move(move)
             recorded_action = RecordedAction(state_before, policy.encoded_policy, move, state)
             recorded_actions.append(recorded_action)
@@ -167,24 +169,31 @@ class AlphaZero:
         initial_states: list[State] = self.game.generate_states(2, num_parallel, initial_state)
         parallel_games = [ParallelGame(s) for s in initial_states if s.status().is_in_progress]
         in_progress_games = list(parallel_games)
+        nodes: list[Node[TMove]] | None = None
 
         self.neural_net.set_to_eval()
 
         progress_bar = tqdm.tqdm(total=float("inf"), unit=" -- count:", leave=False)
         while in_progress_games:
             states = [pg.latest_state for pg in in_progress_games]
-            policies = solver.policies(states)
+            policies = solver.policies(states, nodes)
 
+            nodes = []
+            games_tmp = []
             for policy, pg in zip(policies, in_progress_games):
                 policy, pg = cast(Policy, policy), cast(ParallelGame, pg)
                 state_before = pg.latest_state
                 temperature = temperature_schedule.get_temperature(state_before.move_count)
                 move = policy.select_move(temperature)
+                node = next(node for node in policy.node.children if node.move == move)
                 state = state_before.play_move(move)
                 recorded_action = RecordedAction(state_before, policy.encoded_policy, move, state)
                 pg.recorded_actions.append(recorded_action)
+                if state.status().is_in_progress:
+                    games_tmp.append(pg)
+                    nodes.append(node)
+            in_progress_games = games_tmp
 
-            in_progress_games = [g for g in in_progress_games if g.latest_state.status().is_in_progress]
             progress_bar.update(1)
         progress_bar.close()
 
