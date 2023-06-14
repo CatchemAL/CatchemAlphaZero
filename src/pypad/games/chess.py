@@ -6,7 +6,7 @@ import numpy as np
 from chess import Board, Move
 
 from ..kaggle_types import Configuration, Observation
-from ..states.state import State, Status
+from ..states.state import Policy, State, Status
 from ..views import View
 from .chess_enums import ActionPlanes, ObsPlanes
 from .game import Game, GameParameters
@@ -224,20 +224,26 @@ class ChessState(State[Move]):
         input_feature = self.to_feature()
         plot_chess_slice(input_feature, observation_plane)
 
-    def plot_policy(self, action_plane: ActionPlanes, policy: np.ndarray | None = None) -> None:
+    def plot_policy(self, action_plane: ActionPlanes, policy: Policy | None = None) -> None:
+        from IPython.display import Math, display
+
         from ..views.plot import plot_chess_slice
 
         if policy is not None:
-            vmax = policy.max()
-            policy = policy.reshape(ActionPlanes.shape())
+            value_expression = rf"v \in (-1, +1) = {policy.value:.3f}"
+            display(Math(value_expression))
+
+            encoded_policy = policy.encoded_policy
+            vmax = encoded_policy.max()
+            policy = encoded_policy.reshape(ActionPlanes.shape())
             plot_chess_slice(policy, action_plane, vmax=vmax)
         else:
-            policy = np.zeros(ActionPlanes.shape())
+            encoded_policy = np.zeros(ActionPlanes.shape())
             for move in self.status().legal_moves:
                 p, r, c = self.policy_loc_3d(move)
-                policy[p, r, c] = 1.0
+                encoded_policy[p, r, c] = 1.0
 
-            plot_chess_slice(policy, action_plane)
+            plot_chess_slice(encoded_policy, action_plane)
 
     def __copy__(self) -> "ChessState":
         board = self.board.copy()

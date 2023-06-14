@@ -40,7 +40,11 @@ def plot_chess_slice(
 ) -> None:
     CHECK_DARKNESS = 0.1 * vmax
     _, rows, cols = planes.shape
-    plane = planes[slice, :, :]
+
+    if slice < 0:
+        plane = np.max(planes, axis=0)
+    else:
+        plane = planes[slice, :, :]
     plane += CHECK_DARKNESS * create_checkered_array(rows)
 
     figsize = figsize or (3, 3)
