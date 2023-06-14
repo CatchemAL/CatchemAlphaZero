@@ -36,20 +36,23 @@ def plot_state(planes: np.ndarray, figsize: tuple[int, int], linewidth: float = 
 
 
 def plot_chess_slice(
-    planes: np.ndarray, slice: int, figsize: tuple[int, int], linewidth: float = 2.0
+    planes: np.ndarray, slice: int, vmax: float = 1.0, figsize: tuple[int, int] | None = None
 ) -> None:
+    CHECK_DARKNESS = 0.1 * vmax
     _, rows, cols = planes.shape
     plane = planes[slice, :, :]
+    plane += CHECK_DARKNESS * create_checkered_array(rows)
 
-    plane += 0.1 * create_checkered_array(rows)
+    figsize = figsize or (3, 3)
     _, ax = plt.subplots(figsize=figsize)
 
     cmap = plt.get_cmap("inferno")
-    _ = ax.imshow(plane, cmap=cmap, vmin=0, vmax=1.1)
+    vmin, vmax = 0, vmax + CHECK_DARKNESS
+    _ = ax.imshow(plane, cmap=cmap, vmin=vmin, vmax=vmax)
 
     ax.set_xticks(np.arange(-0.5, rows, 1), minor=True)
     ax.set_yticks(np.arange(-0.5, cols, 1), minor=True)
-    ax.grid(which="minor", color="white", linestyle="-", linewidth=linewidth)
+    ax.grid(which="minor", color="white", linestyle="-", linewidth=2.0)
 
     ax.spines["top"].set_edgecolor("white")
     ax.spines["right"].set_edgecolor("white")

@@ -222,7 +222,22 @@ class ChessState(State[Move]):
         from ..views.plot import plot_chess_slice
 
         input_feature = self.to_feature()
-        plot_chess_slice(input_feature, observation_plane, figsize=(3, 3))
+        plot_chess_slice(input_feature, observation_plane)
+
+    def plot_policy(self, action_plane: ActionPlanes, policy: np.ndarray | None = None) -> None:
+        from ..views.plot import plot_chess_slice
+
+        if policy is not None:
+            vmax = policy.max()
+            policy = policy.reshape(ActionPlanes.shape())
+            plot_chess_slice(policy, action_plane, vmax=vmax)
+        else:
+            policy = np.zeros(ActionPlanes.shape())
+            for move in self.status().legal_moves:
+                p, r, c = self.policy_loc_3d(move)
+                policy[p, r, c] = 1.0
+
+            plot_chess_slice(policy, action_plane)
 
     def __copy__(self) -> "ChessState":
         board = self.board.copy()
