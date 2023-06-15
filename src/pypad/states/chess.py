@@ -5,11 +5,8 @@ import chess
 import numpy as np
 from chess import Board, Move
 
-from ..kaggle_types import Configuration, Observation
-from ..states.state import Policy, State, Status
-from ..views import View
 from .chess_enums import ActionPlanes, ObsPlanes
-from .game import Game, GameParameters
+from .state import Policy, State, Status
 
 WHITE_IDXS = np.flipud(np.arange(64, dtype=np.uint64).reshape(8, 8))
 WHITE_POWERS = 2**WHITE_IDXS
@@ -289,43 +286,3 @@ class ChessState(State[Move]):
                     board.push_san(san)
 
         return ChessState(board)
-
-
-class Chess(Game[ChessState]):
-    ROWS, COLS = 8, 8
-
-    def __init__(self, view: View[ChessState] | None = None) -> None:
-        self.view = view
-
-    @property
-    def name(self) -> str:
-        return "chess"
-
-    @property
-    def fullname(self) -> str:
-        return "Chess"
-
-    @property
-    def shape(self) -> tuple[int, int]:
-        return self.ROWS, self.COLS
-
-    def initial_state(self, start: str | list[int] | None = None) -> ChessState:
-        return ChessState.create(start)
-
-    def config(self) -> GameParameters:
-        shape = self.shape
-        return GameParameters(shape, ObsPlanes.shape(), ActionPlanes.size())
-
-    def from_kaggle(self, obs: Observation, config: Configuration) -> ChessState:
-        pass
-
-    def symmetries(
-        self, encoded_state: np.ndarray, policy: np.ndarray
-    ) -> list[tuple[np.ndarray, np.ndarray]]:
-        return [(encoded_state, policy)]
-
-    def display(self, state: ChessState) -> None:
-        pass
-
-    def display_outcome(self, state: ChessState) -> None:
-        pass

@@ -1,3 +1,4 @@
+from .chess import ChessState as ChessState
 from .connectx import ConnectXState as ConnectXState
 from .state import State as State
 from .state import Status as Status

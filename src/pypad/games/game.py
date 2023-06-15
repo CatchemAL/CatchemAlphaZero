@@ -6,7 +6,8 @@ import numpy as np
 
 from ..kaggle_types import Configuration, Observation
 from ..solvers import Solver
-from ..states import ConnectXState, TicTacToeState, TState
+from ..states import ChessState, ConnectXState, TicTacToeState, TState
+from ..states.chess_enums import ActionPlanes, ObsPlanes
 from ..views import View
 from ..views.console import ConsoleConnectXView, ConsoleTicTacToeView
 from .game_type import GameType
@@ -208,15 +209,53 @@ class TicTacToe(Game[TicTacToeState]):
         self.view.display_outcome(state)
 
 
-def get_game(game_type: GameType) -> TicTacToe | ConnectX:
+class Chess(Game[ChessState]):
+    ROWS, COLS = 8, 8
+
+    def __init__(self, view: View[ChessState] | None = None) -> None:
+        self.view = view
+
+    @property
+    def name(self) -> str:
+        return "chess"
+
+    @property
+    def fullname(self) -> str:
+        return "Chess"
+
+    @property
+    def shape(self) -> tuple[int, int]:
+        return self.ROWS, self.COLS
+
+    def initial_state(self, start: str | list[int] | None = None) -> ChessState:
+        return ChessState.create(start)
+
+    def config(self) -> GameParameters:
+        shape = self.shape
+        return GameParameters(shape, ObsPlanes.shape(), ActionPlanes.size())
+
+    def from_kaggle(self, obs: Observation, config: Configuration) -> ChessState:
+        pass
+
+    def symmetries(
+        self, encoded_state: np.ndarray, policy: np.ndarray
+    ) -> list[tuple[np.ndarray, np.ndarray]]:
+        return [(encoded_state, policy)]
+
+    def display(self, state: ChessState) -> None:
+        pass
+
+    def display_outcome(self, state: ChessState) -> None:
+        pass
+
+
+def get_game(game_type: GameType) -> Chess | ConnectX | TicTacToe:
     match game_type:
         case GameType.TICTACTOE:
             return TicTacToe()
         case GameType.CONNECTX:
             return ConnectX()
         case GameType.CHESS:
-            from .chess import Chess
-
             return Chess()
         case _:
             raise ValueError(f"Invalid game type: {game_type}")

@@ -6,7 +6,6 @@ import numpy as np
 
 from .games import GameType, get_game
 from .solvers import AgentType, Solver
-from .solvers.alpha_zero_parameters import AZArenaParameters, AZTrainingParameters
 
 
 def run(args: Namespace) -> None:
@@ -53,6 +52,7 @@ def kaggle(args: Namespace) -> None:
 
 def learn(args: Namespace) -> None:
     from .solvers.alpha_zero import AlphaZero
+    from .solvers.alpha_zero_parameters import AZTrainingParameters
     from .solvers.network_torch import PytorchNeuralNetwork
 
     game_type: GameType = args.game
@@ -73,7 +73,7 @@ def learn(args: Namespace) -> None:
 def supervised_learning(args: Namespace) -> None:
     import chess
 
-    from .solvers.alpha_zero import AlphaZero
+    from .solvers.alpha_zero_parameters import AZTrainingParameters
     from .solvers.network_torch import PytorchNeuralNetwork
     from .solvers.supervised_learning import SupervisedTrainer
 
@@ -88,13 +88,14 @@ def supervised_learning(args: Namespace) -> None:
     path = r".\stockfish\stockfish-windows-2022-x86-64-avx2.exe"
     with chess.engine.SimpleEngine.popen_uci(path) as stockfish:
         trainer = SupervisedTrainer(neural_net, stockfish)
-        training_data = trainer.train(training_params)
+        trainer.train(training_params)
 
     print("done!")
 
 
 def hyper(args: Namespace) -> None:
     from .solvers.alpha_zero import AlphaZero
+    from .solvers.alpha_zero_parameters import AZArenaParameters
     from .solvers.network_torch import PytorchNeuralNetwork
 
     generation: int = args.gen
@@ -112,6 +113,8 @@ def hyper(args: Namespace) -> None:
 
 
 def main() -> None:
+    parse_args(sys.argv[1:])
+
     return
     run_kaggle()
 
@@ -123,10 +126,6 @@ def main() -> None:
     board = ConnectX.create(ROWS, COLS, moves)
     solver = Solver()
     solver.minimax(board, -np.inf, np.inf)
-
-
-def main() -> None:
-    parse_args(sys.argv[1:])
 
 
 def parse_args(args: Sequence[str]) -> None:
