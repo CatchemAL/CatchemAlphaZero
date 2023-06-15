@@ -177,7 +177,7 @@ class AZNetworkParameters:
                 params = {
                     "num_resnet_blocks": 19,
                     "num_features": 256,
-                    "optimizer_learn_rate": 0.00025,
+                    "optimizer_learn_rate": 0.0001,
                     "optimizer_weight_decay": 0.0001,
                 }
 
