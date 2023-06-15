@@ -3,11 +3,11 @@ import random
 
 import numpy as np
 from chess import Move
-from chess.engine import Limit, PovScore, Score, SimpleEngine
+from chess.engine import Limit, PovScore, SimpleEngine
 from tqdm import trange
 
 from ..solvers.alpha_zero_parameters import AZTrainingParameters
-from ..states.chess import Chess, ChessState
+from ..states.chess import ChessState
 from .network import NeuralNetwork, TrainingData
 
 
