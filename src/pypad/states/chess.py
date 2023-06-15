@@ -201,13 +201,21 @@ class ChessState(State[Move]):
     def to_grid(self) -> np.ndarray:
         ...
 
-    def get_input_move(self) -> int:
+    def get_input_move(self) -> Move:
         while True:
-            response = input("Your turn to move. Please enter an integer: ")
+            legal_moves = self.status().legal_moves
+            msg = "Your turn to move. Please enter a move (integer): "
+            for i, move in enumerate(legal_moves):
+                if i % 8 == 0:
+                    msg += "\n"
+                move_str = f"{i + 1: >2}. {move}"
+                msg += f"{move_str: <10}"
+            response = input(msg + "\n")
+
             try:
-                move = int(response)
-                if move in self.status().legal_moves:
-                    return move
+                idx = int(response)
+                if 0 < idx and idx <= len(legal_moves):
+                    return legal_moves[idx - 1]
             except ValueError:
                 pass
             print("Move was invalid. Please try again.")
