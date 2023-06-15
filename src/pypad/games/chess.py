@@ -245,6 +245,35 @@ class ChessState(State[Move]):
 
             plot_chess_slice(encoded_policy, action_plane)
 
+    def csv(self) -> str:
+        sans = []
+        for move in self.board.move_stack:
+            san = self.board.san(move)
+            self.board.push(move)
+            sans.append(san)
+
+        return f"[{','.join(sans)}]"
+
+    def pgn(self, title: str | None = None) -> str:
+        from datetime import datetime
+
+        import chess.pgn
+
+        date = datetime.now()
+        formatted_date = date.strftime("%Y.%m.%d")
+
+        pgn = chess.pgn.Game()
+        pgn.headers["Event"] = title or "Example"
+        pgn.headers["Date"] = formatted_date
+
+        if self.board.move_stack:
+            node = pgn.add_variation(self.board.move_stack[0])
+
+        for move in self.board.move_stack[1:]:
+            node = node.add_variation(move)
+
+        return str(pgn)
+
     def __copy__(self) -> "ChessState":
         board = self.board.copy()
         return ChessState(board)
