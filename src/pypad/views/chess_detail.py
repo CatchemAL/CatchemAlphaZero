@@ -1,120 +1,55 @@
 import tkinter as tk
 from tkinter import ttk
 
-from PIL import ImageTk, Image
-
 import chess
-from chess import Piece, Square, PieceType
+from chess import Piece, PieceType, Square
+from PIL import Image, ImageTk
+
 from pypad.states import ChessState
 
 ROWS, COLS = 8, 8
 CELL_SIZE = 80
 
-DARK_COLOUR = "#1F1F1F"
-TEAL_COLOUR = "#78C5B0"
-BLUE_COLOUR = "#77BEFC"
-HIGH_COLOUR = "#B5E61D"
+DARK_COLOR = "#1F1F1F"
+TEAL_COLOR = "#78C5B0"
+BLUE_COLOR = "#77BEFC"
+HIGH_COLOR = "#B5E61D"
+MATE_COLOR = "#880015"
+DRAW_COLOR = "#FFA628"
+LAST_COLOR_L = "#F8F77E"
+LAST_COLOR_D = "#BECC52"
 
 
 class ChessScreen(tk.Frame):
     def __init__(self, master, switch_screen_callback):
-        super().__init__(master, bg=DARK_COLOUR)
+        super().__init__(master, bg=DARK_COLOR)
 
+        # Initialize variables
         self.state = ChessState.create()
-
         self.selected_square: Square | None = None
         self.image_map = ChessScreen._get_piece_image_map()
 
         # LHS Canvas
-        self.canvas = tk.Canvas(
-            self,
-            width=CELL_SIZE * COLS,
-            height=CELL_SIZE * ROWS,
-            bg="white",
-            border=0,
-        )
+        size = 8 * CELL_SIZE
+        self.canvas = tk.Canvas(self, width=size, height=size, bg="white", border=0)
         self.canvas.pack(side=tk.LEFT, padx=25, pady=25, expand=False)
         self.canvas.bind("<Button-1>", self.on_click)
         self.draw_board()
 
         # RHS Frame
-        rhs_frame = tk.Frame(self, bg=DARK_COLOUR)
+        rhs_frame = tk.Frame(self, bg=DARK_COLOR)
         rhs_frame.pack(side=tk.LEFT, padx=(0, 20), anchor=tk.W, expand=True)
 
         # Add labels to display game information
-        self.status_label = tk.Label(
-            rhs_frame,
-            text="Status",
-            font=("Cascadia Mono", 12),
-            fg=TEAL_COLOUR,
-            bg=DARK_COLOUR,
-        )
-        self.status_label.pack(side=tk.TOP, pady=0, anchor=tk.W)
-
-        # Add labels to display game information
-        self.white_player_label = tk.Label(
-            rhs_frame,
-            text="White: Human",
-            font=("Cascadia Mono", 11),
-            fg=BLUE_COLOUR,
-            bg=DARK_COLOUR,
-        )
-        self.white_player_label.pack(side=tk.TOP, pady=(0, 0), anchor=tk.W)
-
-        # Add labels to display game information
-        self.black_player_label = tk.Label(
-            rhs_frame,
-            text="Black: CatchemAlpha",
-            font=("Cascadia Mono", 11),
-            fg=BLUE_COLOUR,
-            bg=DARK_COLOUR,
-        )
-        self.black_player_label.pack(side=tk.TOP, pady=0, anchor=tk.W)
-
-        # Add labels to display game information
-        self.outcome_label = tk.Label(
-            rhs_frame,
-            text="Game:  In Progress",
-            font=("Cascadia Mono", 11),
-            fg=BLUE_COLOUR,
-            bg=DARK_COLOUR,
-        )
-        self.outcome_label.pack(side=tk.TOP, pady=0, anchor=tk.W)
+        self.outcome_label = self._add_status_labels(rhs_frame, "Human", "CatchemAlpha")
 
         # Create radio buttons for promotion options
         self.promotion_option = tk.IntVar(value=chess.QUEEN)
         self._add_promotion_options(rhs_frame)
 
-        # Load and display the image
-        image_path = "icons/ui_image.png"  # Replace with the actual path to your PNG image
-        image = Image.open(image_path)
-        image = image.resize((180, 176))  # Adjust the size of the image as needed
-        photo = ImageTk.PhotoImage(image)
-        image_label = tk.Label(rhs_frame, image=photo, bg=DARK_COLOUR)
-        image_label.image = photo  # Store a reference to avoid garbage collection
-        image_label.pack(side=tk.TOP, pady=(60, 30), anchor=tk.W)
-
-        # Create a custom style for the buttons
-        style = ttk.Style()
-        style.theme_use("clam")  # put the theme name here, that you want to use
-        style.configure(
-            "W.TButton",
-            foreground=DARK_COLOUR,
-            background=BLUE_COLOUR,
-            font=("Cascadia Mono", 12),
-            relief=tk.FLAT,
-            anchor=tk.CENTER,
-        )
-
-        # Create the "Go to Title Screen" button
-        new_game_button = ttk.Button(
-            rhs_frame,
-            text="New Game",
-            command=switch_screen_callback,
-            style="W.TButton",
-            compound=tk.CENTER,
-        )
-        new_game_button.pack(side=tk.BOTTOM, anchor=tk.S, pady=(10, 10), padx=(0, 0))
+        # Add new game button
+        self._add_catchemalphazero_logo(rhs_frame)
+        self._add_new_game_button(rhs_frame, switch_screen_callback)
 
     def draw_board(self):
         self.canvas.delete("all")
@@ -136,7 +71,18 @@ class ChessScreen(tk.Frame):
                         image=self.image_map[piece],
                     )
 
-    def on_click(self, event):
+        if self.state.board.move_stack:
+            last_move = self.state.board.move_stack[-1]
+            self.highlight_last_move(last_move)
+
+        status = self.state.status()
+        if not status.is_in_progress:
+            self.highlight_mate() if status.value > 0 else self.highlight_draw()
+
+    def on_click(self, event) -> None:
+        if not self.state.status().is_in_progress:
+            return
+
         file = event.x // CELL_SIZE
         rank = 7 - (event.y // CELL_SIZE)
         square = chess.square(file, rank)
@@ -144,43 +90,21 @@ class ChessScreen(tk.Frame):
 
         if piece and piece.color == self.state.board.turn and square != self.selected_square:
             self.selected_square = square
-            self.highlight_cell(file, rank)
+            self.highlight_cell(file, rank, HIGH_COLOR)
 
         elif self.selected_square is not None:
-            self.move_piece(square)
-            self.selected_square = None
+            move = chess.Move(self.selected_square, square)
+            self.move_piece(move)
             self.draw_board()
 
-    def highlight_cell(self, file, rank):
-        x1 = file * CELL_SIZE
-        y1 = (7 - rank) * CELL_SIZE
-        x2 = x1 + CELL_SIZE
-        y2 = y1 + CELL_SIZE
-
-        self.canvas.delete("highlight")
-        highlighted_cell = self.canvas.create_rectangle(
-            x1 + 2,
-            y1 + 2,
-            x2 - 2,
-            y2 - 2,
-            fill=HIGH_COLOUR,
-            outline=HIGH_COLOUR,
-            width=4,
-            tag="highlight",
-        )
-        # self.canvas.tag_lower(highlighted_cell, "all")
-        self.canvas.tag_raise(highlighted_cell, "cell_rect")
-
-    def remove_highlight(self):
-        self.canvas.delete("highlight")
-
-    def move_piece(self, to_square: Square):
-        from_square = self.selected_square
+    def move_piece(self, move: chess.Move):
+        from_square = move.from_square
+        to_square = move.to_square
         piece = self.state.board.piece_at(from_square)
-        move = chess.Move(from_square, to_square)
+        self.selected_square = None
 
         if piece.piece_type == chess.PAWN and chess.square_rank(to_square) == 7:
-            move.promotion = chess.QUEEN
+            move.promotion = self.promotion_option.get()
 
         # Check if the move is legal
         if piece.color == self.state.board.turn:
@@ -189,6 +113,94 @@ class ChessScreen(tk.Frame):
                 return True
 
         return False
+
+    def highlight_last_move(self, move: chess.Move) -> None:
+        from_square = move.from_square
+        file, rank = chess.square_file(from_square), chess.square_rank(from_square)
+        color = LAST_COLOR_L if (file + rank) & 1 else LAST_COLOR_D
+        self.highlight_cell(file, rank, color, "move_col", True)
+
+        to_square = move.to_square
+        file, rank = chess.square_file(to_square), chess.square_rank(to_square)
+        color = LAST_COLOR_L if (file + rank) & 1 else LAST_COLOR_D
+        self.highlight_cell(file, rank, color, "move_col", False)
+
+    def highlight_draw(self) -> None:
+        king_square = self.state.board.king(self.state.board.turn)
+        file, rank = chess.square_file(king_square), chess.square_rank(king_square)
+        self.highlight_cell(file, rank, DRAW_COLOR, "highlight")
+
+        king_square = self.state.board.king(not self.state.board.turn)
+        file, rank = chess.square_file(king_square), chess.square_rank(king_square)
+        self.highlight_cell(file, rank, DRAW_COLOR, "highlight", False)
+
+    def highlight_mate(self) -> None:
+        king_square = self.state.board.king(self.state.board.turn)
+        file, rank = chess.square_file(king_square), chess.square_rank(king_square)
+        self.highlight_cell(file, rank, MATE_COLOR, "highlight")
+
+    def highlight_cell(
+        self, file: int, rank: int, color: str, tag: str = "highlight", delete_canvas: bool = True
+    ):
+        x1 = file * CELL_SIZE
+        y1 = (7 - rank) * CELL_SIZE
+        x2 = x1 + CELL_SIZE
+        y2 = y1 + CELL_SIZE
+
+        if delete_canvas:
+            self.canvas.delete(tag)
+        highlighted_cell = self.canvas.create_rectangle(
+            x1 + 2,
+            y1 + 2,
+            x2 - 2,
+            y2 - 2,
+            fill=color,
+            outline=color,
+            width=4,
+            tag=tag,
+        )
+        self.canvas.tag_raise(highlighted_cell, "cell_rect")
+
+    def _add_status_labels(self, frame, player1, player2) -> tk.Label:
+        status_label = tk.Label(
+            frame,
+            text="Status",
+            font=("Cascadia Mono", 12),
+            fg=TEAL_COLOR,
+            bg=DARK_COLOR,
+        )
+        status_label.pack(side=tk.TOP, pady=0, anchor=tk.W)
+
+        # Add labels to display game information
+        white_player_label = tk.Label(
+            frame,
+            text=f"White: {player1}",
+            font=("Cascadia Mono", 11),
+            fg=BLUE_COLOR,
+            bg=DARK_COLOR,
+        )
+        white_player_label.pack(side=tk.TOP, pady=(0, 0), anchor=tk.W)
+
+        # Add labels to display game information
+        black_player_label = tk.Label(
+            frame,
+            text=f"Black: {player2}",
+            font=("Cascadia Mono", 11),
+            fg=BLUE_COLOR,
+            bg=DARK_COLOR,
+        )
+        black_player_label.pack(side=tk.TOP, pady=0, anchor=tk.W)
+
+        # Add labels to display game information
+        outcome_label = tk.Label(
+            frame,
+            text="Game:  In Progress",
+            font=("Cascadia Mono", 11),
+            fg=BLUE_COLOR,
+            bg=DARK_COLOR,
+        )
+        outcome_label.pack(side=tk.TOP, pady=0, anchor=tk.W)
+        return outcome_label
 
     def _add_promotion_options(self, frame) -> None:
         piece_map = {
@@ -202,8 +214,8 @@ class ChessScreen(tk.Frame):
             frame,
             text="Promotion Piece",
             font=("Cascadia Mono", 12),
-            fg=TEAL_COLOUR,
-            bg=DARK_COLOUR,
+            fg=TEAL_COLOR,
+            bg=DARK_COLOR,
         )
         self.status_label.pack(side=tk.TOP, anchor=tk.W, pady=(60, 0))
 
@@ -214,10 +226,43 @@ class ChessScreen(tk.Frame):
                 variable=self.promotion_option,
                 value=value,
                 font=("Cascadia Mono", 11),
-                bg=DARK_COLOUR,
-                fg=BLUE_COLOUR,
+                bg=DARK_COLOR,
+                fg=BLUE_COLOR,
             )
             radio.pack(anchor=tk.W, side=tk.TOP)
+
+    def _add_catchemalphazero_logo(self, frame) -> None:
+        # Load and display the image
+        image_path = "icons/ui_image.png"
+        image = Image.open(image_path)
+        image = image.resize((180, 176))
+        photo = ImageTk.PhotoImage(image)
+        image_label = tk.Label(frame, image=photo, bg=DARK_COLOR)
+        image_label.image = photo  # Store a reference to avoid garbage collection
+        image_label.pack(side=tk.TOP, pady=(60, 30), anchor=tk.W)
+
+    def _add_new_game_button(self, frame, switch_screen_callback) -> None:
+        # Create a custom style for the buttons
+        style = ttk.Style()
+        style.theme_use("clam")  # put the theme name here, that you want to use
+        style.configure(
+            "W.TButton",
+            foreground=DARK_COLOR,
+            background=BLUE_COLOR,
+            font=("Cascadia Mono", 12),
+            relief=tk.FLAT,
+            anchor=tk.CENTER,
+        )
+
+        # Create the "Go to Title Screen" button
+        new_game_button = ttk.Button(
+            frame,
+            text="New Game",
+            command=switch_screen_callback,
+            style="W.TButton",
+            compound=tk.CENTER,
+        )
+        new_game_button.pack(side=tk.BOTTOM, anchor=tk.S, pady=(10, 10), padx=(0, 0))
 
     @staticmethod
     def _get_piece_image_map() -> dict[Piece, tk.PhotoImage]:
