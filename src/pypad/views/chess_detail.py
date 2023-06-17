@@ -34,14 +34,28 @@ class ChessScreenModel:
     def __init__(self, alpha_zero: AlphaZero, colors: list[chess.Color]) -> None:
         self.alpha_zero = alpha_zero
         self.colors = colors
+        self.root_node = None
 
     def is_alphas_turn(self, state: ChessState) -> bool:
         return state.board.turn in self.colors
 
+    def reset(self, colors: list[chess.Color]) -> None:
+        self.root_node = None
+        self.colors = colors
+
     async def get_move(self, state: ChessState, num_sims: int) -> chess.Move:
         await asyncio.sleep(0.1)
+        node = None
+        if len(self.colors) == 2:
+            node = self.root_node
+        elif self.root_node and state.board.move_stack:
+            node = next(n for n in self.root_node.children if n.move == state.board.move_stack[-1])
+
         temperature_schedule = TemperatureSchedule.competitive()
-        move = self.alpha_zero.select_move(state, num_sims, temperature_schedule)
+        policy = self.alpha_zero.policy(state, num_sims, node)
+        temperature = temperature_schedule.get_temperature(state.move_count)
+        move = policy.select_move(temperature)
+        self.root_node = next(node for node in policy.node.children if node.move == move)
         return move
 
 
@@ -61,7 +75,7 @@ class ChessScreenController:
     def num_sims(self) -> int:
         return int(self.view.sims_combobox.get())
 
-    async def refresh(self, human_colors: list[chess.Color]) -> None:
+    async def reset(self, human_colors: list[chess.Color]) -> None:
         colors_complement = []
         if chess.WHITE not in human_colors:
             colors_complement.append(chess.WHITE)
@@ -69,7 +83,7 @@ class ChessScreenController:
             colors_complement.append(chess.BLACK)
 
         self.state = ChessState.create()
-        self.model.colors = colors_complement
+        self.model.reset(colors_complement)
         self.view.set_players("Human", human_colors)
         self.view.set_players("CAZ", colors_complement)
         self.view.draw_board(self.state)

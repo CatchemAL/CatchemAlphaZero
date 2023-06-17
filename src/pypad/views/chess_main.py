@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 import asyncio
 import tkinter as tk
 from tkinter import filedialog, ttk
@@ -57,7 +56,7 @@ class Application(tk.Tk):
     def switch_to_game_screen(self, human_colors: list[chess.Color]) -> None:
         if self.current_screen:
             self.current_screen.pack_forget()
-        asyncio.create_task(self.game_controller.refresh(human_colors))
+        asyncio.create_task(self.game_controller.reset(human_colors))
         self.game_screen.pack(fill=tk.BOTH, expand=True)
         self.current_screen = self.game_screen
 

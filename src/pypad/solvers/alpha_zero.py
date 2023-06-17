@@ -31,10 +31,15 @@ class AlphaZero:
     def as_solver(self, num_mcts_sims: int | AZMctsParameters) -> Solver:
         return AlphaZeroSolver(self, num_mcts_sims)
 
-    def policy(self, state: State[TMove], num_mcts_sims: int | AZMctsParameters) -> Policy:
+    def policy(
+        self,
+        state: State[TMove],
+        num_mcts_sims: int | AZMctsParameters,
+        root_node: Node[TMove] | None = None,
+    ) -> Policy:
         self.neural_net.set_to_eval()
         mcts = self._get_mcts(num_mcts_sims)
-        return mcts.policy(state)
+        return mcts.policy(state, root_node)
 
     def policies(
         self, states: list[State[TMove]], num_mcts_sims: int | AZMctsParameters
@@ -83,13 +88,13 @@ class AlphaZero:
             training_set: list[TrainingData] = []
 
             for _ in trange(num_rounds, desc="- Self-play", leave=False):
-                # training_set += self.self_play(mcts, training_params.temperature, initial_state)
-                training_set += self.self_play_parallel(
-                    mcts,
-                    training_params.num_parallel,
-                    training_params.temperature,
-                    initial_state,
-                )
+                training_set += self.self_play(mcts, training_params.temperature, initial_state)
+                # training_set += self.self_play_parallel(
+                #     mcts,
+                #     training_params.num_parallel,
+                #     training_params.temperature,
+                #     initial_state,
+                # )
 
             extended_training_set = self._exploit_symmetries(training_set)
 
