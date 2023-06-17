@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 import asyncio
 import tkinter as tk
 from tkinter import filedialog, ttk
@@ -51,10 +54,10 @@ class Application(tk.Tk):
         self.title_screen.pack(fill=tk.BOTH, expand=True)
         self.current_screen = self.title_screen
 
-    def switch_to_game_screen(self):
+    def switch_to_game_screen(self, human_colors: list[chess.Color]) -> None:
         if self.current_screen:
             self.current_screen.pack_forget()
-        self.game_controller.refresh()
+        asyncio.create_task(self.game_controller.refresh(human_colors))
         self.game_screen.pack(fill=tk.BOTH, expand=True)
         self.current_screen = self.game_screen
 
@@ -71,6 +74,16 @@ class Application(tk.Tk):
     def open_file(self):
         file_path = filedialog.askopenfilename()
         print("Selected file:", file_path)
+
+
+class TitleScreenModel:
+    ...
+
+
+class TitleScreenController:
+    def __init__(self, model: TitleScreenModel, view: TitleScreen):
+        self.model = model
+        self.view = view
 
 
 class TitleScreen(tk.Frame):
@@ -108,33 +121,33 @@ class TitleScreen(tk.Frame):
         )
 
         # Create the "Go to Title Screen" button
-        white_button = ttk.Button(
+        self.white_button = ttk.Button(
             self,
             text="Play as White",
-            command=switch_screen_callback,
+            command=lambda: switch_screen_callback([chess.WHITE]),
             style="TButton",
             compound=tk.CENTER,
         )
 
-        black_button = ttk.Button(
+        self.black_button = ttk.Button(
             self,
             text="Play as Black",
-            command=switch_screen_callback,
+            command=lambda: switch_screen_callback([chess.BLACK]),
             style="TButton",
             compound=tk.CENTER,
         )
 
-        both_button = ttk.Button(
+        self.both_button = ttk.Button(
             self,
             text="Play as Both ",
-            command=switch_screen_callback,
+            command=lambda: switch_screen_callback([chess.WHITE, chess.BLACK]),
             style="TButton",
             compound=tk.CENTER,
         )
 
-        white_button.place(relx=0.5, rely=0.75, anchor=tk.CENTER)
-        black_button.place(relx=0.5, rely=0.83, anchor=tk.CENTER)
-        both_button.place(relx=0.5, rely=0.91, anchor=tk.CENTER)
+        self.white_button.place(relx=0.5, rely=0.75, anchor=tk.CENTER)
+        self.black_button.place(relx=0.5, rely=0.83, anchor=tk.CENTER)
+        self.both_button.place(relx=0.5, rely=0.91, anchor=tk.CENTER)
 
 
 if __name__ == "__main__":

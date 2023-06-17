@@ -31,16 +31,17 @@ HIGH_COLOR = "#B5E61D"
 
 
 class ChessScreenModel:
-    def __init__(self, alpha_zero: AlphaZero, color: chess.Color) -> None:
+    def __init__(self, alpha_zero: AlphaZero, colors: list[chess.Color]) -> None:
         self.alpha_zero = alpha_zero
-        self.color = color
+        self.colors = colors
 
     def is_alphas_turn(self, state: ChessState) -> bool:
-        return state.board.turn == self.color
+        return state.board.turn in self.colors
 
-    async def get_move(self, state: ChessState) -> chess.Move:
+    async def get_move(self, state: ChessState, num_sims: int) -> chess.Move:
         await asyncio.sleep(0.1)
-        move = self.alpha_zero.select_move(state, 100, TemperatureSchedule.competitive())
+        temperature_schedule = TemperatureSchedule.competitive()
+        move = self.alpha_zero.select_move(state, num_sims, temperature_schedule)
         return move
 
 
@@ -56,9 +57,25 @@ class ChessScreenController:
         self.view.on_square_click = self.on_square_click
         self.view.draw_board(self.state)
 
-    def refresh(self) -> None:
+    @property
+    def num_sims(self) -> int:
+        return int(self.view.sims_combobox.get())
+
+    async def refresh(self, human_colors: list[chess.Color]) -> None:
+        colors_complement = []
+        if chess.WHITE not in human_colors:
+            colors_complement.append(chess.WHITE)
+        if chess.BLACK not in human_colors:
+            colors_complement.append(chess.BLACK)
+
         self.state = ChessState.create()
+        self.model.colors = colors_complement
+        self.view.set_players("Human", human_colors)
+        self.view.set_players("CAZ", colors_complement)
         self.view.draw_board(self.state)
+        if self.state.status().is_in_progress and self.model.is_alphas_turn(self.state):
+            move = await self.model.get_move(self.state, self.num_sims)
+            await self.move_piece(move)
 
     async def on_square_click(self, file: int, rank: int) -> None:
         if self.model.is_alphas_turn(self.state) or not self.state.status().is_in_progress:
@@ -81,7 +98,7 @@ class ChessScreenController:
         piece = self.state.board.piece_at(from_square)
         self.selected_square = None
 
-        if piece.piece_type == chess.PAWN:
+        if move.promotion is None and piece.piece_type == chess.PAWN:
             promotion_rank = 7 if self.state.board.turn else 0
             if chess.square_rank(to_square) == promotion_rank:
                 move.promotion = self.view.promotion_option.get()
@@ -92,7 +109,7 @@ class ChessScreenController:
                 self.state.board.push(move)
                 self.view.draw_board(self.state)
                 if self.state.status().is_in_progress and self.model.is_alphas_turn(self.state):
-                    move = await self.model.get_move(self.state)
+                    move = await self.model.get_move(self.state, self.num_sims)
                     await self.move_piece(move)
         else:
             self.view.draw_board(self.state)
@@ -115,7 +132,7 @@ class ChessScreen(tk.Frame):
         rhs_frame.pack(side=tk.LEFT, padx=(0, 20), anchor=tk.W, expand=True)
 
         # Add labels to display game information
-        self.outcome_label = self._add_status_labels(rhs_frame, "Human", "CatchemAlpha")
+        self.white_label, self.black_label = self._add_status_labels(rhs_frame)
 
         # Create radio buttons for promotion options
         self.promotion_option = tk.IntVar(value=chess.QUEEN)
@@ -217,46 +234,41 @@ class ChessScreen(tk.Frame):
         )
         self.canvas.tag_raise(highlighted_cell, "cell_rect")
 
-    def _add_status_labels(self, frame, player1, player2) -> tk.Label:
-        status_label = tk.Label(
+    def set_players(self, label: str, colors: list[chess.Color]) -> None:
+        if chess.WHITE in colors:
+            self.white_label.config(text=f"White: {label}")
+        if chess.BLACK in colors:
+            self.black_label.config(text=f"Black: {label}")
+
+    def _add_status_labels(self, frame) -> tk.Label:
+        players_label = tk.Label(
             frame,
             text="Status",
             font=("Cascadia Mono", 12),
             fg=TEAL_COLOR,
             bg=DARK_COLOR,
         )
-        status_label.pack(side=tk.TOP, pady=0, anchor=tk.W)
+        players_label.pack(side=tk.TOP, pady=0, anchor=tk.W)
 
-        # Add labels to display game information
         white_player_label = tk.Label(
             frame,
-            text=f"White: {player1}",
+            text=f"White: <<PLACEHOLDER>>",
             font=("Cascadia Mono", 11),
             fg=BLUE_COLOR,
             bg=DARK_COLOR,
         )
         white_player_label.pack(side=tk.TOP, pady=(0, 0), anchor=tk.W)
 
-        # Add labels to display game information
         black_player_label = tk.Label(
             frame,
-            text=f"Black: {player2}",
+            text=f"Black: <<PLACEHOLDER>>",
             font=("Cascadia Mono", 11),
             fg=BLUE_COLOR,
             bg=DARK_COLOR,
         )
         black_player_label.pack(side=tk.TOP, pady=0, anchor=tk.W)
 
-        # Add labels to display game information
-        outcome_label = tk.Label(
-            frame,
-            text="Game:  In Progress",
-            font=("Cascadia Mono", 11),
-            fg=BLUE_COLOR,
-            bg=DARK_COLOR,
-        )
-        outcome_label.pack(side=tk.TOP, pady=0, anchor=tk.W)
-        return outcome_label
+        return white_player_label, black_player_label
 
     def _add_promotion_options(self, frame) -> None:
         piece_map = {
@@ -273,7 +285,7 @@ class ChessScreen(tk.Frame):
             fg=TEAL_COLOR,
             bg=DARK_COLOR,
         )
-        self.status_label.pack(side=tk.TOP, anchor=tk.W, pady=(60, 0))
+        self.status_label.pack(side=tk.TOP, anchor=tk.W, pady=(20, 0))
 
         for text, value in piece_map.items():
             radio = tk.Radiobutton(
@@ -286,6 +298,21 @@ class ChessScreen(tk.Frame):
                 fg=BLUE_COLOR,
             )
             radio.pack(anchor=tk.W, side=tk.TOP)
+
+        self.simluation_label = tk.Label(
+            frame,
+            text="MCTS Num Sims",
+            font=("Cascadia Mono", 12),
+            fg=TEAL_COLOR,
+            bg=DARK_COLOR,
+        )
+        self.simluation_label.pack(side=tk.TOP, anchor=tk.W, pady=(20, 0))
+
+        # Create a Combobox
+        values = (10, 50, 100, 200, 500, 1000, 2000, 5000, 10000)
+        self.sims_combobox = ttk.Combobox(frame, values=values, state="readonly")
+        self.sims_combobox.current(4)
+        self.sims_combobox.pack(side=tk.TOP, anchor=tk.W, pady=(10, 0))
 
     def _add_catchemalphazero_logo(self, frame) -> None:
         # Load and display the image
@@ -353,11 +380,11 @@ class Application(tk.Tk):
         self.is_open = True
 
         game = Chess()
-        network = PytorchNeuralNetwork.create(game, "..")
+        network = PytorchNeuralNetwork.create(game, ".")
         alpha_zero = AlphaZero(network)
-        model = ChessScreenModel(alpha_zero, chess.BLACK)
+        model = ChessScreenModel(alpha_zero, [chess.BLACK])
 
-        self.game_screen = ChessScreen(self, lambda x: x)
+        self.game_screen = ChessScreen(self, lambda: print("Single Window!"))
         self.controller = ChessScreenController(model, self.game_screen)
         self.game_screen.pack(fill=tk.BOTH, expand=True)
 
