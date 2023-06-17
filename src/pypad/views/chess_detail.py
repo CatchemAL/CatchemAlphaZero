@@ -8,7 +8,11 @@ import chess
 from chess import Piece, Square
 from PIL import Image, ImageTk
 
+from pypad.games import Chess
+from pypad.solvers.alpha_zero import AlphaZero
+from pypad.solvers.network_torch import PytorchNeuralNetwork
 from pypad.states import ChessState
+from pypad.states.state import TemperatureSchedule
 
 ROWS, COLS = 8, 8
 CELL_SIZE = 80
@@ -26,8 +30,22 @@ LAST_COLOR_D = "#BECC52"
 HIGH_COLOR = "#B5E61D"
 
 
+class ChessScreenModel:
+    def __init__(self, alpha_zero: AlphaZero, color: chess.Color) -> None:
+        self.alpha_zero = alpha_zero
+        self.color = color
+
+    def is_alphas_turn(self, state: ChessState) -> bool:
+        return state.board.turn == self.color
+
+    async def get_move(self, state: ChessState) -> chess.Move:
+        await asyncio.sleep(0.1)
+        move = self.alpha_zero.select_move(state, 100, TemperatureSchedule.competitive())
+        return move
+
+
 class ChessScreenController:
-    def __init__(self, model, view: ChessScreen):
+    def __init__(self, model: ChessScreenModel, view: ChessScreen):
         self.model = model
         self.view = view
 
@@ -38,8 +56,12 @@ class ChessScreenController:
         self.view.on_square_click = self.on_square_click
         self.view.draw_board(self.state)
 
-    def on_square_click(self, file: int, rank: int) -> None:
-        if not self.state.status().is_in_progress:
+    def refresh(self) -> None:
+        self.state = ChessState.create()
+        self.view.draw_board(self.state)
+
+    async def on_square_click(self, file: int, rank: int) -> None:
+        if self.model.is_alphas_turn(self.state) or not self.state.status().is_in_progress:
             return
 
         square = chess.square(file, rank)
@@ -51,9 +73,9 @@ class ChessScreenController:
 
         elif self.selected_square is not None:
             move = chess.Move(self.selected_square, square)
-            self.move_piece(move)
+            await self.move_piece(move)
 
-    def move_piece(self, move: chess.Move):
+    async def move_piece(self, move: chess.Move):
         from_square = move.from_square
         to_square = move.to_square
         piece = self.state.board.piece_at(from_square)
@@ -69,10 +91,11 @@ class ChessScreenController:
             if move in self.state.board.legal_moves:
                 self.state.board.push(move)
                 self.view.draw_board(self.state)
-                return True
-
-        self.view.draw_board(self.state)
-        return False
+                if self.state.status().is_in_progress and self.model.is_alphas_turn(self.state):
+                    move = await self.model.get_move(self.state)
+                    await self.move_piece(move)
+        else:
+            self.view.draw_board(self.state)
 
 
 class ChessScreen(tk.Frame):
@@ -102,7 +125,7 @@ class ChessScreen(tk.Frame):
         self._add_catchemalphazero_logo(rhs_frame)
         self._add_new_game_button(rhs_frame, new_game_callback)
 
-    def on_square_click(self, file: int, rank: int) -> None:
+    async def on_square_click(self, file: int, rank: int) -> None:
         ...
 
     def draw_board(self, state: ChessState):
@@ -300,7 +323,7 @@ class ChessScreen(tk.Frame):
     def _canvas_callback(self, event) -> None:
         file = event.x // CELL_SIZE
         rank = 7 - (event.y // CELL_SIZE)
-        self.on_square_click(file, rank)
+        asyncio.create_task(self.on_square_click(file, rank))
 
     @staticmethod
     def _get_piece_image_map() -> dict[Piece, tk.PhotoImage]:
@@ -327,11 +350,28 @@ class Application(tk.Tk):
         self.title("CatchemAlphaZero")
         self.resizable(False, False)
         self.iconbitmap("icons/tiny_chess.ico")
+        self.is_open = True
+
+        game = Chess()
+        network = PytorchNeuralNetwork.create(game, "..")
+        alpha_zero = AlphaZero(network)
+        model = ChessScreenModel(alpha_zero, chess.BLACK)
+
         self.game_screen = ChessScreen(self, lambda x: x)
-        self.controller = ChessScreenController(None, self.game_screen)
+        self.controller = ChessScreenController(model, self.game_screen)
         self.game_screen.pack(fill=tk.BOTH, expand=True)
+
+        self.protocol("WM_DELETE_WINDOW", self.raise_exit_flag)
+
+    async def show(self):
+        while self.is_open:
+            self.update()
+            await asyncio.sleep(0.025)
+
+    def raise_exit_flag(self):
+        self.is_open = False
 
 
 if __name__ == "__main__":
     app = Application()
-    app.mainloop()
+    asyncio.run(app.show())

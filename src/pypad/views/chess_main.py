@@ -1,28 +1,49 @@
+import asyncio
 import tkinter as tk
 from tkinter import filedialog, ttk
 
+import chess
 from PIL import Image, ImageTk
 
-from pypad.views.chess_detail import DARK_COLOR, ChessScreen, ChessScreenController
+from pypad.games import Chess
+from pypad.solvers.alpha_zero import AlphaZero
+from pypad.solvers.network_torch import PytorchNeuralNetwork
+from pypad.views.chess_detail import DARK_COLOR, ChessScreen, ChessScreenController, ChessScreenModel
 
 GREY_COLOR = "#BEC7C6"
 
 
 class Application(tk.Tk):
-    def __init__(self):
+    def __init__(self, event_loop):
         super().__init__()
 
+        self.loop = event_loop
+        self.is_open = True
         self.title("CatchemAlphaZero")
         self.resizable(False, False)
         self.iconbitmap("icons/tiny_chess.ico")
-
         self.current_screen = None
+        self.protocol("WM_DELETE_WINDOW", self.raise_exit_flag)
+
+        game = Chess()
+        network = PytorchNeuralNetwork.create(game, ".")
+        alpha_zero = AlphaZero(network)
+        model = ChessScreenModel(alpha_zero, chess.BLACK)
+
         self.title_screen = TitleScreen(self, self.switch_to_game_screen)
         self.game_screen = ChessScreen(self, self.switch_to_title_screen)
-        self.game_controller = ChessScreenController(None, self.game_screen)
+        self.game_controller = ChessScreenController(model, self.game_screen)
 
         self.switch_to_title_screen()
         self.create_menu()
+
+    async def show_async(self):
+        while self.is_open:
+            self.update()
+            await asyncio.sleep(0.025)
+
+    def raise_exit_flag(self):
+        self.is_open = False
 
     def switch_to_title_screen(self):
         if self.current_screen:
@@ -33,6 +54,7 @@ class Application(tk.Tk):
     def switch_to_game_screen(self):
         if self.current_screen:
             self.current_screen.pack_forget()
+        self.game_controller.refresh()
         self.game_screen.pack(fill=tk.BOTH, expand=True)
         self.current_screen = self.game_screen
 
@@ -116,5 +138,6 @@ class TitleScreen(tk.Frame):
 
 
 if __name__ == "__main__":
-    app = Application()
-    app.mainloop()
+    loop = asyncio.get_event_loop()
+    app = Application(loop)
+    asyncio.run(app.show_async())
