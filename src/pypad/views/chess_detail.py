@@ -17,23 +17,6 @@ HIGH_COLOUR = "#B5E61D"
 
 
 class ChessScreen(tk.Frame):
-    @staticmethod
-    def _get_piece_image_map() -> dict[Piece, tk.PhotoImage]:
-        return {
-            Piece(chess.PAWN, chess.WHITE): tk.PhotoImage(file=r"icons/white-pawn.png"),
-            Piece(chess.ROOK, chess.WHITE): tk.PhotoImage(file=r"icons/white-rook.png"),
-            Piece(chess.KNIGHT, chess.WHITE): tk.PhotoImage(file=r"icons/white-knight.png"),
-            Piece(chess.BISHOP, chess.WHITE): tk.PhotoImage(file=r"icons/white-bishop.png"),
-            Piece(chess.QUEEN, chess.WHITE): tk.PhotoImage(file=r"icons/white-queen.png"),
-            Piece(chess.KING, chess.WHITE): tk.PhotoImage(file=r"icons/white-king.png"),
-            Piece(chess.PAWN, chess.BLACK): tk.PhotoImage(file=r"icons/black-pawn.png"),
-            Piece(chess.ROOK, chess.BLACK): tk.PhotoImage(file=r"icons/black-rook.png"),
-            Piece(chess.KNIGHT, chess.BLACK): tk.PhotoImage(file=r"icons/black-knight.png"),
-            Piece(chess.BISHOP, chess.BLACK): tk.PhotoImage(file=r"icons/black-bishop.png"),
-            Piece(chess.QUEEN, chess.BLACK): tk.PhotoImage(file=r"icons/black-queen.png"),
-            Piece(chess.KING, chess.BLACK): tk.PhotoImage(file=r"icons/black-king.png"),
-        }
-
     def __init__(self, master, switch_screen_callback):
         super().__init__(master, bg=DARK_COLOUR)
 
@@ -59,100 +42,48 @@ class ChessScreen(tk.Frame):
         rhs_frame.pack(side=tk.LEFT, padx=(0, 20), anchor=tk.W, expand=True)
 
         # Add labels to display game information
-        self.turn_label = tk.Label(
+        self.status_label = tk.Label(
             rhs_frame,
             text="Status",
             font=("Cascadia Mono", 12),
             fg=TEAL_COLOUR,
             bg=DARK_COLOUR,
         )
-        self.turn_label.pack(side=tk.TOP, pady=0, anchor=tk.W)
+        self.status_label.pack(side=tk.TOP, pady=0, anchor=tk.W)
 
         # Add labels to display game information
-        self.turn_label = tk.Label(
+        self.white_player_label = tk.Label(
             rhs_frame,
             text="White: Human",
             font=("Cascadia Mono", 11),
             fg=BLUE_COLOUR,
             bg=DARK_COLOUR,
         )
-        self.turn_label.pack(side=tk.TOP, pady=(0, 0), anchor=tk.W)
+        self.white_player_label.pack(side=tk.TOP, pady=(0, 0), anchor=tk.W)
 
         # Add labels to display game information
-        self.turn_label = tk.Label(
+        self.black_player_label = tk.Label(
             rhs_frame,
             text="Black: CatchemAlpha",
             font=("Cascadia Mono", 11),
             fg=BLUE_COLOUR,
             bg=DARK_COLOUR,
         )
-        self.turn_label.pack(side=tk.TOP, pady=0, anchor=tk.W)
+        self.black_player_label.pack(side=tk.TOP, pady=0, anchor=tk.W)
 
         # Add labels to display game information
-        self.turn_label = tk.Label(
+        self.outcome_label = tk.Label(
             rhs_frame,
             text="Game:  In Progress",
             font=("Cascadia Mono", 11),
             fg=BLUE_COLOUR,
             bg=DARK_COLOUR,
         )
-        self.turn_label.pack(side=tk.TOP, pady=0, anchor=tk.W)
+        self.outcome_label.pack(side=tk.TOP, pady=0, anchor=tk.W)
 
-        self.status_label = tk.Label(
-            rhs_frame,
-            text="Promotion Piece",
-            font=("Cascadia Mono", 12),
-            fg=TEAL_COLOUR,
-            bg=DARK_COLOUR,
-        )
-        self.status_label.pack(side=tk.TOP, anchor=tk.W, pady=(80, 0))
-
-        # Create the radio buttons for promotion options
+        # Create radio buttons for promotion options
         self.promotion_option = tk.IntVar(value=chess.QUEEN)
-
-        queen_radio = tk.Radiobutton(
-            rhs_frame,
-            text="Queen",
-            variable=self.promotion_option,
-            value=chess.QUEEN,
-            font=("Cascadia Mono", 11),
-            bg=DARK_COLOUR,
-            fg=BLUE_COLOUR,
-        )
-        queen_radio.pack(anchor=tk.W, side=tk.TOP)
-
-        knight_radio = tk.Radiobutton(
-            rhs_frame,
-            text="Knight",
-            variable=self.promotion_option,
-            value=chess.KNIGHT,
-            font=("Cascadia Mono", 11),
-            bg=DARK_COLOUR,
-            fg=BLUE_COLOUR,
-        )
-        knight_radio.pack(anchor=tk.W, side=tk.TOP)
-
-        rook_radio = tk.Radiobutton(
-            rhs_frame,
-            text="Rook",
-            variable=self.promotion_option,
-            value=chess.ROOK,
-            font=("Cascadia Mono", 11),
-            bg=DARK_COLOUR,
-            fg=BLUE_COLOUR,
-        )
-        rook_radio.pack(anchor=tk.W, side=tk.TOP)
-
-        bishop_radio = tk.Radiobutton(
-            rhs_frame,
-            text="Bishop",
-            variable=self.promotion_option,
-            value=chess.BISHOP,
-            font=("Cascadia Mono", 11),
-            bg=DARK_COLOUR,
-            fg=BLUE_COLOUR,
-        )
-        bishop_radio.pack(anchor=tk.W, side=tk.TOP)
+        self._add_promotion_options(rhs_frame)
 
         # Load and display the image
         image_path = "icons/ui_image.png"  # Replace with the actual path to your PNG image
@@ -161,7 +92,7 @@ class ChessScreen(tk.Frame):
         photo = ImageTk.PhotoImage(image)
         image_label = tk.Label(rhs_frame, image=photo, bg=DARK_COLOUR)
         image_label.image = photo  # Store a reference to avoid garbage collection
-        image_label.pack(side=tk.TOP, pady=(40, 30), anchor=tk.W)
+        image_label.pack(side=tk.TOP, pady=(60, 30), anchor=tk.W)
 
         # Create a custom style for the buttons
         style = ttk.Style()
@@ -259,8 +190,51 @@ class ChessScreen(tk.Frame):
 
         return False
 
-    def add_promotion_options(self) -> None:
-        ...
+    def _add_promotion_options(self, frame) -> None:
+        piece_map = {
+            "Queen": chess.QUEEN,
+            "Knight": chess.KNIGHT,
+            "Rook": chess.ROOK,
+            "Bishop": chess.BISHOP,
+        }
+
+        self.status_label = tk.Label(
+            frame,
+            text="Promotion Piece",
+            font=("Cascadia Mono", 12),
+            fg=TEAL_COLOUR,
+            bg=DARK_COLOUR,
+        )
+        self.status_label.pack(side=tk.TOP, anchor=tk.W, pady=(60, 0))
+
+        for text, value in piece_map.items():
+            radio = tk.Radiobutton(
+                frame,
+                text=text,
+                variable=self.promotion_option,
+                value=value,
+                font=("Cascadia Mono", 11),
+                bg=DARK_COLOUR,
+                fg=BLUE_COLOUR,
+            )
+            radio.pack(anchor=tk.W, side=tk.TOP)
+
+    @staticmethod
+    def _get_piece_image_map() -> dict[Piece, tk.PhotoImage]:
+        return {
+            Piece(chess.PAWN, chess.WHITE): tk.PhotoImage(file=r"icons/white-pawn.png"),
+            Piece(chess.ROOK, chess.WHITE): tk.PhotoImage(file=r"icons/white-rook.png"),
+            Piece(chess.KNIGHT, chess.WHITE): tk.PhotoImage(file=r"icons/white-knight.png"),
+            Piece(chess.BISHOP, chess.WHITE): tk.PhotoImage(file=r"icons/white-bishop.png"),
+            Piece(chess.QUEEN, chess.WHITE): tk.PhotoImage(file=r"icons/white-queen.png"),
+            Piece(chess.KING, chess.WHITE): tk.PhotoImage(file=r"icons/white-king.png"),
+            Piece(chess.PAWN, chess.BLACK): tk.PhotoImage(file=r"icons/black-pawn.png"),
+            Piece(chess.ROOK, chess.BLACK): tk.PhotoImage(file=r"icons/black-rook.png"),
+            Piece(chess.KNIGHT, chess.BLACK): tk.PhotoImage(file=r"icons/black-knight.png"),
+            Piece(chess.BISHOP, chess.BLACK): tk.PhotoImage(file=r"icons/black-bishop.png"),
+            Piece(chess.QUEEN, chess.BLACK): tk.PhotoImage(file=r"icons/black-queen.png"),
+            Piece(chess.KING, chess.BLACK): tk.PhotoImage(file=r"icons/black-king.png"),
+        }
 
 
 class Application(tk.Tk):
