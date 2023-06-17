@@ -1,8 +1,11 @@
+from __future__ import annotations
+
+import asyncio
 import tkinter as tk
 from tkinter import ttk
 
 import chess
-from chess import Piece, PieceType, Square
+from chess import Piece, Square
 from PIL import Image, ImageTk
 
 from pypad.states import ChessState
@@ -10,14 +13,66 @@ from pypad.states import ChessState
 ROWS, COLS = 8, 8
 CELL_SIZE = 80
 
+BLACK_COLOR = "#EDF9EB"
+WHITE_COLOR = "#346B51"
+
 DARK_COLOR = "#1F1F1F"
 TEAL_COLOR = "#78C5B0"
 BLUE_COLOR = "#77BEFC"
-HIGH_COLOR = "#B5E61D"
 MATE_COLOR = "#880015"
 DRAW_COLOR = "#FFA628"
 LAST_COLOR_L = "#F8F77E"
 LAST_COLOR_D = "#BECC52"
+HIGH_COLOR = "#B5E61D"
+
+
+class ChessScreenController:
+    def __init__(self, model, view: ChessScreen):
+        self.model = model
+        self.view = view
+
+        self.state = ChessState.create()
+
+        self.selected_square: Square | None = None
+
+        self.view.on_square_click = self.on_square_click
+        self.view.draw_board(self.state)
+
+    def on_square_click(self, file: int, rank: int) -> None:
+        if not self.state.status().is_in_progress:
+            return
+
+        square = chess.square(file, rank)
+        piece = self.state.board.piece_at(square)
+
+        if piece and piece.color == self.state.board.turn and square != self.selected_square:
+            self.selected_square = square
+            self.view.highlight_cell(file, rank, HIGH_COLOR, True)
+
+        elif self.selected_square is not None:
+            move = chess.Move(self.selected_square, square)
+            self.move_piece(move)
+
+    def move_piece(self, move: chess.Move):
+        from_square = move.from_square
+        to_square = move.to_square
+        piece = self.state.board.piece_at(from_square)
+        self.selected_square = None
+
+        if piece.piece_type == chess.PAWN:
+            promotion_rank = 7 if self.state.board.turn else 0
+            if chess.square_rank(to_square) == promotion_rank:
+                move.promotion = self.view.promotion_option.get()
+
+        # Check if the move is legal
+        if piece.color == self.state.board.turn:
+            if move in self.state.board.legal_moves:
+                self.state.board.push(move)
+                self.view.draw_board(self.state)
+                return True
+
+        self.view.draw_board(self.state)
+        return False
 
 
 class ChessScreen(tk.Frame):
@@ -25,16 +80,12 @@ class ChessScreen(tk.Frame):
         super().__init__(parent, bg=DARK_COLOR)
 
         # Initialize variables
-        self.state = ChessState.create()
-        self.selected_square: Square | None = None
         self.image_map = ChessScreen._get_piece_image_map()
 
         # LHS Canvas
-        size = 8 * CELL_SIZE
-        self.canvas = tk.Canvas(self, width=size, height=size, bg="white", border=0)
+        self.canvas = tk.Canvas(self, width=8 * CELL_SIZE, height=8 * CELL_SIZE, bg="white", border=0)
         self.canvas.pack(side=tk.LEFT, padx=25, pady=25, expand=False)
-        self.canvas.bind("<Button-1>", self.on_click)
-        self.draw_board()
+        self.canvas.bind("<Button-1>", self._canvas_callback)
 
         # RHS Frame
         rhs_frame = tk.Frame(self, bg=DARK_COLOR)
@@ -51,37 +102,36 @@ class ChessScreen(tk.Frame):
         self._add_catchemalphazero_logo(rhs_frame)
         self._add_new_game_button(rhs_frame, new_game_callback)
 
-    def on_click(self, event) -> None:
-        if not self.state.status().is_in_progress:
-            return
+    def on_square_click(self, file: int, rank: int) -> None:
+        ...
 
-        file = event.x // CELL_SIZE
-        rank = 7 - (event.y // CELL_SIZE)
-        square = chess.square(file, rank)
-        piece = self.state.board.piece_at(square)
-
-        if piece and piece.color == self.state.board.turn and square != self.selected_square:
-            self.selected_square = square
-            self.highlight_cell(file, rank, HIGH_COLOR, True)
-
-        elif self.selected_square is not None:
-            move = chess.Move(self.selected_square, square)
-            self.move_piece(move)
-            self.draw_board()
-
-    def draw_board(self):
+    def draw_board(self, state: ChessState):
         self.canvas.delete("all")
-        for rank in range(ROWS):
-            for file in range(COLS):
-                x1, y1 = file * CELL_SIZE, rank * CELL_SIZE
-                x2, y2 = x1 + CELL_SIZE, y1 + CELL_SIZE
-                color = "#EDF9EB" if (rank + file) % 2 == 0 else "#346B51"
-                self.canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline="", tags="cell_rect")
+
+        # Big white square
+        self.canvas.create_rectangle(
+            0,
+            0,
+            8 * CELL_SIZE,
+            8 * CELL_SIZE,
+            fill=WHITE_COLOR,
+            outline="",
+            tags="cell_rect",
+        )
+
+        # Overlay the black squares
+        for square in range(ROWS * COLS):
+            file, rank = chess.square_file(square), chess.square_rank(square)
+            if (file + rank) % 2 == 1:
+                continue
+            x1, y1 = file * CELL_SIZE, rank * CELL_SIZE
+            x2, y2 = x1 + CELL_SIZE, y1 + CELL_SIZE
+            self.canvas.create_rectangle(x1, y1, x2, y2, fill=BLACK_COLOR, outline="", tags="cell_rect")
 
         for rank in range(ROWS):
             for file in range(COLS):
                 square = chess.square(file, 7 - rank)
-                piece = self.state.board.piece_at(square)
+                piece = state.board.piece_at(square)
                 if piece:
                     self.canvas.create_image(
                         file * CELL_SIZE + CELL_SIZE // 2,
@@ -89,30 +139,13 @@ class ChessScreen(tk.Frame):
                         image=self.image_map[piece],
                     )
 
-        if self.state.board.move_stack:
-            last_move = self.state.board.move_stack[-1]
+        if state.board.move_stack:
+            last_move = state.board.move_stack[-1]
             self.highlight_last_move(last_move)
 
-        status = self.state.status()
+        status = state.status()
         if not status.is_in_progress:
-            self.highlight_mate() if status.value > 0 else self.highlight_draw()
-
-    def move_piece(self, move: chess.Move):
-        from_square = move.from_square
-        to_square = move.to_square
-        piece = self.state.board.piece_at(from_square)
-        self.selected_square = None
-
-        if piece.piece_type == chess.PAWN and chess.square_rank(to_square) == 7:
-            move.promotion = self.promotion_option.get()
-
-        # Check if the move is legal
-        if piece.color == self.state.board.turn:
-            if move in self.state.board.legal_moves:
-                self.state.board.push(move)
-                return True
-
-        return False
+            self.highlight_mate(state) if status.value > 0 else self.highlight_draw(state)
 
     def highlight_last_move(self, move: chess.Move) -> None:
         from_square = move.from_square
@@ -125,17 +158,17 @@ class ChessScreen(tk.Frame):
         color = LAST_COLOR_L if (file + rank) & 1 else LAST_COLOR_D
         self.highlight_cell(file, rank, color, False, "move_highlight")
 
-    def highlight_draw(self) -> None:
-        king_square = self.state.board.king(self.state.board.turn)
+    def highlight_draw(self, state: ChessState) -> None:
+        king_square = state.board.king(state.board.turn)
         file, rank = chess.square_file(king_square), chess.square_rank(king_square)
         self.highlight_cell(file, rank, DRAW_COLOR, True)
 
-        king_square = self.state.board.king(not self.state.board.turn)
+        king_square = state.board.king(not state.board.turn)
         file, rank = chess.square_file(king_square), chess.square_rank(king_square)
         self.highlight_cell(file, rank, DRAW_COLOR, False)
 
-    def highlight_mate(self) -> None:
-        king_square = self.state.board.king(self.state.board.turn)
+    def highlight_mate(self, state: ChessState) -> None:
+        king_square = state.board.king(state.board.turn)
         file, rank = chess.square_file(king_square), chess.square_rank(king_square)
         self.highlight_cell(file, rank, MATE_COLOR, True)
 
@@ -264,6 +297,11 @@ class ChessScreen(tk.Frame):
         )
         new_game_button.pack(side=tk.BOTTOM, anchor=tk.S, pady=(10, 10), padx=(0, 0))
 
+    def _canvas_callback(self, event) -> None:
+        file = event.x // CELL_SIZE
+        rank = 7 - (event.y // CELL_SIZE)
+        self.on_square_click(file, rank)
+
     @staticmethod
     def _get_piece_image_map() -> dict[Piece, tk.PhotoImage]:
         return {
@@ -290,6 +328,7 @@ class Application(tk.Tk):
         self.resizable(False, False)
         self.iconbitmap("icons/tiny_chess.ico")
         self.game_screen = ChessScreen(self, lambda x: x)
+        self.controller = ChessScreenController(None, self.game_screen)
         self.game_screen.pack(fill=tk.BOTH, expand=True)
 
 

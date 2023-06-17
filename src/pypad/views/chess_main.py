@@ -1,20 +1,11 @@
-from __future__ import annotations
-
 import tkinter as tk
 from tkinter import filedialog, ttk
 
 from PIL import Image, ImageTk
 
-from pypad.views.chess_detail import ChessScreen, DARK_COLOR
+from pypad.views.chess_detail import DARK_COLOR, ChessScreen, ChessScreenController
 
 GREY_COLOR = "#BEC7C6"
-
-
-class ChessScreenController:
-    def __init__(self, model, view: ChessScreen):
-        self.model = model
-        self.view = view
-        self.view.set_button_command(self.go_to_screen2)
 
 
 class Application(tk.Tk):
@@ -28,6 +19,7 @@ class Application(tk.Tk):
         self.current_screen = None
         self.title_screen = TitleScreen(self, self.switch_to_game_screen)
         self.game_screen = ChessScreen(self, self.switch_to_title_screen)
+        self.game_controller = ChessScreenController(None, self.game_screen)
 
         self.switch_to_title_screen()
         self.create_menu()
