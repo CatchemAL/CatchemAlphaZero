@@ -21,8 +21,8 @@ LAST_COLOR_D = "#BECC52"
 
 
 class ChessScreen(tk.Frame):
-    def __init__(self, master, switch_screen_callback):
-        super().__init__(master, bg=DARK_COLOR)
+    def __init__(self, parent, new_game_callback):
+        super().__init__(parent, bg=DARK_COLOR)
 
         # Initialize variables
         self.state = ChessState.create()
@@ -49,7 +49,7 @@ class ChessScreen(tk.Frame):
 
         # Add new game button
         self._add_catchemalphazero_logo(rhs_frame)
-        self._add_new_game_button(rhs_frame, switch_screen_callback)
+        self._add_new_game_button(rhs_frame, new_game_callback)
 
     def on_click(self, event) -> None:
         if not self.state.status().is_in_progress:
@@ -233,7 +233,7 @@ class ChessScreen(tk.Frame):
 
     def _add_catchemalphazero_logo(self, frame) -> None:
         # Load and display the image
-        image_path = "icons/ui_image.png"
+        image_path = "icons/Flat_UI_icon.png"
         image = Image.open(image_path)
         image = image.resize((180, 176))
         photo = ImageTk.PhotoImage(image)
@@ -241,7 +241,7 @@ class ChessScreen(tk.Frame):
         image_label.image = photo  # Store a reference to avoid garbage collection
         image_label.pack(side=tk.TOP, pady=(60, 30), anchor=tk.W)
 
-    def _add_new_game_button(self, frame, switch_screen_callback) -> None:
+    def _add_new_game_button(self, frame, new_game_callback) -> None:
         # Create a custom style for the buttons
         style = ttk.Style()
         style.theme_use("clam")  # put the theme name here, that you want to use
@@ -258,7 +258,7 @@ class ChessScreen(tk.Frame):
         new_game_button = ttk.Button(
             frame,
             text="New Game",
-            command=switch_screen_callback,
+            command=new_game_callback,
             style="W.TButton",
             compound=tk.CENTER,
         )
