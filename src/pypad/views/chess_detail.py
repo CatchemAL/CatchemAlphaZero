@@ -51,6 +51,24 @@ class ChessScreen(tk.Frame):
         self._add_catchemalphazero_logo(rhs_frame)
         self._add_new_game_button(rhs_frame, switch_screen_callback)
 
+    def on_click(self, event) -> None:
+        if not self.state.status().is_in_progress:
+            return
+
+        file = event.x // CELL_SIZE
+        rank = 7 - (event.y // CELL_SIZE)
+        square = chess.square(file, rank)
+        piece = self.state.board.piece_at(square)
+
+        if piece and piece.color == self.state.board.turn and square != self.selected_square:
+            self.selected_square = square
+            self.highlight_cell(file, rank, HIGH_COLOR, True)
+
+        elif self.selected_square is not None:
+            move = chess.Move(self.selected_square, square)
+            self.move_piece(move)
+            self.draw_board()
+
     def draw_board(self):
         self.canvas.delete("all")
         for rank in range(ROWS):
@@ -79,24 +97,6 @@ class ChessScreen(tk.Frame):
         if not status.is_in_progress:
             self.highlight_mate() if status.value > 0 else self.highlight_draw()
 
-    def on_click(self, event) -> None:
-        if not self.state.status().is_in_progress:
-            return
-
-        file = event.x // CELL_SIZE
-        rank = 7 - (event.y // CELL_SIZE)
-        square = chess.square(file, rank)
-        piece = self.state.board.piece_at(square)
-
-        if piece and piece.color == self.state.board.turn and square != self.selected_square:
-            self.selected_square = square
-            self.highlight_cell(file, rank, HIGH_COLOR)
-
-        elif self.selected_square is not None:
-            move = chess.Move(self.selected_square, square)
-            self.move_piece(move)
-            self.draw_board()
-
     def move_piece(self, move: chess.Move):
         from_square = move.from_square
         to_square = move.to_square
@@ -118,29 +118,29 @@ class ChessScreen(tk.Frame):
         from_square = move.from_square
         file, rank = chess.square_file(from_square), chess.square_rank(from_square)
         color = LAST_COLOR_L if (file + rank) & 1 else LAST_COLOR_D
-        self.highlight_cell(file, rank, color, "move_col", True)
+        self.highlight_cell(file, rank, color, True, "move_highlight")
 
         to_square = move.to_square
         file, rank = chess.square_file(to_square), chess.square_rank(to_square)
         color = LAST_COLOR_L if (file + rank) & 1 else LAST_COLOR_D
-        self.highlight_cell(file, rank, color, "move_col", False)
+        self.highlight_cell(file, rank, color, False, "move_highlight")
 
     def highlight_draw(self) -> None:
         king_square = self.state.board.king(self.state.board.turn)
         file, rank = chess.square_file(king_square), chess.square_rank(king_square)
-        self.highlight_cell(file, rank, DRAW_COLOR, "highlight")
+        self.highlight_cell(file, rank, DRAW_COLOR, True)
 
         king_square = self.state.board.king(not self.state.board.turn)
         file, rank = chess.square_file(king_square), chess.square_rank(king_square)
-        self.highlight_cell(file, rank, DRAW_COLOR, "highlight", False)
+        self.highlight_cell(file, rank, DRAW_COLOR, False)
 
     def highlight_mate(self) -> None:
         king_square = self.state.board.king(self.state.board.turn)
         file, rank = chess.square_file(king_square), chess.square_rank(king_square)
-        self.highlight_cell(file, rank, MATE_COLOR, "highlight")
+        self.highlight_cell(file, rank, MATE_COLOR, True)
 
     def highlight_cell(
-        self, file: int, rank: int, color: str, tag: str = "highlight", delete_canvas: bool = True
+        self, file: int, rank: int, color: str, delete_canvas: bool, tag: str = "highlight"
     ):
         x1 = file * CELL_SIZE
         y1 = (7 - rank) * CELL_SIZE
