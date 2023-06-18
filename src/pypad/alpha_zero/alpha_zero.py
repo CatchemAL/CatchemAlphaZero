@@ -157,7 +157,7 @@ class AlphaZero:
 
         while status.is_in_progress:
             state_before = state
-            policy = mcts.policy_async(state_before, node)
+            policy = mcts.policy(state_before, node)
             temperature = temperature_schedule.get_temperature(state_before.move_count)
             move = policy.select_move(temperature)
             node = next(node for node in policy.node.children if node.move == move)

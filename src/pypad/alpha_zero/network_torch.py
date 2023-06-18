@@ -213,7 +213,7 @@ class PytorchNeuralNetwork:
 
                 # Compute loss
                 policy_loss = F.cross_entropy(predicted_logits, batch_policies)
-                outcome_loss = F.mse_loss(predicted_outcomes, batch_outcomes)
+                outcome_loss = 5 * F.mse_loss(predicted_outcomes, batch_outcomes)
                 total_loss = policy_loss + outcome_loss
 
                 # Backwards + optimize

@@ -6,8 +6,8 @@ from chess import Move
 from chess.engine import Limit, PovScore, SimpleEngine
 from tqdm import trange
 
-from ..solvers.alpha_zero_parameters import AZTrainingParameters
 from ..states.chess import ChessState
+from .alpha_zero_parameters import AZTrainingParameters
 from .network import NeuralNetwork, TrainingData
 
 

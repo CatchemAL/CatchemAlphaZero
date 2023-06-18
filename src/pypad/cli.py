@@ -51,9 +51,7 @@ def kaggle(args: Namespace) -> None:
 
 
 def learn(args: Namespace) -> None:
-    from .solvers.alpha_zero import AlphaZero
-    from .solvers.alpha_zero_parameters import AZTrainingParameters
-    from .solvers.network_torch import PytorchNeuralNetwork
+    from .alpha_zero import AlphaZero, AZTrainingParameters, PytorchNeuralNetwork
 
     game_type: GameType = args.game
     init: str = args.init
@@ -73,9 +71,7 @@ def learn(args: Namespace) -> None:
 def supervised_learning(args: Namespace) -> None:
     import chess
 
-    from .solvers.alpha_zero_parameters import AZTrainingParameters
-    from .solvers.network_torch import PytorchNeuralNetwork
-    from .solvers.supervised_learning import SupervisedTrainer
+    from .alpha_zero import AZTrainingParameters, PytorchNeuralNetwork, SupervisedTrainer
 
     init: str = args.init
 
@@ -94,9 +90,7 @@ def supervised_learning(args: Namespace) -> None:
 
 
 def hyper(args: Namespace) -> None:
-    from .solvers.alpha_zero import AlphaZero
-    from .solvers.alpha_zero_parameters import AZArenaParameters
-    from .solvers.network_torch import PytorchNeuralNetwork
+    from .alpha_zero import AlphaZero, AZArenaParameters, PytorchNeuralNetwork
 
     generation: int = args.gen
     game_type: GameType = args.game
