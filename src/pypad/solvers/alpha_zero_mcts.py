@@ -7,11 +7,36 @@ from dataclasses import dataclass, field
 from math import sqrt
 from typing import Awaitable, Generic, Self
 
+import nest_asyncio
 import numpy as np
 
 from ..states import State, TMove
 from ..states.state import Policy
 from .network import NeuralNetwork
+
+
+def asyncio_run(future, as_task=True):
+    """
+    A better implementation of `asyncio.run`.
+
+    :param future: A future or task or call of an async method.
+    :param as_task: Forces the future to be scheduled as task (needed for e.g. aiohttp).
+    """
+
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:  # no event loop running:
+        loop = asyncio.new_event_loop()
+        return loop.run_until_complete(_to_task(future, as_task, loop))
+    else:
+        nest_asyncio.apply(loop)
+        return asyncio.run(_to_task(future, as_task, loop))
+
+
+def _to_task(future, as_task, loop):
+    if not as_task or isinstance(future, asyncio.Task):
+        return future
+    return loop.create_task(future)
 
 
 @dataclass
@@ -23,7 +48,7 @@ class AlphaZeroMcts:
     discount_factor: float
 
     def policy(self, state: State[TMove], root_node: Node[TMove] | None = None) -> Policy[TMove]:
-        return asyncio.run(self.policy_async(state, root_node))
+        return asyncio_run(self.policy_async(state, root_node))
 
     async def policy_async(
         self,
@@ -74,7 +99,7 @@ class AlphaZeroMcts:
         return policies
 
     def search(self, root_state: State[TMove], root_node: Node[TMove] | None = None) -> Node[TMove]:
-        return asyncio.run(self.search_async(root_state, root_node))
+        return asyncio_run(self.search_async(root_state, root_node))
 
     async def search_async(
         self,
