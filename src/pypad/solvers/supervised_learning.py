@@ -17,10 +17,11 @@ class SupervisedTrainer:
         self.engine = engine
 
     def train(self, training_params: AZTrainingParameters) -> None:
+        discount_factor = training_params.mcts_parameters.discount_factor
         num_epochs, minibatch_size = training_params.num_epochs, training_params.minibatch_size
 
         for i in trange(training_params.num_generations):
-            training_data = self.generate_training_data(10_000)
+            training_data = self.generate_training_data(10_000, discount_factor)
 
             extended_training_set = self._exploit_symmetries(training_data)
 
@@ -36,7 +37,7 @@ class SupervisedTrainer:
         # todo
         return training_data
 
-    def generate_training_data(self, min_num_points: int):
+    def generate_training_data(self, min_num_points: int, discount_factor: float):
         BLUNDER_PROBABILITY = 0.2
 
         training_set: list[TrainingData] = []
@@ -44,7 +45,7 @@ class SupervisedTrainer:
             state: ChessState = self.neural_net.game.initial_state()
             status = state.status()
             while status.is_in_progress:
-                training_data, top_moves = self.to_data_point(state)
+                training_data, top_moves = self.to_data_point(state, discount_factor)
                 training_set.append(training_data)
 
                 if random.random() < BLUNDER_PROBABILITY:
@@ -79,7 +80,9 @@ class SupervisedTrainer:
         encoded_policy /= encoded_policy.sum()
         return encoded_policy
 
-    def to_data_point(self, state: ChessState) -> tuple[TrainingData, list[Move]]:
+    def to_data_point(
+        self, state: ChessState, discount_factor: float
+    ) -> tuple[TrainingData, list[Move]]:
         encoded_state = state.to_feature()
 
         time_limit = Limit(time=0.01)
@@ -110,9 +113,9 @@ class SupervisedTrainer:
 
     @staticmethod
     def centipawns_to_q_value(cp: int) -> float:
-        return math.atan(cp / 111.714640912) / 1.5620688421
+        return math.atan(cp / 120) / 1.57
 
     @staticmethod
     def q_value_to_centipawns(q: float) -> int:
-        cp = 111.714640912 * math.tan(1.5620688421 * q)
+        cp = 120 * math.tan(1.57 * q)
         return round(cp)
