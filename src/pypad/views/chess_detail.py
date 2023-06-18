@@ -357,7 +357,7 @@ class ChessScreen(tk.Frame):
 
     def _add_catchemalphazero_logo(self, frame) -> None:
         # Load and display the image
-        image_path = "icons/Flat_UI_icon.png"
+        image_path = "icons/caz_flat_logo.png"
         image = Image.open(image_path)
         image = image.resize((180, 176))
         photo = ImageTk.PhotoImage(image)

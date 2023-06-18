@@ -86,7 +86,7 @@ class TitleScreen(tk.Frame):
         super().__init__(master)
 
         # Load and display the background image
-        logo = Image.open("icons/Logo.jpg").resize((614, 608))
+        logo = Image.open("icons/caz_splashscreen.jpg").resize((614, 608))
         image = ImageTk.PhotoImage(logo)
         label = tk.Label(self, image=image)
         label.image = image  # avoid garbage collection
