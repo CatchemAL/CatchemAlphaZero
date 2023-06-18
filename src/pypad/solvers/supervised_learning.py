@@ -101,8 +101,10 @@ class SupervisedTrainer:
     @staticmethod
     def score_to_centipawns(score: PovScore):
         if score.is_mate():
-            value = 100_000 - (100 * np.abs(score.relative.moves))
-            return np.sign(score.relative.moves) * value
+            full_moves = 2 * np.abs(score.relative.moves) - (1 if score.relative.moves > 0 else 0)
+            value = 0.99**full_moves
+            signed_value = np.sign(score.relative.moves) * value
+            return SupervisedTrainer.q_value_to_centipawns(signed_value)
         return score.relative.score()
 
     @staticmethod
@@ -113,9 +115,9 @@ class SupervisedTrainer:
 
     @staticmethod
     def centipawns_to_q_value(cp: int) -> float:
-        return math.atan(cp / 120) / 1.57
+        return math.atan(cp / 250) / 1.5620688421
 
     @staticmethod
     def q_value_to_centipawns(q: float) -> int:
-        cp = 120 * math.tan(1.57 * q)
+        cp = 250 * math.tan(1.5620688421 * q)
         return round(cp)
