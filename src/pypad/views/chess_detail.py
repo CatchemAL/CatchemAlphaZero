@@ -38,6 +38,7 @@ class ChessScreenModel:
         self.colors = colors
         self.root_node = None
         self.event: Event | None = None
+        self.is_pondering: bool = False
 
     def is_alphas_turn(self, state: ChessState) -> bool:
         return state.board.turn in self.colors
@@ -48,18 +49,25 @@ class ChessScreenModel:
 
     async def ponder(self, state: ChessState) -> None:
         if not self.colors:
+            self.is_pondering = False
             return
 
         PONDER_SIMS = 50_000
+        self.is_pondering = True
         await asyncio.sleep(REFRESH_RATE)
         self.event = Event()
         policy = await self.alpha_zero.policy_async(state, PONDER_SIMS, self.root_node, self.event)
         self.root_node = policy.node
+        self.is_pondering = False
 
-    async def stop_pondering(self, move: chess.Move) -> None:
+    def stop_pondering(self) -> None:
         if self.event:
             self.event.set()
             self.event = None
+
+    async def wait_for_pondering_to_stop(self) -> None:
+        while self.is_pondering:
+            await asyncio.sleep(REFRESH_RATE)
 
     async def get_move(self, state: ChessState, num_sims: int) -> chess.Move:
         node = None
@@ -140,7 +148,8 @@ class ChessScreenController:
 
         # Check if the move is legal
         if piece.color == self.state.board.turn and move in self.state.board.legal_moves:
-            await self.model.stop_pondering(move)
+            self.model.stop_pondering()
+            await self.model.wait_for_pondering_to_stop()
             self.state.board.push(move)
             self.view.draw_board(self.state)
 

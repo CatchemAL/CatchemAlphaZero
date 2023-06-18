@@ -54,6 +54,7 @@ class Application(tk.Tk):
         self.is_open = False
 
     def switch_to_title_screen(self):
+        self.game_controller.model.stop_pondering()
         if self.current_screen:
             self.current_screen.pack_forget()
         self.title_screen.pack(fill=tk.BOTH, expand=True)

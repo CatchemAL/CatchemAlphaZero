@@ -103,7 +103,8 @@ class ChessState(State[Move]):
                 case (1, 1, chess.BISHOP):
                     return ActionPlanes.PROMOTE_BISHOP_NE, 7 - y_from, x_from
                 case _:
-                    raise ValueError("This should never happen")
+                    msg = f"x={x_shift}, y={y_shift}, promotion={move.promotion}"
+                    raise ValueError(f"This should never happen ({msg})")
 
         # N, NE, E, SE, S, SW, W, NW
         match x_shift, y_shift:
