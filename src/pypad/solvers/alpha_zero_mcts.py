@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import asyncio
+from asyncio import Event
 from copy import copy
 from dataclasses import dataclass, field
 from math import sqrt
-from typing import Generic, Self
+from typing import Awaitable, Generic, Self
 
 import numpy as np
 
@@ -21,7 +23,15 @@ class AlphaZeroMcts:
     discount_factor: float
 
     def policy(self, state: State[TMove], root_node: Node[TMove] | None = None) -> Policy[TMove]:
-        root_node = self.search(state, root_node)
+        return asyncio.run(self.policy_async(state, root_node))
+
+    async def policy_async(
+        self,
+        state: State[TMove],
+        root_node: Node[TMove] | None = None,
+        cancellation_event: Event | None = None,
+    ) -> Awaitable[Policy[TMove]]:
+        root_node = await self.search_async(state, root_node, cancellation_event)
         root_q = 1 - root_node.q_value
         value = root_q * 2 - 1
 
@@ -64,6 +74,14 @@ class AlphaZeroMcts:
         return policies
 
     def search(self, root_state: State[TMove], root_node: Node[TMove] | None = None) -> Node[TMove]:
+        return asyncio.run(self.search_async(root_state, root_node))
+
+    async def search_async(
+        self,
+        root_state: State[TMove],
+        root_node: Node[TMove] | None = None,
+        cancellation_event: Event | None = None,
+    ) -> Awaitable[Node[TMove]]:
         root: Node[TMove] = root_node or Node(root_state.played_by)
 
         if root_node:
@@ -76,7 +94,15 @@ class AlphaZeroMcts:
 
             root.parent = None  # free memory
 
+        # check to bail more frequently if we are pondering - keep responsive
+        poll_rate = 1 if cancellation_event else 5
+
         for n in range(self.num_mcts_sims):
+            if n % poll_rate == 0:
+                await asyncio.sleep(0)
+            if cancellation_event and cancellation_event.is_set():
+                break
+
             node = root
             state = copy(root_state)
 

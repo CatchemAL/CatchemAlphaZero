@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from asyncio import Event
 from copy import deepcopy
 from dataclasses import asdict, dataclass
 from itertools import product
-from typing import cast
+from typing import Awaitable, cast
 
 import numpy as np
 import tqdm
@@ -40,6 +41,17 @@ class AlphaZero:
         self.neural_net.set_to_eval()
         mcts = self._get_mcts(num_mcts_sims)
         return mcts.policy(state, root_node)
+
+    def policy_async(
+        self,
+        state: State[TMove],
+        num_mcts_sims: int | AZMctsParameters,
+        root_node: Node[TMove] | None = None,
+        cancellation_event: Event | None = None,
+    ) -> Awaitable[Policy]:
+        self.neural_net.set_to_eval()
+        mcts = self._get_mcts(num_mcts_sims)
+        return mcts.policy_async(state, root_node, cancellation_event)
 
     def policies(
         self, states: list[State[TMove]], num_mcts_sims: int | AZMctsParameters
@@ -145,7 +157,7 @@ class AlphaZero:
 
         while status.is_in_progress:
             state_before = state
-            policy = mcts.policy(state_before, node)
+            policy = mcts.policy_async(state_before, node)
             temperature = temperature_schedule.get_temperature(state_before.move_count)
             move = policy.select_move(temperature)
             node = next(node for node in policy.node.children if node.move == move)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import tkinter as tk
+from asyncio import Event
 from tkinter import ttk
 
 import chess
@@ -16,6 +17,7 @@ from pypad.states.state import TemperatureSchedule
 
 ROWS, COLS = 8, 8
 CELL_SIZE = 80
+REFRESH_RATE = 0.025
 
 BLACK_COLOR = "#EDF9EB"
 WHITE_COLOR = "#346B51"
@@ -35,6 +37,7 @@ class ChessScreenModel:
         self.alpha_zero = alpha_zero
         self.colors = colors
         self.root_node = None
+        self.event: Event | None = None
 
     def is_alphas_turn(self, state: ChessState) -> bool:
         return state.board.turn in self.colors
@@ -43,8 +46,22 @@ class ChessScreenModel:
         self.root_node = None
         self.colors = colors
 
+    async def ponder(self, state: ChessState) -> None:
+        if not self.colors:
+            return
+
+        PONDER_SIMS = 50_000
+        await asyncio.sleep(REFRESH_RATE)
+        self.event = Event()
+        policy = await self.alpha_zero.policy_async(state, PONDER_SIMS, self.root_node, self.event)
+        self.root_node = policy.node
+
+    async def stop_pondering(self, move: chess.Move) -> None:
+        if self.event:
+            self.event.set()
+            self.event = None
+
     async def get_move(self, state: ChessState, num_sims: int) -> chess.Move:
-        await asyncio.sleep(0.1)
         node = None
         if len(self.colors) == 2:
             node = self.root_node
@@ -52,7 +69,8 @@ class ChessScreenModel:
             node = next(n for n in self.root_node.children if n.move == state.board.move_stack[-1])
 
         temperature_schedule = TemperatureSchedule.competitive()
-        policy = self.alpha_zero.policy(state, num_sims, node)
+        await asyncio.sleep(REFRESH_RATE)
+        policy = await self.alpha_zero.policy_async(state, num_sims, node)
         temperature = temperature_schedule.get_temperature(state.move_count)
         move = policy.select_move(temperature)
         self.root_node = next(node for node in policy.node.children if node.move == move)
@@ -106,6 +124,9 @@ class ChessScreenController:
             move = chess.Move(self.selected_square, square)
             await self.move_piece(move)
 
+        else:
+            self.view.draw_board(self.state)
+
     async def move_piece(self, move: chess.Move):
         from_square = move.from_square
         to_square = move.to_square
@@ -118,13 +139,19 @@ class ChessScreenController:
                 move.promotion = self.view.promotion_option.get()
 
         # Check if the move is legal
-        if piece.color == self.state.board.turn:
-            if move in self.state.board.legal_moves:
-                self.state.board.push(move)
-                self.view.draw_board(self.state)
-                if self.state.status().is_in_progress and self.model.is_alphas_turn(self.state):
-                    move = await self.model.get_move(self.state, self.num_sims)
-                    await self.move_piece(move)
+        if piece.color == self.state.board.turn and move in self.state.board.legal_moves:
+            await self.model.stop_pondering(move)
+            self.state.board.push(move)
+            self.view.draw_board(self.state)
+
+            if not self.state.status().is_in_progress:
+                return
+
+            if self.model.is_alphas_turn(self.state):
+                move = await self.model.get_move(self.state, self.num_sims)
+                await self.move_piece(move)
+            else:
+                await self.model.ponder(self.state)
         else:
             self.view.draw_board(self.state)
 

@@ -10,7 +10,13 @@ from PIL import Image, ImageTk
 from pypad.games import Chess
 from pypad.solvers.alpha_zero import AlphaZero
 from pypad.solvers.network_torch import PytorchNeuralNetwork
-from pypad.views.chess_detail import DARK_COLOR, ChessScreen, ChessScreenController, ChessScreenModel
+from pypad.views.chess_detail import (
+    DARK_COLOR,
+    REFRESH_RATE,
+    ChessScreen,
+    ChessScreenController,
+    ChessScreenModel,
+)
 
 GREY_COLOR = "#BEC7C6"
 
@@ -42,7 +48,7 @@ class Application(tk.Tk):
     async def show_async(self):
         while self.is_open:
             self.update()
-            await asyncio.sleep(0.025)
+            await asyncio.sleep(REFRESH_RATE)
 
     def raise_exit_flag(self):
         self.is_open = False
@@ -73,16 +79,6 @@ class Application(tk.Tk):
     def open_file(self):
         file_path = filedialog.askopenfilename()
         print("Selected file:", file_path)
-
-
-class TitleScreenModel:
-    ...
-
-
-class TitleScreenController:
-    def __init__(self, model: TitleScreenModel, view: TitleScreen):
-        self.model = model
-        self.view = view
 
 
 class TitleScreen(tk.Frame):
