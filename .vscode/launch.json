@@ -8,7 +8,7 @@
             "name": "AlphaZero (Tic)",
             "type": "python",
             "request": "launch",
-            "module": "src.pypad",
+            "module": "src.caz",
             "justMyCode": true,
             "args": [
                 "learn",
@@ -19,7 +19,7 @@
             "name": "AlphaZero (ConnectX)",
             "type": "python",
             "request": "launch",
-            "module": "src.pypad",
+            "module": "src.caz",
             "justMyCode": true,
             "args": [
                 "learn",
@@ -30,7 +30,7 @@
             "name": "AlphaZero (Chess)",
             "type": "python",
             "request": "launch",
-            "module": "src.pypad",
+            "module": "src.caz",
             "justMyCode": true,
             "args": [
                 "learn",
@@ -41,7 +41,7 @@
             "name": "Supervised (Chess)",
             "type": "python",
             "request": "launch",
-            "module": "src.pypad",
+            "module": "src.caz",
             "justMyCode": true,
             "args": [
                 "super",
@@ -51,7 +51,7 @@
             "name": "Catchem Alpha Zero",
             "type": "python",
             "request": "launch",
-            "module": "src.pypad.app",
+            "module": "src.caz.app",
             "justMyCode": true,
             "args": []
         },
@@ -59,7 +59,7 @@
             "name": "Hyper-parameters (TicTacToe)",
             "type": "python",
             "request": "launch",
-            "module": "src.pypad",
+            "module": "src.caz",
             "justMyCode": true,
             "args": [
                 "hyper",
@@ -71,7 +71,7 @@
             "name": "Hyper-parameters (ConnectX)",
             "type": "python",
             "request": "launch",
-            "module": "src.pypad",
+            "module": "src.caz",
             "justMyCode": true,
             "args": [
                 "hyper",
@@ -83,7 +83,7 @@
             "name": "MNIST Examples",
             "type": "python",
             "request": "launch",
-            "module": "src.pypad.mnist",
+            "module": "src.caz.mnist",
             "justMyCode": true,
             "args": []
         },
@@ -91,7 +91,7 @@
             "name": "Run TicTacToe (MCTS)",
             "type": "python",
             "request": "launch",
-            "module": "src.pypad",
+            "module": "src.caz",
             "justMyCode": true,
             "args": [
                 "run",
@@ -104,7 +104,7 @@
             "name": "Run TicTacToe (Alpha)",
             "type": "python",
             "request": "launch",
-            "module": "src.pypad",
+            "module": "src.caz",
             "justMyCode": true,
             "args": [
                 "run",
@@ -117,7 +117,7 @@
             "name": "Run Connect (MCTS)",
             "type": "python",
             "request": "launch",
-            "module": "src.pypad",
+            "module": "src.caz",
             "justMyCode": true,
             "args": [
                 "run",
@@ -130,7 +130,7 @@
             "name": "Run Connect (Alpha)",
             "type": "python",
             "request": "launch",
-            "module": "src.pypad",
+            "module": "src.caz",
             "justMyCode": true,
             "args": [
                 "run",
@@ -143,7 +143,7 @@
             "name": "Run Chess (Alpha)",
             "type": "python",
             "request": "launch",
-            "module": "src.pypad",
+            "module": "src.caz",
             "justMyCode": true,
             "args": [
                 "run",
@@ -156,7 +156,7 @@
             "name": "Kaggle TicTacToe (MCTS)",
             "type": "python",
             "request": "launch",
-            "module": "src.pypad",
+            "module": "src.caz",
             "justMyCode": true,
             "args": [
                 "kaggle",
@@ -169,7 +169,7 @@
             "name": "Kaggle TicTacToe (Alpha)",
             "type": "python",
             "request": "launch",
-            "module": "src.pypad",
+            "module": "src.caz",
             "justMyCode": true,
             "args": [
                 "kaggle",
@@ -182,7 +182,7 @@
             "name": "Kaggle Connect (MCTS)",
             "type": "python",
             "request": "launch",
-            "module": "src.pypad",
+            "module": "src.caz",
             "justMyCode": true,
             "args": [
                 "kaggle",
@@ -195,7 +195,7 @@
             "name": "Kaggle Connect (Alpha)",
             "type": "python",
             "request": "launch",
-            "module": "src.pypad",
+            "module": "src.caz",
             "justMyCode": true,
             "args": [
                 "kaggle",
@@ -213,10 +213,10 @@
             "justMyCode": true
         },
         {
-            "name": "PyPad",
+            "name": "CAZ",
             "type": "python",
             "request": "launch",
-            "module": "src.pypad",
+            "module": "src.caz",
             "justMyCode": true
         }
     ]
