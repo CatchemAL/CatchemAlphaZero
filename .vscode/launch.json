@@ -140,6 +140,19 @@
             ]
         },
         {
+            "name": "Run Chess (Alpha)",
+            "type": "python",
+            "request": "launch",
+            "module": "src.pypad",
+            "justMyCode": true,
+            "args": [
+                "run",
+                "--game=chess",
+                "--player1=az",
+                "--player2=az",
+            ]
+        },
+        {
             "name": "Kaggle TicTacToe (MCTS)",
             "type": "python",
             "request": "launch",
