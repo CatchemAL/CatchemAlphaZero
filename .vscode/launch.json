@@ -48,6 +48,14 @@
             ]
         },
         {
+            "name": "Catchem Alpha Zero",
+            "type": "python",
+            "request": "launch",
+            "module": "src.pypad.app",
+            "justMyCode": true,
+            "args": []
+        },
+        {
             "name": "Hyper-parameters (TicTacToe)",
             "type": "python",
             "request": "launch",
