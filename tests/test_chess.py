@@ -1,23 +1,9 @@
 import numpy as np
 import pytest
+from pypad.games import Chess
 
-from pypad.states.chess import ActionPlanes, Chess, ChessState, ObsPlanes
-
-from . import chess_games
-
-moves_by_label = {
-    "white_en_passant_sans": chess_games.white_en_passant_sans,
-    "black_en_passant_sans": chess_games.black_en_passant_sans,
-    "white_no_queenside_sans": chess_games.white_no_queenside_sans,
-    "white_no_kingside_sans": chess_games.white_no_kingside_sans,
-    "white_no_castling_sans": chess_games.white_no_castling_sans,
-    "black_no_queenside_sans": chess_games.black_no_queenside_sans,
-    "black_no_kingside_sans": chess_games.black_no_kingside_sans,
-    "black_no_castling_sans": chess_games.black_no_castling_sans,
-    "white_castled_black_not_yet_sans": chess_games.white_castled_black_not_yet_sans,
-    "scholars_mate_sans": chess_games.scholars_mate_sans,
-    "alpha_zeros_immortal_zugzwang_sans": chess_games.alpha_zeros_immortal_zugzwang_sans,
-}
+from pypad.states.chess import ObsPlanes
+from pypad.states.chess_enums import KeyGames
 
 
 class TestChessFeatures:
@@ -47,8 +33,9 @@ class TestChessFeatures:
         ep_square: float | None,
     ) -> None:
         # Arrange
-        moves = moves_by_label[label]
-        sut = ChessState.create(moves)
+        game = Chess()
+        sans = KeyGames.get(label)
+        sut = game.initial_state(sans)
 
         # Act
         actual = sut.to_feature()
