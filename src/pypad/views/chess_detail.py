@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import tkinter as tk
 from asyncio import Event
+from importlib import resources
 from tkinter import ttk
 
 import chess
@@ -371,9 +372,9 @@ class ChessScreen(tk.Frame):
         self.sims_combobox.pack(side=tk.TOP, anchor=tk.W, pady=(10, 0))
 
     def _add_catchemalphazero_logo(self, frame) -> None:
-        # Load and display the image
-        image_path = "icons/caz_flat_logo.png"
-        image = Image.open(image_path)
+        with resources.path("pypad.icons", "caz_flat_logo.png") as image_path:
+            image = Image.open(image_path)
+
         image = image.resize((180, 176))
         photo = ImageTk.PhotoImage(image)
         image_label = tk.Label(frame, image=photo, bg=DARK_COLOR)
@@ -410,20 +411,21 @@ class ChessScreen(tk.Frame):
 
     @staticmethod
     def _get_piece_image_map() -> dict[Piece, tk.PhotoImage]:
-        piece_images = {
-            Piece(chess.PAWN, chess.WHITE): Image.open(r"icons/white-pawn.png"),
-            Piece(chess.ROOK, chess.WHITE): Image.open(r"icons/white-rook.png"),
-            Piece(chess.KNIGHT, chess.WHITE): Image.open(r"icons/white-knight.png"),
-            Piece(chess.BISHOP, chess.WHITE): Image.open(r"icons/white-bishop.png"),
-            Piece(chess.QUEEN, chess.WHITE): Image.open(r"icons/white-queen.png"),
-            Piece(chess.KING, chess.WHITE): Image.open(r"icons/white-king.png"),
-            Piece(chess.PAWN, chess.BLACK): Image.open(r"icons/black-pawn.png"),
-            Piece(chess.ROOK, chess.BLACK): Image.open(r"icons/black-rook.png"),
-            Piece(chess.KNIGHT, chess.BLACK): Image.open(r"icons/black-knight.png"),
-            Piece(chess.BISHOP, chess.BLACK): Image.open(r"icons/black-bishop.png"),
-            Piece(chess.QUEEN, chess.BLACK): Image.open(r"icons/black-queen.png"),
-            Piece(chess.KING, chess.BLACK): Image.open(r"icons/black-king.png"),
-        }
+        with resources.files("pypad.icons") as dir:
+            piece_images = {
+                Piece(chess.PAWN, chess.WHITE): Image.open(dir / "white-pawn.png"),
+                Piece(chess.ROOK, chess.WHITE): Image.open(dir / "white-rook.png"),
+                Piece(chess.KNIGHT, chess.WHITE): Image.open(dir / "white-knight.png"),
+                Piece(chess.BISHOP, chess.WHITE): Image.open(dir / "white-bishop.png"),
+                Piece(chess.QUEEN, chess.WHITE): Image.open(dir / "white-queen.png"),
+                Piece(chess.KING, chess.WHITE): Image.open(dir / "white-king.png"),
+                Piece(chess.PAWN, chess.BLACK): Image.open(dir / "black-pawn.png"),
+                Piece(chess.ROOK, chess.BLACK): Image.open(dir / "black-rook.png"),
+                Piece(chess.KNIGHT, chess.BLACK): Image.open(dir / "black-knight.png"),
+                Piece(chess.BISHOP, chess.BLACK): Image.open(dir / "black-bishop.png"),
+                Piece(chess.QUEEN, chess.BLACK): Image.open(dir / "black-queen.png"),
+                Piece(chess.KING, chess.BLACK): Image.open(dir / "black-king.png"),
+            }
 
         resized_images = {}
         SCALAR = 1.2

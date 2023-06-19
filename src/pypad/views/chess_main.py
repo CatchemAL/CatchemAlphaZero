@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import tkinter as tk
+from importlib import resources
 from tkinter import filedialog, ttk
 
 import chess
@@ -28,7 +29,6 @@ class Application(tk.Tk):
         self.is_open = True
         self.title("CatchemAlphaZero")
         self.resizable(False, False)
-        self.iconbitmap("icons/tiny_chess.ico")
         self.current_screen = None
         self.protocol("WM_DELETE_WINDOW", self.raise_exit_flag)
 
@@ -43,6 +43,9 @@ class Application(tk.Tk):
 
         self.switch_to_title_screen()
         self.create_menu()
+
+        with resources.path("pypad.icons", "tiny_chess.ico") as icon_path:
+            self.iconbitmap(icon_path)
 
     async def show_async(self):
         while self.is_open:
@@ -86,7 +89,9 @@ class TitleScreen(tk.Frame):
         super().__init__(master)
 
         # Load and display the background image
-        logo = Image.open("icons/caz_splashscreen.jpg").resize((614, 608))
+        with resources.path("pypad.icons", "caz_splashscreen.jpg") as splash_path:
+            logo = Image.open(splash_path).resize((614, 608))
+
         image = ImageTk.PhotoImage(logo)
         label = tk.Label(self, image=image)
         label.image = image  # avoid garbage collection
