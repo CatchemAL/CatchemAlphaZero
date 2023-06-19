@@ -97,8 +97,8 @@ class AZTrainingParameters:
         match fullname:
             case "TicTacToe":
                 params = {
-                    "num_generations": 50,
-                    "num_epochs": 5,
+                    "num_generations": 20,
+                    "num_epochs": 4,
                     "games_per_generation": 100,
                     "num_parallel": 50,
                     "minibatch_size": 128,
