@@ -890,7 +890,7 @@ class KeyGames(Enum):
     BLACK_NO_KINGSIDE_SANS = ["e4", "h6", "e5", "Rh7", "Bc4", "Rh8", "Bd3"]
     BLACK_NO_CASTLING_SANS = ["e4", "e5", "Bc4", "Ke7", "Nf3", "Ke8"]
 
-    WHITE_CASLTED_BLACK_NOT_YET_SANS = ["e4", "e5", "Bc4", "Bc5", "Nf3", "Ne7", "O-O", "f6", "Ng5", "a6"]
+    WHITE_CASTLED_BLACK_NOT_YET_SANS = ["e4", "e5", "Bc4", "Bc5", "Nf3", "Ne7", "O-O", "f6", "Ng5", "a6"]
 
     @classmethod
     def get(cls, label: str) -> Self:
