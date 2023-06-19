@@ -1,4 +1,4 @@
-<img src="https://raw.githubusercontent.com/CatchemAl/Doddle/main/images/DoddleLogo.png" width="420">
+<img src="https://raw.githubusercontent.com/CatchemAl/CatchemAlphaZero/main/src/pypad/icons/caz_splashscreen.jpg" width="420">
 
 ## Features
 
