@@ -47,10 +47,13 @@ class AgentType(Enum):
 
                 return MctsSolver()
             case AgentType.AZ:
-                from .alpha_zero_mcts import AlphaZeroMcts
-                from .network import DummyNeuralNetwork
+                from ..alpha_zero import AlphaZero, PytorchNeuralNetwork
+                from ..alpha_zero.network import DummyNeuralNetwork
 
-                neural_network = DummyNeuralNetwork()
-                return AlphaZeroMcts(neural_network)
+                # neural_net = PytorchNeuralNetwork.create(game, ".")
+                neural_net = DummyNeuralNetwork()
+                alpha_zero = AlphaZero(neural_net)
+
+                return alpha_zero.as_solver()
             case _:
                 raise ValueError(f"Unsupported agent type: {self}")

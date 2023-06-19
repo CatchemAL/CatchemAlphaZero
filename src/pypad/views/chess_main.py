@@ -7,9 +7,8 @@ from tkinter import filedialog, ttk
 import chess
 from PIL import Image, ImageTk
 
+from pypad.alpha_zero import AlphaZero, PytorchNeuralNetwork
 from pypad.games import Chess
-from pypad.solvers.alpha_zero import AlphaZero
-from pypad.solvers.network_torch import PytorchNeuralNetwork
 from pypad.views.chess_detail import (
     DARK_COLOR,
     REFRESH_RATE,

@@ -9,9 +9,8 @@ import chess
 from chess import Piece, Square
 from PIL import Image, ImageTk
 
+from pypad.alpha_zero import AlphaZero, PytorchNeuralNetwork
 from pypad.games import Chess
-from pypad.solvers.alpha_zero import AlphaZero
-from pypad.solvers.network_torch import PytorchNeuralNetwork
 from pypad.states import ChessState
 from pypad.states.state import TemperatureSchedule
 
@@ -29,6 +28,8 @@ MATE_COLOR = "#880015"
 DRAW_COLOR = "#FFA628"
 LAST_COLOR_L = "#F8F77E"
 LAST_COLOR_D = "#BECC52"
+HIGH_COLOR_L = "#8DD1BA"
+HIGH_COLOR_D = "#349688"
 HIGH_COLOR = "#B5E61D"
 
 
@@ -126,7 +127,7 @@ class ChessScreenController:
 
         if piece and piece.color == self.state.board.turn and square != self.selected_square:
             self.selected_square = square
-            self.view.highlight_cell(file, rank, HIGH_COLOR, True)
+            self.view.highlight_click(square)
 
         elif self.selected_square is not None:
             move = chess.Move(self.selected_square, square)
@@ -237,15 +238,20 @@ class ChessScreen(tk.Frame):
         if not status.is_in_progress:
             self.highlight_mate(state) if status.value > 0 else self.highlight_draw(state)
 
+    def highlight_click(self, square: Square) -> None:
+        file, rank = chess.square_file(square), chess.square_rank(square)
+        color = HIGH_COLOR_L if (file + rank) & 1 else HIGH_COLOR_D
+        self.highlight_cell(file, rank, color, True)
+
     def highlight_last_move(self, move: chess.Move) -> None:
         from_square = move.from_square
         file, rank = chess.square_file(from_square), chess.square_rank(from_square)
-        color = LAST_COLOR_L if (file + rank) & 1 else LAST_COLOR_D
+        color = HIGH_COLOR_L if (file + rank) & 1 else HIGH_COLOR_D
         self.highlight_cell(file, rank, color, True, "move_highlight")
 
         to_square = move.to_square
         file, rank = chess.square_file(to_square), chess.square_rank(to_square)
-        color = LAST_COLOR_L if (file + rank) & 1 else LAST_COLOR_D
+        color = HIGH_COLOR_L if (file + rank) & 1 else HIGH_COLOR_D
         self.highlight_cell(file, rank, color, False, "move_highlight")
 
     def highlight_draw(self, state: ChessState) -> None:
@@ -404,20 +410,31 @@ class ChessScreen(tk.Frame):
 
     @staticmethod
     def _get_piece_image_map() -> dict[Piece, tk.PhotoImage]:
-        return {
-            Piece(chess.PAWN, chess.WHITE): tk.PhotoImage(file=r"icons/white-pawn.png"),
-            Piece(chess.ROOK, chess.WHITE): tk.PhotoImage(file=r"icons/white-rook.png"),
-            Piece(chess.KNIGHT, chess.WHITE): tk.PhotoImage(file=r"icons/white-knight.png"),
-            Piece(chess.BISHOP, chess.WHITE): tk.PhotoImage(file=r"icons/white-bishop.png"),
-            Piece(chess.QUEEN, chess.WHITE): tk.PhotoImage(file=r"icons/white-queen.png"),
-            Piece(chess.KING, chess.WHITE): tk.PhotoImage(file=r"icons/white-king.png"),
-            Piece(chess.PAWN, chess.BLACK): tk.PhotoImage(file=r"icons/black-pawn.png"),
-            Piece(chess.ROOK, chess.BLACK): tk.PhotoImage(file=r"icons/black-rook.png"),
-            Piece(chess.KNIGHT, chess.BLACK): tk.PhotoImage(file=r"icons/black-knight.png"),
-            Piece(chess.BISHOP, chess.BLACK): tk.PhotoImage(file=r"icons/black-bishop.png"),
-            Piece(chess.QUEEN, chess.BLACK): tk.PhotoImage(file=r"icons/black-queen.png"),
-            Piece(chess.KING, chess.BLACK): tk.PhotoImage(file=r"icons/black-king.png"),
+        piece_images = {
+            Piece(chess.PAWN, chess.WHITE): Image.open(r"icons/white-pawn.png"),
+            Piece(chess.ROOK, chess.WHITE): Image.open(r"icons/white-rook.png"),
+            Piece(chess.KNIGHT, chess.WHITE): Image.open(r"icons/white-knight.png"),
+            Piece(chess.BISHOP, chess.WHITE): Image.open(r"icons/white-bishop.png"),
+            Piece(chess.QUEEN, chess.WHITE): Image.open(r"icons/white-queen.png"),
+            Piece(chess.KING, chess.WHITE): Image.open(r"icons/white-king.png"),
+            Piece(chess.PAWN, chess.BLACK): Image.open(r"icons/black-pawn.png"),
+            Piece(chess.ROOK, chess.BLACK): Image.open(r"icons/black-rook.png"),
+            Piece(chess.KNIGHT, chess.BLACK): Image.open(r"icons/black-knight.png"),
+            Piece(chess.BISHOP, chess.BLACK): Image.open(r"icons/black-bishop.png"),
+            Piece(chess.QUEEN, chess.BLACK): Image.open(r"icons/black-queen.png"),
+            Piece(chess.KING, chess.BLACK): Image.open(r"icons/black-king.png"),
         }
+
+        resized_images = {}
+        SCALAR = 1.2
+        for piece, image in piece_images.items():
+            new_width = int(image.width * SCALAR)
+            new_height = int(image.height * SCALAR)
+            resized_image = image.resize((new_width, new_height), Image.LANCZOS)
+            photo_image = ImageTk.PhotoImage(resized_image)
+            resized_images[piece] = photo_image
+
+        return resized_images
 
 
 class Application(tk.Tk):

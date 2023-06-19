@@ -14,8 +14,8 @@ from . import Solver
 class MctsSolver(Solver):
     num_mcts_sims: int = 1_000
 
-    def solve(self, root_state: State[TMove]) -> TMove:
-        root = self.search(root_state)
+    def solve(self, state: State[TMove]) -> TMove:
+        root = self.search(state)
         max_child = max(root.children, key=lambda c: c.visit_count)
         return max_child.move
 
