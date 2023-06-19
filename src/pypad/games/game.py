@@ -9,7 +9,7 @@ from ..solvers import Solver
 from ..states import ChessState, ConnectXState, TicTacToeState, TState
 from ..states.chess_enums import ActionPlanes, ObsPlanes
 from ..views import View
-from ..views.console import ConsoleConnectXView, ConsoleTicTacToeView
+from ..views.console import ChessTicTacToeView, ConsoleConnectXView, ConsoleTicTacToeView
 from .game_type import GameType
 
 
@@ -213,7 +213,7 @@ class Chess(Game[ChessState]):
     ROWS, COLS = 8, 8
 
     def __init__(self, view: View[ChessState] | None = None) -> None:
-        self.view = view
+        self.view = view or ChessTicTacToeView()
 
     @property
     def name(self) -> str:
@@ -243,10 +243,10 @@ class Chess(Game[ChessState]):
         return [(encoded_state, policy)]
 
     def display(self, state: ChessState) -> None:
-        pass
+        self.view.display(state)
 
     def display_outcome(self, state: ChessState) -> None:
-        pass
+        self.view.display_outcome(state)
 
 
 def get_game(game_type: GameType) -> Chess | ConnectX | TicTacToe:

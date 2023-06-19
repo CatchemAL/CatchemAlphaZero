@@ -1,6 +1,6 @@
 from colorama import Fore, Style
 
-from ..states import ConnectXState, TicTacToeState
+from ..states import ChessState, ConnectXState, TicTacToeState
 from . import View
 
 
@@ -38,6 +38,18 @@ class ConsoleTicTacToeView(View[TicTacToeState]):
 
     def display_outcome(self, state: TicTacToeState) -> None:
         if state.is_won():
+            print(f"Player {state.played_by}  wins!")
+        else:
+            print("It's a draw!")
+
+
+class ChessTicTacToeView(View[ChessState]):
+    def display(self, state: ChessState) -> None:
+        print(state.board)
+        print()
+
+    def display_outcome(self, state: ChessState) -> None:
+        if state.status().value:
             print(f"Player {state.played_by}  wins!")
         else:
             print("It's a draw!")
