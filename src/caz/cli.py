@@ -109,18 +109,6 @@ def hyper(args: Namespace) -> None:
 def main() -> None:
     parse_args(sys.argv[1:])
 
-    return
-    run_kaggle()
-
-    ROWS, COLS = 6, 7
-    moves = [1, 1, 2, 2, 3, 3]
-    # 12211221122137477577675665566556
-    sequence = "1,2,2,1,1,2,2,1,1,2,2,1,3,7,4,7,7,5,7,7,6,7,5,6,6,5,5,6,6,5,5,6".split(",")
-    moves = [int(s) for s in sequence]
-    board = ConnectX.create(ROWS, COLS, moves)
-    solver = Solver()
-    solver.minimax(board, -np.inf, np.inf)
-
 
 def parse_args(args: Sequence[str]) -> None:
     parser = ArgumentParser()
