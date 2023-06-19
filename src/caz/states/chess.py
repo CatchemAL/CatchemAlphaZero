@@ -253,9 +253,10 @@ class ChessState(State[Move]):
 
     def csv(self) -> str:
         sans = []
+        new_board = chess.Board()
         for move in self.board.move_stack:
-            san = self.board.san(move)
-            self.board.push(move)
+            san = new_board.san(move)
+            new_board.push(move)
             sans.append(san)
 
         return f"[{','.join(sans)}]"
