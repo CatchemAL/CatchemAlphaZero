@@ -10,10 +10,10 @@ import chess
 from chess import Piece, Square
 from PIL import Image, ImageTk
 
-from pypad.alpha_zero import AlphaZero, PytorchNeuralNetwork
-from pypad.games import Chess
-from pypad.states import ChessState
-from pypad.states.state import TemperatureSchedule
+from caz.alpha_zero import AlphaZero, PytorchNeuralNetwork
+from caz.games import Chess
+from caz.states import ChessState
+from caz.states.state import TemperatureSchedule
 
 ROWS, COLS = 8, 8
 CELL_SIZE = 80
@@ -372,7 +372,7 @@ class ChessScreen(tk.Frame):
         self.sims_combobox.pack(side=tk.TOP, anchor=tk.W, pady=(10, 0))
 
     def _add_catchemalphazero_logo(self, frame) -> None:
-        with resources.path("pypad.icons", "caz_flat_logo.png") as image_path:
+        with resources.path("caz.icons", "caz_flat_logo.png") as image_path:
             image = Image.open(image_path)
 
         image = image.resize((180, 176))
@@ -411,7 +411,7 @@ class ChessScreen(tk.Frame):
 
     @staticmethod
     def _get_piece_image_map() -> dict[Piece, tk.PhotoImage]:
-        with resources.files("pypad.icons") as dir:
+        with resources.files("caz.icons") as dir:
             piece_images = {
                 Piece(chess.PAWN, chess.WHITE): Image.open(dir / "white-pawn.png"),
                 Piece(chess.ROOK, chess.WHITE): Image.open(dir / "white-rook.png"),

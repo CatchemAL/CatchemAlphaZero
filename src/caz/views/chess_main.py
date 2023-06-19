@@ -8,9 +8,9 @@ from tkinter import filedialog, ttk
 import chess
 from PIL import Image, ImageTk
 
-from pypad.alpha_zero import AlphaZero, PytorchNeuralNetwork
-from pypad.games import Chess
-from pypad.views.chess_detail import (
+from ..alpha_zero import AlphaZero, PytorchNeuralNetwork
+from ..games import Chess
+from .chess_detail import (
     DARK_COLOR,
     REFRESH_RATE,
     ChessScreen,
@@ -44,7 +44,7 @@ class Application(tk.Tk):
         self.switch_to_title_screen()
         self.create_menu()
 
-        with resources.path("pypad.icons", "tiny_chess.ico") as icon_path:
+        with resources.path("caz.icons", "tiny_chess.ico") as icon_path:
             self.iconbitmap(icon_path)
 
     async def show_async(self):
@@ -89,7 +89,7 @@ class TitleScreen(tk.Frame):
         super().__init__(master)
 
         # Load and display the background image
-        with resources.path("pypad.icons", "caz_splashscreen.jpg") as splash_path:
+        with resources.path("caz.icons", "caz_splashscreen.jpg") as splash_path:
             logo = Image.open(splash_path).resize((614, 608))
 
         image = ImageTk.PhotoImage(logo)

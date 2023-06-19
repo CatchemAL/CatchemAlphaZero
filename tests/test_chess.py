@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
-from pypad.games import Chess
+from caz.games import Chess
 
-from pypad.states.chess import ObsPlanes
-from pypad.states.chess_enums import KeyGames
+from caz.states.chess import ObsPlanes
+from caz.states.chess_enums import KeyGames
 
 
 class TestChessFeatures:

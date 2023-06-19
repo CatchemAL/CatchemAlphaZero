@@ -1,6 +1,6 @@
 import asyncio
 
-from pypad.views.chess_main import Application
+from caz.views.chess_main import Application
 
 
 def launch() -> None:
