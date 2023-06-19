@@ -11,25 +11,6 @@ TState = TypeVar("TState", bound="State[+TMove]")
 TState_co = TypeVar("TState_co", bound="State[+TMove]", covariant=True)
 
 
-@dataclass
-class Policy(Generic[TMove]):
-    moves: list[TMove] | None
-    priors: np.ndarray[np.float32] | None
-    encoded_policy: np.ndarray[np.float32]
-    value: float
-    node: "Node" | None = None
-
-    def select_move(self, temperature: float) -> TMove:
-        if temperature <= 0.001:
-            idx = np.argmax(self.priors)
-        else:
-            temperature_policy = self.priors ** (1 / temperature)
-            temperature_policy /= temperature_policy.sum()
-            idx = np.random.choice(len(self.priors), p=temperature_policy)
-
-        return self.moves[idx]
-
-
 class State(ABC, Generic[TMove]):
     @property
     @abstractmethod
@@ -77,6 +58,25 @@ class State(ABC, Generic[TMove]):
     @abstractmethod
     def __copy__(self) -> Self:
         ...
+
+
+@dataclass
+class Policy(Generic[TMove]):
+    moves: list[TMove] | None
+    priors: np.ndarray[np.float32] | None
+    encoded_policy: np.ndarray[np.float32]
+    value: float
+    node: "Node" | None = None
+
+    def select_move(self, temperature: float) -> TMove:
+        if temperature <= 0.001:
+            idx = np.argmax(self.priors)
+        else:
+            temperature_policy = self.priors ** (1 / temperature)
+            temperature_policy /= temperature_policy.sum()
+            idx = np.random.choice(len(self.priors), p=temperature_policy)
+
+        return self.moves[idx]
 
 
 @dataclass
