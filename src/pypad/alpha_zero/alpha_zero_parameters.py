@@ -5,12 +5,6 @@ from ..states.state import TemperatureSchedule
 
 
 @dataclass
-class RandomStart:
-    num_moves: int
-    probability: float
-
-
-@dataclass
 class AZMctsParameters:
     num_mcts_sims: int
     dirichlet_epsilon: float
@@ -27,7 +21,6 @@ class AZMctsParameters:
                     "dirichlet_alpha": 0.9,
                     "discount_factor": 0.99,
                 }
-                return cls(**params)
 
             case "ConnectX_6x7":
                 params = {
@@ -36,7 +29,6 @@ class AZMctsParameters:
                     "dirichlet_alpha": 0.6,
                     "discount_factor": 0.98,
                 }
-                return cls(**params)
 
             case "Chess":
                 params = {
@@ -45,7 +37,11 @@ class AZMctsParameters:
                     "dirichlet_alpha": 0.3,
                     "discount_factor": 0.99,
                 }
-                return cls(**params)
+
+            case _:
+                raise NotImplementedError(f"MCTS defaults for {fullname} not supported.")
+
+        return cls(**params)
 
 
 @dataclass
@@ -68,7 +64,6 @@ class AZArenaParameters:
                     "discount_factor": 0.99,
                 }
 
-                return cls(**params)
             case "ConnectX_6x7":
                 params = {
                     "num_mcts_sims": 1600,
@@ -77,7 +72,10 @@ class AZArenaParameters:
                     "discount_factor": 0.98,
                 }
 
-                return cls(**params)
+            case _:
+                raise NotImplementedError(f"Arena defaults for {fullname} not supported.")
+
+        return cls(**params)
 
 
 @dataclass
@@ -87,7 +85,6 @@ class AZTrainingParameters:
     games_per_generation: int
     num_parallel: int
     minibatch_size: int
-    random_start: RandomStart
     temperature: TemperatureSchedule
     mcts_parameters: AZMctsParameters
     arena_parameters: AZArenaParameters
@@ -96,7 +93,6 @@ class AZTrainingParameters:
     def defaults(cls, fullname: str) -> Self:
         mcts_parameters = AZMctsParameters.defaults(fullname)
         arena_parameters = AZArenaParameters()
-        random_start = RandomStart(3, 0.3)
 
         match fullname:
             case "TicTacToe":
@@ -106,13 +102,11 @@ class AZTrainingParameters:
                     "games_per_generation": 100,
                     "num_parallel": 50,
                     "minibatch_size": 128,
-                    "random_start": random_start,
                     "temperature": TemperatureSchedule(2, 1.25),
                     "mcts_parameters": mcts_parameters,
                     "arena_parameters": arena_parameters,
                 }
 
-                return cls(**params)
             case "ConnectX_6x7":
                 params = {
                     "num_generations": 50,
@@ -120,13 +114,10 @@ class AZTrainingParameters:
                     "games_per_generation": 400,
                     "num_parallel": 100,
                     "minibatch_size": 512,
-                    "random_start": random_start,
                     "temperature": TemperatureSchedule(10, 1.2),
                     "mcts_parameters": mcts_parameters,
                     "arena_parameters": arena_parameters,
                 }
-
-                return cls(**params)
 
             case "Chess":
                 params = {
@@ -135,12 +126,15 @@ class AZTrainingParameters:
                     "games_per_generation": 400,
                     "num_parallel": 100,
                     "minibatch_size": 1024,
-                    "random_start": random_start,
                     "temperature": TemperatureSchedule(20, 1.2),
                     "mcts_parameters": mcts_parameters,
                     "arena_parameters": arena_parameters,
                 }
-                return cls(**params)
+
+            case _:
+                raise NotImplementedError(f"Training defaults for {fullname} not supported.")
+
+        return cls(**params)
 
 
 @dataclass
@@ -161,8 +155,6 @@ class AZNetworkParameters:
                     "optimizer_weight_decay": 0.0001,
                 }
 
-                return cls(**params)
-
             case "ConnectX_6x7":
                 params = {
                     "num_resnet_blocks": 9,
@@ -170,8 +162,6 @@ class AZNetworkParameters:
                     "optimizer_learn_rate": 0.001,
                     "optimizer_weight_decay": 0.0001,
                 }
-
-                return cls(**params)
 
             case "Chess":
                 params = {
@@ -181,6 +171,7 @@ class AZNetworkParameters:
                     "optimizer_weight_decay": 0.0001,
                 }
 
-                return cls(**params)
             case _:
                 raise NotImplementedError(f"Network defaults for {fullname} not supported.")
+
+        return cls(**params)
