@@ -36,7 +36,7 @@ class AgentType(Enum):
         message = f"{value} not a supported solver type. Supported types are {supported_types}."
         raise ValueError(message)
 
-    def create_player(self) -> Solver:
+    def create_player(self, game) -> Solver:
         match self:
             case AgentType.HUMAN:
                 raise ValueError("todo")
@@ -48,12 +48,9 @@ class AgentType(Enum):
                 return MctsSolver()
             case AgentType.AZ:
                 from ..alpha_zero import AlphaZero, PytorchNeuralNetwork
-                from ..alpha_zero.network import DummyNeuralNetwork
 
-                # neural_net = PytorchNeuralNetwork.create(game, ".")
-                neural_net = DummyNeuralNetwork()
+                neural_net = PytorchNeuralNetwork.create(game, ".")
                 alpha_zero = AlphaZero(neural_net)
-
-                return alpha_zero.as_solver()
+                return alpha_zero.as_solver(num_mcts_sims=100)
             case _:
                 raise ValueError(f"Unsupported agent type: {self}")

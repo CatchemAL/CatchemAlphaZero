@@ -17,13 +17,13 @@ def run(args: Namespace) -> None:
     game = get_game(game_type)
     state = game.initial_state(init)
 
-    player1 = player1_type.create_player()
-    player2 = player2_type.create_player()
+    player1 = player1_type.create_player(game)
+    player2 = player2_type.create_player(game)
 
     player, opponent = player1, player2
     while state.status().is_in_progress:
         move = player.solve(state)
-        state.play_move(move)
+        state.set_move(move)
         game.display(state)
         player, opponent = opponent, player
 
@@ -39,8 +39,8 @@ def kaggle(args: Namespace) -> None:
 
     game = get_game(game_type)
 
-    player1 = player1_type.create_player()
-    player2 = player2_type.create_player()
+    player1 = player1_type.create_player(game)
+    player2 = player2_type.create_player(game)
     agent1 = game.create_agent(player1)
     agent2 = game.create_agent(player2)
 
