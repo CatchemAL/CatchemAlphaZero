@@ -901,6 +901,7 @@ class KeyGames(Enum):
 
     LONDON_SYSTEM = ["d4", "d5", "Nf3", "Nf6", "Bf4"]
     ACCELERATED_DRAGON = ["e4", "c5", "Nf3", "Nc6", "d4", "cxd4"]
+    SICILIAN_OPENING = ["e4", "c5"]
 
     WHITE_EN_PASSANT_SANS = ["e4", "a6", "e5", "d5"]
     BLACK_EN_PASSANT_SANS = ["a3", "e5", "a4", "e4", "d4"]
