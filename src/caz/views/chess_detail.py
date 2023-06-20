@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import tkinter as tk
 from asyncio import Event
 from importlib import resources
@@ -154,7 +155,14 @@ class ChessScreenController:
             self.state.board.push(move)
             self.view.draw_board(self.state)
 
+            await asyncio.sleep(0)
+            csv = self.state.csv()
+            logging.info(csv)
+
             if not self.state.status().is_in_progress:
+                await asyncio.sleep(0)
+                pgn = self.state.pgn()
+                logging.info("\n" + pgn)
                 return
 
             if self.model.is_alphas_turn(self.state):
