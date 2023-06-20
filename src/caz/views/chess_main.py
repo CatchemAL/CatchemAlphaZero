@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import tkinter as tk
 from importlib import resources
 from tkinter import filedialog, ttk
@@ -10,13 +11,7 @@ from PIL import Image, ImageTk
 
 from ..alpha_zero import AlphaZero, PytorchNeuralNetwork
 from ..games import Chess
-from .chess_detail import (
-    DARK_COLOR,
-    REFRESH_RATE,
-    ChessScreen,
-    ChessScreenController,
-    ChessScreenModel,
-)
+from .chess_detail import DARK_COLOR, REFRESH_RATE, ChessScreen, ChessScreenController, ChessScreenModel
 
 GREY_COLOR = "#BEC7C6"
 
@@ -25,6 +20,9 @@ class Application(tk.Tk):
     def __init__(self, event_loop):
         super().__init__()
 
+        logging.info("CatchemAlphaZero app started.")
+
+        game = Chess()
         self.loop = event_loop
         self.is_open = True
         self.title("CatchemAlphaZero")
@@ -32,7 +30,7 @@ class Application(tk.Tk):
         self.current_screen = None
         self.protocol("WM_DELETE_WINDOW", self.raise_exit_flag)
 
-        game = Chess()
+        logging.info("Loading Torch weights.")
         network = PytorchNeuralNetwork.create(game, ".")
         alpha_zero = AlphaZero(network)
         model = ChessScreenModel(alpha_zero, chess.BLACK)
@@ -145,9 +143,18 @@ class TitleScreen(tk.Frame):
             compound=tk.CENTER,
         )
 
-        self.white_button.place(relx=0.5, rely=0.75, anchor=tk.CENTER)
-        self.black_button.place(relx=0.5, rely=0.83, anchor=tk.CENTER)
-        self.both_button.place(relx=0.5, rely=0.91, anchor=tk.CENTER)
+        self.spectate_button = ttk.Button(
+            self,
+            text="Spectate Mode",
+            command=lambda: switch_screen_callback([]),
+            style="TButton",
+            compound=tk.CENTER,
+        )
+
+        self.white_button.place(relx=0.38, rely=0.80, anchor=tk.CENTER)
+        self.black_button.place(relx=0.38, rely=0.88, anchor=tk.CENTER)
+        self.both_button.place(relx=0.62, rely=0.80, anchor=tk.CENTER)
+        self.spectate_button.place(relx=0.62, rely=0.88, anchor=tk.CENTER)
 
 
 if __name__ == "__main__":
