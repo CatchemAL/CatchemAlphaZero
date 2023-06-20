@@ -119,11 +119,10 @@ class ChessScreenController:
             move = await self.model.get_move(self.state, self.num_sims)
             await self.move_piece(move)
 
-    async def on_square_click(self, file: int, rank: int) -> None:
+    async def on_square_click(self, square: Square) -> None:
         if self.model.is_alphas_turn(self.state) or not self.state.status().is_in_progress:
             return
 
-        square = chess.square(file, rank)
         piece = self.state.board.piece_at(square)
 
         if piece and piece.color == self.state.board.turn and square != self.selected_square:
@@ -184,6 +183,7 @@ class ChessScreen(tk.Frame):
         rhs_frame.pack(side=tk.LEFT, padx=(0, 20), anchor=tk.W, expand=True)
 
         # Add labels to display game information
+        self.flip_board = tk.BooleanVar(value=False)
         self.white_label, self.black_label = self._add_status_labels(rhs_frame)
 
         # Create radio buttons for promotion options
@@ -194,7 +194,7 @@ class ChessScreen(tk.Frame):
         self._add_catchemalphazero_logo(rhs_frame)
         self._add_new_game_button(rhs_frame, new_game_callback)
 
-    async def on_square_click(self, file: int, rank: int) -> None:
+    async def on_square_click(self, square: Square) -> None:
         ...
 
     def draw_board(self, state: ChessState):
@@ -223,6 +223,8 @@ class ChessScreen(tk.Frame):
         for rank in range(ROWS):
             for file in range(COLS):
                 square = chess.square(file, 7 - rank)
+                square = self._flip_square(square)
+
                 piece = state.board.piece_at(square)
                 if piece:
                     self.canvas.create_image(
@@ -272,6 +274,8 @@ class ChessScreen(tk.Frame):
     def highlight_cell(
         self, file: int, rank: int, color: str, delete_canvas: bool, tag: str = "highlight"
     ):
+        file, rank = self._flip_coords(file, rank)
+
         x1 = file * CELL_SIZE
         y1 = (7 - rank) * CELL_SIZE
         x2 = x1 + CELL_SIZE
@@ -324,6 +328,10 @@ class ChessScreen(tk.Frame):
             bg=DARK_COLOR,
         )
         black_player_label.pack(side=tk.TOP, pady=0, anchor=tk.W)
+
+        checkbox = tk.Checkbutton(frame, text="Flip Board", variable=self.flip_board)
+        checkbox.configure(background=DARK_COLOR, foreground=BLUE_COLOR, font=("Cascadia Mono", 11))
+        checkbox.pack(side=tk.TOP, pady=0, anchor=tk.W)
 
         return white_player_label, black_player_label
 
@@ -407,7 +415,17 @@ class ChessScreen(tk.Frame):
     def _canvas_callback(self, event) -> None:
         file = event.x // CELL_SIZE
         rank = 7 - (event.y // CELL_SIZE)
-        asyncio.create_task(self.on_square_click(file, rank))
+        square = chess.square(file, rank)
+        square = self._flip_square(square)
+        asyncio.create_task(self.on_square_click(square))
+
+    def _flip_square(self, square: Square) -> Square:
+        return 63 - square if self.flip_board.get() else square
+
+    def _flip_coords(self, file: int, rank: int) -> tuple[int, int]:
+        if self.flip_board.get():
+            return 7 - file, 7 - rank
+        return file, rank
 
     @staticmethod
     def _get_piece_image_map() -> dict[Piece, tk.PhotoImage]:
