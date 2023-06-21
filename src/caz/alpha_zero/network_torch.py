@@ -281,6 +281,7 @@ class PytorchNeuralNetwork:
         action_size = game_parameters.action_size
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
+        map_location = torch.device(device)
 
         net_params = AZNetworkParameters.defaults(game.fullname)
         resnet = ResNet(obs_shape, action_size, net_params.num_resnet_blocks, net_params.num_features)
@@ -303,11 +304,11 @@ class PytorchNeuralNetwork:
 
             if weights_files:
                 latest_weights_file = max(weights_files, key=lambda f: int(f.stem.split("gen")[1]))
-                resnet.load_state_dict(torch.load(latest_weights_file))
+                resnet.load_state_dict(torch.load(latest_weights_file, map_location=map_location))
                 generation = int(latest_weights_file.stem.split("gen")[1])
 
             if optim_files:
                 latest_optimiser_file = max(optim_files, key=lambda f: int(f.stem.split("gen")[1]))
-                optimizer.load_state_dict(torch.load(latest_optimiser_file))
+                optimizer.load_state_dict(torch.load(latest_optimiser_file, map_location=map_location))
 
         return PytorchNeuralNetwork(resnet, optimizer, game, generation, root_directory)
