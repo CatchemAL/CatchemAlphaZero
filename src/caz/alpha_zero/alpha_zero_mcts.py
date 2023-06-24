@@ -248,7 +248,7 @@ class Node(Generic[TMove]):
             if self.parent is None:
                 return 0
 
-            FIRST_PLAY_URGENCY = 0.1  # 0.44
+            FIRST_PLAY_URGENCY = 0.25  # 0.44
             q_from_parent = 1 - self.parent.q_value
             estimated_q_value = q_from_parent - FIRST_PLAY_URGENCY
             return max(estimated_q_value, 0)
