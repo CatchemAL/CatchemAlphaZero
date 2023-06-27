@@ -72,7 +72,7 @@ class ChessScreenModel:
         while self.is_pondering:
             await asyncio.sleep(REFRESH_RATE)
 
-    async def get_move(self, state: ChessState, num_sims: int) -> chess.Move:
+    async def get_move(self, state: ChessState, num_sims: int) -> tuple[chess.Move, float]:
         node = None
         if len(self.colors) == 2:
             node = self.root_node
@@ -85,7 +85,8 @@ class ChessScreenModel:
         temperature = temperature_schedule.get_temperature(state.move_count)
         move = policy.select_move(temperature)
         self.root_node = next(node for node in policy.node.children if node.move == move)
-        return move
+        q_value = self.root_node.q_value
+        return move, q_value if self.root_node.played_by == 1 else 1 - q_value
 
 
 class ChessScreenController:
@@ -116,9 +117,10 @@ class ChessScreenController:
         self.view.set_players("Human", human_colors)
         self.view.set_players("CAZ", colors_complement)
         self.view.draw_board(self.state)
+        self.view.update_eval_bar(0.5)
         if self.state.status().is_in_progress and self.model.is_alphas_turn(self.state):
-            move = await self.model.get_move(self.state, self.num_sims)
-            await self.move_piece(move)
+            move, q_value = await self.model.get_move(self.state, self.num_sims)
+            await self.move_piece(move, q_value)
 
     async def on_square_click(self, square: Square) -> None:
         if self.model.is_alphas_turn(self.state) or not self.state.status().is_in_progress:
@@ -137,7 +139,7 @@ class ChessScreenController:
         else:
             self.view.draw_board(self.state)
 
-    async def move_piece(self, move: chess.Move):
+    async def move_piece(self, move: chess.Move, q_value: float | None = None):
         from_square = move.from_square
         to_square = move.to_square
         piece = self.state.board.piece_at(from_square)
@@ -154,6 +156,7 @@ class ChessScreenController:
             await self.model.wait_for_pondering_to_stop()
             self.state.board.push(move)
             self.view.draw_board(self.state)
+            self.view.update_eval_bar(q_value)
 
             await asyncio.sleep(0)
             csv = self.state.csv()
@@ -166,8 +169,8 @@ class ChessScreenController:
                 return
 
             if self.model.is_alphas_turn(self.state):
-                move = await self.model.get_move(self.state, self.num_sims)
-                await self.move_piece(move)
+                move, q_value = await self.model.get_move(self.state, self.num_sims)
+                await self.move_piece(move, q_value)
             else:
                 await self.model.ponder(self.state)
         else:
@@ -175,23 +178,68 @@ class ChessScreenController:
 
 
 class ChessScreen(tk.Frame):
+    def update_eval_bar(self, q_value: float | None) -> None:
+        if q_value is None:
+            return
+
+        canvas_width = 20
+        canvas_height = 8 * CELL_SIZE
+        self.eval_bar.delete("all")
+
+        bar_height = int(canvas_height)  # Height of each half bar
+        bar_width = 20  # Width of the bar
+        bar_position = int((canvas_width - bar_width) / 2)  # X-coordinate for the bar
+
+        # Calculate the height of the black and white halves based on the given value
+        white_height = int(bar_height * q_value)
+        black_height = bar_height - white_height
+
+        # Render the black half bar
+        x1, y1, x2, y2 = bar_position, 0, bar_position + bar_width, black_height
+        self.eval_bar.create_rectangle(x1, y1, x2, y2, fill="black")
+
+        # Render the white half bar
+        x1, y1, x2, y2 = bar_position, black_height, bar_position + bar_width, canvas_height
+        self.eval_bar.create_rectangle(x1, y1, x2, y2, fill="white")
+
+    def build_eval_bar(self, root) -> tk.Canvas:
+        canvas_width = 20
+        canvas_height = 8 * CELL_SIZE
+
+        canvas = tk.Canvas(root, width=canvas_width, height=canvas_height, highlightthickness=0)
+        canvas.pack(expand=True)
+        return canvas
+
+    def toggle_chess_bar(self) -> None:
+        if self.eval_var.get():
+            self.eval_bar.pack()
+        else:
+            self.eval_bar.pack_forget()
+
     def __init__(self, parent, new_game_callback):
         super().__init__(parent, bg=DARK_COLOR)
 
         # Initialize variables
         self.image_map = ChessScreen._get_piece_image_map()
 
+        # Eval Bar
+        eval_frame = tk.Frame(self, bg=DARK_COLOR)
+        eval_frame.pack(side=tk.LEFT, padx=15, anchor=tk.W, expand=True)
+        self.eval_bar = self.build_eval_bar(eval_frame)
+        self.update_eval_bar(0.5)
+
         # LHS Canvas
-        self.canvas = tk.Canvas(self, width=8 * CELL_SIZE, height=8 * CELL_SIZE, bg="white", border=0)
-        self.canvas.pack(side=tk.LEFT, padx=25, pady=25, expand=False)
+        self.canvas = tk.Canvas(self, width=8 * CELL_SIZE, height=8 * CELL_SIZE, highlightthickness=0)
+        self.canvas.pack(side=tk.LEFT, padx=0, pady=25, expand=False)
         self.canvas.bind("<Button-1>", self._canvas_callback)
 
         # RHS Frame
         rhs_frame = tk.Frame(self, bg=DARK_COLOR)
-        rhs_frame.pack(side=tk.LEFT, padx=(0, 20), anchor=tk.W, expand=True)
+        rhs_frame.pack(side=tk.LEFT, padx=20, anchor=tk.W, expand=True)
 
         # Add labels to display game information
         self.flip_board = tk.BooleanVar(value=False)
+        self.eval_var = tk.BooleanVar(value=True)
         self.white_label, self.black_label = self._add_status_labels(rhs_frame)
 
         # Create radio buttons for promotion options
@@ -341,6 +389,13 @@ class ChessScreen(tk.Frame):
         checkbox.configure(background=DARK_COLOR, foreground=BLUE_COLOR, font=("Cascadia Mono", 11))
         checkbox.pack(side=tk.TOP, pady=0, anchor=tk.W)
 
+        # Check box for eval bar
+        eval_checkbox = tk.Checkbutton(
+            frame, text="Show Eval Bar", variable=self.eval_var, command=self.toggle_chess_bar
+        )
+        eval_checkbox.configure(background=DARK_COLOR, foreground=BLUE_COLOR, font=("Cascadia Mono", 11))
+        eval_checkbox.pack(side=tk.TOP, pady=0, anchor=tk.W)
+
         return white_player_label, black_player_label
 
     def _add_promotion_options(self, frame) -> None:
@@ -395,7 +450,7 @@ class ChessScreen(tk.Frame):
         photo = ImageTk.PhotoImage(image)
         image_label = tk.Label(frame, image=photo, bg=DARK_COLOR)
         image_label.image = photo  # Store a reference to avoid garbage collection
-        image_label.pack(side=tk.TOP, pady=(60, 30), anchor=tk.W)
+        image_label.pack(side=tk.TOP, pady=(20, 20), anchor=tk.W)
 
     def _add_new_game_button(self, frame, new_game_callback) -> None:
         # Create a custom style for the buttons
@@ -418,7 +473,7 @@ class ChessScreen(tk.Frame):
             style="W.TButton",
             compound=tk.CENTER,
         )
-        new_game_button.pack(side=tk.BOTTOM, anchor=tk.S, pady=(10, 10), padx=(0, 0))
+        new_game_button.pack(side=tk.BOTTOM, anchor=tk.S, pady=(0, 10), padx=(0, 0))
 
     def _canvas_callback(self, event) -> None:
         file = event.x // CELL_SIZE
