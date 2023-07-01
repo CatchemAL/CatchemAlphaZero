@@ -9,6 +9,9 @@
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/Doddle)
 [![Tutorial](https://img.shields.io/badge/doddle-tutorial-orange?logo=jupyter)](https://github.com/CatchemAl/Doddle/blob/main/tutorial/Getting%20Started.ipynb)
 
+## Installation
+`pip install catchem-alpha-zero`
+
 ### Project Overview
 `CatchemAlphaZero` showcases techniques in artificial intelligence for solving two-player games without any human knowledge or input except for the rules of the game.  Any two-player deterministic game can,  in principle, leverage this framework.  Little is needed beyond the ability to: 
  1. get the games current legal moves
@@ -48,10 +51,14 @@ Options to:
 
 
 ### How strong is CAZ?
-The current ELO of CAZ is not precisely known (and obviously varies with increasing number of MCTS simulations). The ultimate plan is to integrate CAZ as a Lichess bot. For now, the strength of CAZ has been calculated by playing friends and colleagues who have generously offered to play the bot. To date, CAZ has not lost on 1,000 simulations and Chess.com consistently estimates its ELO to be in the range 1,900 to 2,300. My suspicion is that it is at the lower end of this figure - like AlphaZero, CAZ is strong at strategic play and openings but struggles with tactical play and endgames (where technique matters more).  
+The current [Elo](https://en.wikipedia.org/wiki/Elo_rating_system) of CAZ is not precisely known (and obviously varies with increasing number of MCTS simulations). The ultimate plan is to integrate CAZ as a Lichess bot. For now, the strength of CAZ has been calculated by playing friends and colleagues who have generously offered to play the bot. To date, CAZ has not lost on 1,000 simulations and Chess.com consistently estimates its Elo to be in the range 1,900 to 2,300. My suspicion is that it is at the lower end of this figure - like AlphaZero, CAZ is strong at strategic play and openings but struggles with tactical play and endgames (where technique matters more).
 
-## Installation
-`pip install catchem-alpha-zero`
+<div style="text-align:center">
+  <img src="https://raw.githubusercontent.com/CatchemAl/LargeFiles/main/CAZ/CAZvAlvar.gif" width="420">
+  <figcaption>A friend (white) vs CAZ (Black) 0-1 under classical conditions. CAZ wins via resignation. Chess.com <a href="https://www.chess.com/analysis/library/jAYnm3Tdx">estimated</a> the Elo scores as 1,800 (white), 2,350 (black).</figcaption>
+</div>
+
+
 
 Download the latest weights from here. CAZ assumes that the weights are saved in a `weights` folder within the current directory.
 
@@ -66,13 +73,17 @@ CAZ produces beautiful visualisations for each game. In particular, it is possib
   <figcaption>Rendered with ❤️ using CAZ. See the tutorial for details on how.</figcaption>
 </div>
 
-CAZ also renders each game state as HTML and will show the policy associated with each state as an HTML grid with a heatmap overlay. The darker squares correspond to squares favoured by the policy. The evaluation shows that CAZ believes it has a 100% chance of winning from here and correctly identifies the three moves that can lead toa win.
+CAZ also renders each game state as HTML and will show the policy associated with each state as an HTML grid with a heatmap overlay. The darker squares correspond to squares favoured by the policy. The evaluation shows that CAZ believes it has a 100% chance of winning from here and correctly identifies the three moves that can lead to a win.
 
 
 <div style="text-align:center">
   <img src="https://raw.githubusercontent.com/CatchemAl/LargeFiles/main/CAZ/TTT%20Policy.png" width="420">
   <figcaption>Heatmap policy for Tic-Tac-Toe. States and policied states are understood natively by IPython.</figcaption>
 </div>
+
+# Learning through self-play reinforcement learning
+
+CAZ is able to learn games entirely through self-play reinforcement learning. The premise 
 
 
 ### Command line Interface Features
