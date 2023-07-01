@@ -64,7 +64,7 @@ It's possible to train CAZ directly but if you'd like to use the weights that I 
 
 
 ### How it works
-CatchemAlphaZero is project that explores artificial intelligence techniques for two player games. The project started with minimax, which was then extended to alpha-beta minimax. MCTS was added to support games where leaf nodes could not be reached via brute force search. AlphaZero extends MCTS by using neural networks to both guide the search and provide and evaluation of each position rather than entering the rollout phase.
+CatchemAlphaZero is a project that explores artificial intelligence techniques for two player games. The project started with minimax, which was then extended to alpha-beta minimax. MCTS was added to support games where leaf nodes could not be reached via brute force search. AlphaZero extends MCTS by using neural networks to both guide the search and provide and evaluation of each position rather than entering the rollout phase.
 
 CAZ produces beautiful visualisations for each game. In particular, it is possible to render the full tree search as well as the policy & evaluation associated with each state. The image below shows the output of a tree search with 10 simulations (please note that CAZ assumes that you have the [GraphViz](https://graphviz.org/doc/info/command.html) application already installed.)
 
@@ -93,8 +93,8 @@ CAZ is able to learn games entirely through self-play reinforcement learning. Th
 </div><br/>
 
 To train the neural network, the network learns through self-play. The steps are:
-1. play a game against itself relying on MCTS and the neural network
-2. at each step, improve the current policy via MCTS - MCTS is a policy improvement operator
+1. Play a game against itself relying on MCTS and the neural network
+2. At each step, improve the current policy via MCTS - MCTS is a policy improvement operator
 3. Record the outcome of the match after the game is played to completion
 4. Play 100s of matches and batch the results together
 5. train the neural network against the match results. In particular, learn an improved policy based on the MCTS. Additionally, improve the network's evaluation function by assigning a score {-1, 0, +1} to **each state** depnding upon the final outcome.
@@ -107,12 +107,14 @@ CAZ exposes five entry points via the command line: `run`, `learn`, `kaggle`, `s
 1)  **Run** CAZ from the terminal to see it play a game
 2) **Learn** through self-play if you wish to train a netowrk
 3) **Kaggle** enables you to run a Kaggle compliant agent that complies with the Kaggle [Simulation Competitions](https://www.kaggle.com/competitions/connectx) API
-4) **super** trains a neural netowrk in chess through supervised learning. Whilst it is entirely possible to learn entirely through self-play reinforcement learning, it would take a very long time to do this exclusively for chess. Supervised learning was used to accelerate the learning process specifically for chess.
-5) **Hyper** performas a search over CAZ's various hyperparameters to ensure that it is learning optimally as training progresses 
+4) **super** trains a neural network in chess through supervised learning. Whilst it is entirely possible to learn solely through self-play reinforcement learning, it would take a very long time to do this exclusively for chess (Deepmind used 5,000 TPUs for training which is out of my budget!). Supervised learning was used to accelerate the learning process specifically for chess but not for any other game.
+5) **Hyper** performs a search over CAZ's various hyperparameters to ensure that it is learning optimally as training progresses 
 
-The commands can be run with additional parameters:
-- Play using words of length 4-9 (inclusive) by adding the optional `--size` parameter (default is 5).
-- Choose your solver using the `--solver=ENTROPY` or `--solver=MINIMAX` parameter (default is minimax)
-- Run deep searches using the `--depth` parameter (default is 1)
-- Solve multiple games of Wordle at the same time. This mode is inspired by popular spin-offs such as [Dordle](https://zaratustra.itch.io/dordle), [Quordle](https://www.quordle.com/#/) and [Octordle](https://octordle.com/). Playing multiple games with Doddle is easy: just add more answers to the run command `doddle run --answer=ULTRA,QUICK,SOLVE` and Doddle will solve them all at the same time.
-
+Examples of how to run the various entry points are shown below:
+- `caz run --game=tic --player1=mcts --player2=az # MCTS vs AlphaZero algorithm`.
+- `caz run --game=connectx --player1=mcts --player2=mcts`
+- `caz run --game=chess --player1=az --player2=az`
+- `caz learn --game=connectx`
+- `caz kaggle --game=connectx --player1=mcts --player2=mcts`
+- `caz super`
+- `caz hyper --game=connectx --gen=53`
