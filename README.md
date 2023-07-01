@@ -56,12 +56,13 @@ At the time of writing, the 'state of the art' is to use an Efficiently Updating
 
 <div style="text-align:center">
   <img src="https://raw.githubusercontent.com/CatchemAl/LargeFiles/main/CAZ/CAZvAlvar.gif" width="420">
-  <figcaption>A friend (white) vs CAZ (Black) 0-1 under classical conditions. CAZ wins via resignation. Chess.com <a href="https://www.chess.com/analysis/library/jAYnm3Tdx">estimated</a> the Elo scores as 1,800 (white), 2,350 (black).</figcaption>
+  <figcaption><br/>A friend (white) vs CAZ (Black) 0-1 under classical conditions. CAZ wins via resignation. Chess.com <a href="https://www.chess.com/analysis/library/jAYnm3Tdx">estimated</a> the Elo scores as 1,800 (white), 2,350 (black).<br/></figcaption>
 </div>
 
 
 
 
+<br/>
 It's possible to train CAZ directly but if you'd like to use the weights that I have produced, you can download them from here. CAZ assumes that the weights are saved in a `weights` folder within the active current directory.
 
 
@@ -72,8 +73,9 @@ CAZ produces beautiful visualisations for each game. In particular, it is possib
 
 <div style="text-align:center">
   <img src="https://raw.githubusercontent.com/CatchemAl/LargeFiles/main/CAZ/graph.svg" width="420">
-  <figcaption>Rendered with ❤️ using CAZ. See the tutorial for details on how.</figcaption>
-</div>
+  <figcaption><br/>Rendered with ❤️ using CAZ. See the tutorial for details on how.</figcaption>
+</div><br/>
+
 
 CAZ also renders each game state as HTML and will show the policy associated with each state as an HTML grid with a heatmap overlay. The darker squares correspond to squares favoured by the policy. The evaluation shows that CAZ believes it has a 100% chance of winning from here and correctly identifies the three moves that can lead to a win.
 
