@@ -84,7 +84,14 @@ CAZ also renders each game state as HTML and will show the policy associated wit
 
 # Learning through self-play reinforcement learning
 
-CAZ is able to learn games entirely through self-play reinforcement learning. The premise 
+CAZ is able to learn games entirely through self-play reinforcement learning. The idea is to use MCTS to explore a sample of the state space that seems most promising. At each step, the MCTS is guided by a policy retrieved from the neural network and evaluates a position using the neural network's evalution result. The neural network is a two-headed (policy head and value head) [ResNet](https://en.wikipedia.org/wiki/Residual_neural_network) architecture that is described in detail in DeepMind's [Nature paper](https://www.nature.com/articles/nature24270.epdf?author_access_token=VJXbVjaSHxFoctQQ4p2k4tRgN0jAjWel9jnR3ZoTv0PVW4gB86EEpGqTRDtpIz-2rmo8-KG06gqVobU5NSCFeHILHcVFUeMsbvwS-lxjqQGg98faovwjxeTUgZAUMnRQ). Below, is an illustration of the architecture used for TicTacToe. For chess, via architecture uses 19 residual network blocks:
+
+
+<div style="text-align:center">
+  <img src="https://raw.githubusercontent.com/CatchemAl/LargeFiles/main/CAZ/Tensorboard-ResNet.png" width="420">
+  <figcaption><br/>Visualisation of the network architecture for TicTacToe using Tensorboard.</figcaption>
+</div><br/>
+
 
 
 ### Command line Interface Features
