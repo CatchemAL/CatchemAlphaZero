@@ -42,8 +42,37 @@ Options to:
   
 #### Key features
  - **MCTS Num Sims:** Increase the size of the Monte Carlo Tree Search to increase the difficulty (1,000 sims corresponds to a chess ELO of about 1,800).
- - **Show Eval Bar** to see how CAZ currently evaluates the current position
+ - **Show Eval Bar** to see how CAZ evaluates the current position
  - **Asynchronous Ponder:** CAZ is fully asynchronous and will ponder on your thinking time. CAZ efficiently recycles the tree search between moves and explores whilst its opponent is thinking. Take time to think but remember that CAZ is thinking too!
+
+
+
+### How strong is CAZ?
+The current ELO of CAZ is not precisely known (and obviously varies with increasing number of MCTS simulations). The ultimate plan is to integrate CAZ as a Lichess bot. For now, the strength of CAZ has been calculated by playing friends and colleagues who have generously offered to play the bot. To date, CAZ has not lost on 1,000 simulations and Chess.com consistently estimates its ELO to be in the range 1,900 to 2,300. My suspicion is that it is at the lower end of this figure - like AlphaZero, CAZ is strong at strategic play and openings but struggles with tactical play and endgames (where technique matters more).  
+
+## Installation
+`pip install catchem-alpha-zero`
+
+Download the latest weights from here. CAZ assumes that the weights are saved in a `weights` folder within the current directory.
+
+
+### How it works
+CatchemAlphaZero is project that explores artificial intelligence techniques for two player games. The project started with minimax, which ws then extended to alpha-beta minimax. MCTS was added to support games where leave nodes could not be reached via brute force search. AlphaZero extends MCTS by using neural networks to both guide the search and provide and evaluation of each position rather than entering the rollout phase.
+
+CAZ produces beautiful visualisations for each game. In particular, it is possible to render the full tree search as well as the policy & evaluation associated with each state. The image below shows the output of a tree search with 10 simulations (please note that CAZ assumes that you have the GraphViz application already installed.)
+
+<div style="text-align:center">
+  <img src="https://raw.githubusercontent.com/CatchemAl/LargeFiles/main/CAZ/graph.svg" width="420">
+  <figcaption>Rendered with ❤️ using CAZ. See the tutorial for details on how.</figcaption>
+</div>
+
+CAZ also renders each game state as HTML and will show the policy associated with each state as an HTML grid with a heatmap overlay. The darker squares correspond to squares favoured by the policy. The evaluation shows that CAZ believes it has a 100% chance of winning from here and correctly identifies the three moves that can lead toa win.
+
+
+<div style="text-align:center">
+  <img src="https://raw.githubusercontent.com/CatchemAl/LargeFiles/main/CAZ/TTT%20Policy.png" width="420">
+  <figcaption>Heatmap policy for Tic-Tac-Toe. States and policied states are understood natively by IPython.</figcaption>
+</div>
 
 
 ### Command line Interface Features
