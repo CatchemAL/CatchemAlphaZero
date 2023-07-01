@@ -100,12 +100,15 @@ To train the neural network, the network learns through self-play. The steps are
 5. train the neural network against the match results. In particular, learn an improved policy based on the MCTS. Additionally, improve the network's evaluation function by assigning a score {-1, 0, +1} to **each state** depnding upon the final outcome.
 
 
+If you'd like to train the network yourself, check out the command line interface below.
+
 ### Command line Interface Features
-Doddle exposes four entry points via the command line: `run`, `solve`, `hide`, `benchmark`
-1)  **Run** the solver to see how the game is optimally played
-2) **Solve** a game in realtime using Doddle's solver
-3) Play a variation of the game where the solver attempts to **hide** the answer from you for as long as possible (inspired by [Absurdle](https://qntm.org/files/absurdle/absurdle.html))
-4) **Benchmark** Doddle against the entire dictionary to see how well it performs
+CAZ exposes five entry points via the command line: `run`, `learn`, `kaggle`, `super`, `hyper`
+1)  **Run** CAZ from the terminal to see it play a game
+2) **Learn** through self-play if you wish to train a netowrk
+3) **Kaggle** enables you to run a Kaggle compliant agent that complies with the Kaggle [Simulation Competitions](https://www.kaggle.com/competitions/connectx) API
+4) **super** trains a neural netowrk in chess through supervised learning. Whilst it is entirely possible to learn entirely through self-play reinforcement learning, it would take a very long time to do this exclusively for chess. Supervised learning was used to accelerate the learning process specifically for chess.
+5) **Hyper** performas a search over CAZ's various hyperparameters to ensure that it is learning optimally as training progresses 
 
 The commands can be run with additional parameters:
 - Play using words of length 4-9 (inclusive) by adding the optional `--size` parameter (default is 5).
