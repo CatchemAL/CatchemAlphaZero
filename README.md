@@ -58,18 +58,15 @@ At the time of writing, the 'state of the art' is to use an Efficiently Updating
   <img src="https://raw.githubusercontent.com/CatchemAl/LargeFiles/main/CAZ/CAZvAlvar.gif" width="420">
   <figcaption><br/>A friend (white) vs CAZ (Black) 0-1 under classical conditions. CAZ wins via resignation. Chess.com <a href="https://www.chess.com/analysis/library/jAYnm3Tdx">estimated</a> the Elo scores as 1,800 (white), 2,350 (black).<br/></figcaption>
 </div>
-
-
-
-
 <br/>
+
 It's possible to train CAZ directly but if you'd like to use the weights that I have produced, you can download them from here. CAZ assumes that the weights are saved in a `weights` folder within the active current directory.
 
 
 ### How it works
 CatchemAlphaZero is project that explores artificial intelligence techniques for two player games. The project started with minimax, which was then extended to alpha-beta minimax. MCTS was added to support games where leaf nodes could not be reached via brute force search. AlphaZero extends MCTS by using neural networks to both guide the search and provide and evaluation of each position rather than entering the rollout phase.
 
-CAZ produces beautiful visualisations for each game. In particular, it is possible to render the full tree search as well as the policy & evaluation associated with each state. The image below shows the output of a tree search with 10 simulations (please note that CAZ assumes that you have the GraphViz application already installed.)
+CAZ produces beautiful visualisations for each game. In particular, it is possible to render the full tree search as well as the policy & evaluation associated with each state. The image below shows the output of a tree search with 10 simulations (please note that CAZ assumes that you have the [GraphViz](https://graphviz.org/doc/info/command.html) application already installed.)
 
 <div style="text-align:center">
   <img src="https://raw.githubusercontent.com/CatchemAl/LargeFiles/main/CAZ/graph.svg" width="420">
@@ -82,8 +79,8 @@ CAZ also renders each game state as HTML and will show the policy associated wit
 
 <div style="text-align:center">
   <img src="https://raw.githubusercontent.com/CatchemAl/LargeFiles/main/CAZ/TTT%20Policy.png" width="420">
-  <figcaption>Heatmap policy for Tic-Tac-Toe. States and policied states are understood natively by IPython.</figcaption>
-</div>
+  <figcaption><br/>Heatmap policy for Tic-Tac-Toe. States and policied states are understood natively by IPython.</figcaption>
+</div><br/>
 
 # Learning through self-play reinforcement learning
 
