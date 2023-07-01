@@ -64,7 +64,7 @@ It's possible to train CAZ directly but if you'd like to use the weights that I 
 
 
 ### How it works
-CatchemAlphaZero is a project that explores artificial intelligence techniques for two player games. The project started with minimax, which was then extended to alpha-beta minimax. MCTS was added to support games where leaf nodes could not be reached via brute force search. AlphaZero extends MCTS by using neural networks to both guide the search and provide and evaluation of each position rather than entering the rollout phase.
+CatchemAlphaZero is a project that explores artificial intelligence techniques for two player games. The project started with [minimax](https://en.wikipedia.org/wiki/Minimax), which was then extended to [alpha-beta](https://en.wikipedia.org/wiki/Alpha%E2%80%93beta_pruning) minimax. [MCTS](https://en.wikipedia.org/wiki/Monte_Carlo_tree_search) was added to support games where leaf nodes could not be reached via brute force search. AlphaZero extends MCTS by using neural networks to both guide the search and provide and evaluation of each position rather than entering the rollout phase.
 
 CAZ produces beautiful visualisations for each game. In particular, it is possible to render the full tree search as well as the policy & evaluation associated with each state. The image below shows the output of a tree search with 10 simulations (please note that CAZ assumes that you have the [GraphViz](https://graphviz.org/doc/info/command.html) application already installed.)
 
@@ -92,7 +92,7 @@ CAZ is able to learn games entirely through self-play reinforcement learning. Th
   <figcaption><br/>Visualisation of the network architecture for TicTacToe using Tensorboard.</figcaption>
 </div><br/>
 
-To train the neural network, the network learns through self-play. The steps are:
+To improve the neural network, CAZ learns through self-play. The steps are:
 1. Play a game against itself relying on MCTS and the neural network
 2. At each step, improve the current policy via MCTS - MCTS is a policy improvement operator
 3. Record the outcome of the match after the game is played to completion
@@ -104,7 +104,7 @@ If you'd like to train the network yourself, check out the command line interfac
 
 ### Command line Interface Features
 CAZ exposes five entry points via the command line: `run`, `learn`, `kaggle`, `super`, `hyper`
-1)  **Run** CAZ from the terminal to see it play a game
+1) **Run** CAZ from the terminal to see it play a game
 2) **Learn** through self-play if you wish to train a netowrk
 3) **Kaggle** enables you to run a Kaggle compliant agent that complies with the Kaggle [Simulation Competitions](https://www.kaggle.com/competitions/connectx) API
 4) **super** trains a neural network in chess through supervised learning. Whilst it is entirely possible to learn solely through self-play reinforcement learning, it would take a very long time to do this exclusively for chess (Deepmind used 5,000 TPUs for training which is out of my budget!). Supervised learning was used to accelerate the learning process specifically for chess but not for any other game.
@@ -178,16 +178,17 @@ The action space is an 8x8x73 tensor where each 8x8 plane corresponds to:
 
 
 ### Tutorial
-CAZ is not, nor ever intends to be a top chess engine*. Rather, it is a showcase in AI techniques and my attempt to reproduce Deepmind's work. If you'd like to know more about the inner working of self-play reinforcement learning, check out the tutorials. They contain beautifully rendered visualisations to help you understand the way the project works. The tutorials have been organised into four sections:
+CAZ is not, nor ever intends to be a top chess engine\*. Rather, it is a showcase in AI techniques and my attempt to reproduce Deepmind's work. If you'd like to know more about the inner working of self-play reinforcement learning, check out the tutorials. They contain beautifully rendered visualisations to help you understand the way the project works. The tutorials have been organised into four sections:
 1. **MCTS Demo** which showcases MCTS including the UCB formula. You can render search trees to see it in action
 2. **Convolutional Layers** which shows how convolutional layers work and can combine to transform the 'images' of the game
 3. **Alpha Zero** where you can see CatchemAlphaZero's policies and play against it within an IPython setting
 4. Chess - which illustrates the exact details of the chess setup. You can interrogate the network and play againt it here (although GUI app preferred)
 
-* However, I am a glutton for punsihment and will probably rewrite this project in C++ to make it stronger...
+\* However, I am a glutton for punsihment and will probably rewrite this project in C++ to make it stronger at some point...
 
 
 Thanks for making it this far!
+
 Alex
 
 
