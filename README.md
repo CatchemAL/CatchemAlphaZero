@@ -174,7 +174,7 @@ The action space is an 8x8x73 tensor where each 8x8 plane corresponds to:
 <p float="center">
   <img src="https://raw.githubusercontent.com/CatchemAl/LargeFiles/main/CAZ/CAZ_Chess_Space.png" width="420">
   <figcaption>Visualisation of the observation space (left) and action space (right). Here, CAZ is set to show the top two moves which align with common theory for the Fried Liver Attack. You can tweak the slider to show more/fewer moves or interrogate top moves by action plane.</figcaption>
-</p><br/>
+</p>
 
 
 ### Tutorial
