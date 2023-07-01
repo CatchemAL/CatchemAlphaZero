@@ -67,7 +67,7 @@ It's possible to train CAZ directly but if you'd like to use the weights that I 
 
 
 ### How it works
-CatchemAlphaZero is project that explores artificial intelligence techniques for two player games. The project started with minimax, which ws then extended to alpha-beta minimax. MCTS was added to support games where leave nodes could not be reached via brute force search. AlphaZero extends MCTS by using neural networks to both guide the search and provide and evaluation of each position rather than entering the rollout phase.
+CatchemAlphaZero is project that explores artificial intelligence techniques for two player games. The project started with minimax, which was then extended to alpha-beta minimax. MCTS was added to support games where leaf nodes could not be reached via brute force search. AlphaZero extends MCTS by using neural networks to both guide the search and provide and evaluation of each position rather than entering the rollout phase.
 
 CAZ produces beautiful visualisations for each game. In particular, it is possible to render the full tree search as well as the policy & evaluation associated with each state. The image below shows the output of a tree search with 10 simulations (please note that CAZ assumes that you have the GraphViz application already installed.)
 
