@@ -21,12 +21,29 @@ The project includes:
  - [AlphaZero](https://en.wikipedia.org/wiki/AlphaZero): an attempt to replicate the brilliant work of [DeepMind](https://www.deepmind.com/), who used deep convolutional neural networks in conjunction with Monte Carlo Tree SearchTo significantly improve upon the MCTS algorithm.  The neural network learns the optimal policy entirely through self-play reinforcement learning.
 
 ### Supported Games
+
 - Chess
 - ConnectX ([Connect 4](https://en.wikipedia.org/wiki/Connect_Four) for boards of arbitrary sizes)
 - Tic Tac Toe
 
+  
+
 ### Play Chess Against `CatchemAlphaZero`
-`CatchemAlphaZero`  bundles a GUI  application with the wheel, `alpha`, installed into your virtual environments Scripts folder.
+
+`CatchemAlphaZero` bundles a GUI application with the wheel, `alpha`, installed into your virtual environments Scripts folder. To launch the GUI, either click the application within the scripts folder or type `alpha` into the command line (having activated your virtual environment).
+
+Options to:
+- Play as White
+- Play as Black
+- Play as Both
+- Spectate Mode (watch CAZ play against itself) 
+
+  <img src="https://raw.githubusercontent.com/CatchemAl/LargeFiles/main/CAZ/GUI_demo.png" width="420">
+  
+#### Key features
+ - **MCTS Num Sims:** Increase the size of the Monte Carlo Tree Search to increase the difficulty (1,000 sims corresponds to a chess ELO of about 1,800).
+ - **Show Eval Bar** to see how CAZ currently evaluates the current position
+ - **Asynchronous Ponder:** CAZ is fully asynchronous and will ponder on your thinking time. CAZ efficiently recycles the tree search between moves and explores whilst its opponent is thinking. Take time to think but remember that CAZ is thinking too!
 
 
 ### Command line Interface Features
