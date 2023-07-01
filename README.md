@@ -84,7 +84,7 @@ CAZ also renders each game state as HTML and will show the policy associated wit
 
 # Learning through self-play reinforcement learning
 
-CAZ is able to learn games entirely through self-play reinforcement learning. The idea is to use MCTS to explore a sample of the state space that seems most promising. At each step, the MCTS is guided by a policy retrieved from the neural network and evaluates a position using the neural network's evalution result. The neural network is a two-headed (policy head and value head) [ResNet](https://en.wikipedia.org/wiki/Residual_neural_network) architecture that is described in detail in DeepMind's [Nature paper](https://www.nature.com/articles/nature24270.epdf?author_access_token=VJXbVjaSHxFoctQQ4p2k4tRgN0jAjWel9jnR3ZoTv0PVW4gB86EEpGqTRDtpIz-2rmo8-KG06gqVobU5NSCFeHILHcVFUeMsbvwS-lxjqQGg98faovwjxeTUgZAUMnRQ). Below, is an illustration of the architecture used for TicTacToe. For chess, via architecture uses 19 residual network blocks:
+CAZ is able to learn games entirely through self-play reinforcement learning. The idea is to use MCTS to explore a sample of the state space that seems most promising. At each step, the MCTS is guided by a policy retrieved from the neural network and evaluates a position using the neural network's evalution result. The neural network is a two-headed (policy head and value head) [ResNet](https://en.wikipedia.org/wiki/Residual_neural_network) architecture that is described in detail in DeepMind's [Nature paper](https://www.nature.com/articles/nature24270.epdf?author_access_token=VJXbVjaSHxFoctQQ4p2k4tRgN0jAjWel9jnR3ZoTv0PVW4gB86EEpGqTRDtpIz-2rmo8-KG06gqVobU5NSCFeHILHcVFUeMsbvwS-lxjqQGg98faovwjxeTUgZAUMnRQ). Below, is an illustration of the architecture used for TicTacToe. For chess, the architecture uses 19 residual network blocks:
 
 
 <div style="text-align:center">
@@ -97,7 +97,7 @@ To train the neural network, the network learns through self-play. The steps are
 2. At each step, improve the current policy via MCTS - MCTS is a policy improvement operator
 3. Record the outcome of the match after the game is played to completion
 4. Play 100s of matches and batch the results together
-5. train the neural network against the match results. In particular, learn an improved policy based on the MCTS. Additionally, improve the network's evaluation function by assigning a score {-1, 0, +1} to **each state** depnding upon the final outcome.
+5. Train the neural network against the match results. In particular, learn an improved policy based on the MCTS. Additionally, improve the network's evaluation function by assigning a score {-1, 0, +1} to **each state** depending upon the final outcome.
 
 
 If you'd like to train the network yourself, check out the command line interface below.
@@ -118,3 +118,56 @@ Examples of how to run the various entry points are shown below:
 - `caz kaggle --game=connectx --player1=mcts --player2=mcts`
 - `caz super`
 - `caz hyper --game=connectx --gen=53`
+
+
+## Chess Representation
+CAZ follows Deepmind's proposal for representing input features and the action space per the [follow up paper](https://arxiv.org/pdf/1712.01815.pdf). In particular, a state is represented by an 8x8x20 input tensor where the 20 planes correspond to:
+1. Current player's pawn positions 
+1. Current player's rook positions 
+1. Current player's knight positions 
+1. Current player's bishop positions 
+1. Current player's queen positions 
+1. Opposing player's king positions
+1. Opposing player's pawn positions 
+1. Opposing player's rook positions 
+1. Opposing player's knight positions 
+1. Opposing player's bishop positions 
+1. Opposing player's queen positions 
+1. Opposing player's king positions
+1. 8x8 matrix of 0's or 1's denoting the player's turn (all zeroes or all ones)
+1. 8x8 matrix of 0's or 1's denoting current player's kingside castling rights
+1. 8x8 matrix of 0's or 1's denoting current player's queenside castling rights
+1. 8x8 matrix of 0's or 1's denoting opposing player's kingside castling rights
+1. 8x8 matrix of 0's or 1's denoting opposing player's queenside castling rights
+1. 8x8 matrix of showing the halfmove clock
+1. indicators for the position of any en passant squares
+1. 8x8 matrix denoting whether the state is a two-fold repetition
+
+The action space is an 8x8x73 tensor where each 8x8 plane corresponds to:
+- x7 N moves (the maximum number of squares you can move north is 7)
+- x7 NE moves (again, moving 1-7 moves in a north-east direction)
+- x7 E moves
+- x7 SE moves
+- x7 S moves
+- x7 SW moves
+- x7 W moves
+- x7 NW moves
+- Knight move NNE (i.e. one square east and two north)
+- Knight move ENE (i.e. two square east and two north)
+- Knight move ESE
+- Knight move SSE
+- Knight move SSW
+- Knight move WSW
+- Knight move WNW
+- Knight move NNW
+- Promote NW Knight (underpromote to a knight by capturing north-west)
+- Promote N Knight (underpromote to a knight by advancing north)
+- Promote NE Knight
+- Promote NW Rook
+- Promote N  Rook
+- Promote NE Rook
+- Promote NW Bishop
+- Promote N  Bishop
+- Promote NE Bishop
+
+Check out the tutorial (below) to see visualisations of these representations.
