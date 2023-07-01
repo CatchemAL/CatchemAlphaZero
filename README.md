@@ -92,6 +92,12 @@ CAZ is able to learn games entirely through self-play reinforcement learning. Th
   <figcaption><br/>Visualisation of the network architecture for TicTacToe using Tensorboard.</figcaption>
 </div><br/>
 
+To train the neural network, the network learns through self-play. The steps are:
+1. play a game against itself relying on MCTS and the neural network
+2. at each step, improve the current policy via MCTS - MCTS is a policy improvement operator
+3. Record the outcome of the match after the game is played to completion
+4. Play 100s of matches and batch the results together
+5. train the neural network against the match results. In particular, learn an improved policy based on the MCTS. Additionally, improve the network's evaluation function by assigning a score {-1, 0, +1} to **each state** depnding upon the final outcome.
 
 
 ### Command line Interface Features
