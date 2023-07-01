@@ -170,4 +170,24 @@ The action space is an 8x8x73 tensor where each 8x8 plane corresponds to:
 - Promote N  Bishop
 - Promote NE Bishop
 
-Check out the tutorial (below) to see visualisations of these representations.
+
+<p float="center">
+  <img src="https://raw.githubusercontent.com/CatchemAl/LargeFiles/main/CAZ/CAZ_Chess_Space.png" width="420">
+  <figcaption>Visualisation of the observation space (left) and action space (right). Here, CAZ is set to show the top two moves which align with common theory for the Fried Liver Attack. You can tweak the slider to show more/fewer moves or interrogate top moves by action plane.</figcaption>
+</p><br/>
+
+
+### Tutorial
+CAZ is not, nor ever intends to be a top chess engine*. Rather, it is a showcase in AI techniques and my attempt to reproduce Deepmind's work. If you'd like to know more about the inner working of self-play reinforcement learning, check out the tutorials. They contain beautifully rendered visualisations to help you understand the way the project works. The tutorials have been organised into four sections:
+1. **MCTS Demo** which showcases MCTS including the UCB formula. You can render search trees to see it in action
+2. **Convolutional Layers** which shows how convolutional layers work and can combine to transform the 'images' of the game
+3. **Alpha Zero** where you can see CatchemAlphaZero's policies and play against it within an IPython setting
+4. Chess - which illustrates the exact details of the chess setup. You can interrogate the network and play againt it here (although GUI app preferred)
+
+* However, I am a glutton for punsihment and will probably rewrite this project in C++ to make it stronger...
+
+
+Thanks for making it this far!
+Alex
+
+
