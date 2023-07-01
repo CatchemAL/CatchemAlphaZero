@@ -79,7 +79,7 @@ class ChessScreenModel:
         elif self.root_node and state.board.move_stack:
             node = next(n for n in self.root_node.children if n.move == state.board.move_stack[-1])
 
-        temperature_schedule = TemperatureSchedule.competitive()
+        temperature_schedule = TemperatureSchedule(2, 1)
         await asyncio.sleep(REFRESH_RATE)
         policy = await self.alpha_zero.policy_async(state, num_sims, node)
         temperature = temperature_schedule.get_temperature(state.move_count)
