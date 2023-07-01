@@ -13,7 +13,7 @@
 `pip install catchem-alpha-zero`
 
 ### Project Overview
-`CatchemAlphaZero` (CAZ) showcases techniques in artificial intelligence for solving two-player games without any human knowledge or input except for the rules of the game.  Any two-player deterministic game can,  in principle, leverage this framework.  Little is needed beyond the ability to: 
+`CatchemAlphaZero` (CAZ) showcases techniques in artificial intelligence for solving two-player games without any human knowledge or input except for the rules of the game.  Any two-player deterministic game can, in principle, leverage this framework.  Little is needed beyond the ability to: 
  1. get the games current legal moves
  2. play a move
  3. determine if the game has terminated.
@@ -50,7 +50,7 @@ The crowning glory of this project is chess. `CatchemAlphaZero` bundles a GUI ap
 
 
 ### How strong is CAZ?
-The current [Elo](https://en.wikipedia.org/wiki/Elo_rating_system) of CAZ is not precisely known (and obviously varies with increasing number of MCTS simulations). The ultimate plan is to integrate CAZ as a Lichess bot. For now, the strength of CAZ has been calculated by playing friends and colleagues who have generously offered to play the bot. To date, CAZ has not lost on 1,000 simulations and Chess.com consistently estimates its Elo to be in the range 1,900 to 2,300. My suspicion is that it is at the lower end of this figure - like AlphaZero, CAZ is strong at strategic play and openings but struggles with tactical play and endgames (where technique matters more).
+The current [Elo](https://en.wikipedia.org/wiki/Elo_rating_system) of CAZ is not precisely known (and obviously varies with increasing number of MCTS simulations). The ultimate plan is to integrate CAZ as a Lichess bot. For now, the strength of CAZ has been calculated by playing friends and colleagues who (are far better at chess than me and) have generously offered to play the bot. To date, CAZ has not lost on 1,000 simulations and [Chess.com](https://www.chess.com) consistently estimates its Elo to be in the range 1,900 to 2,300. My suspicion is that it is at the lower end of this spectrum - like AlphaZero, CAZ is strong at strategic play and closed positions but struggles with tactical play and endgames (where technique matters more).
 
 At the time of writing, the 'state of the art' is to use an Efficiently Updating Sparse Flat Neighborhood Network (SF NNUE). This is a smaller, faster CPU bound network that allows for deeper searches and therefore shines in tactical play as well as strategic play. This project uses a large convolutional ResNet architecture exactly as per DeepMind's specification. It works best on a GPU (but CPU only runs are supported as well).
 
@@ -84,7 +84,7 @@ CAZ also renders each game state as HTML and will show the policy associated wit
 
 # Learning through self-play reinforcement learning
 
-CAZ is able to learn games entirely through self-play reinforcement learning. The idea is to use MCTS to explore a sample of the state space that seems most promising. At each step, the MCTS is guided by a policy retrieved from the neural network and evaluates a position using the neural network's evalution result. The neural network is a two-headed (policy head and value head) [ResNet](https://en.wikipedia.org/wiki/Residual_neural_network) architecture that is described in detail in DeepMind's [Nature paper](https://www.nature.com/articles/nature24270.epdf?author_access_token=VJXbVjaSHxFoctQQ4p2k4tRgN0jAjWel9jnR3ZoTv0PVW4gB86EEpGqTRDtpIz-2rmo8-KG06gqVobU5NSCFeHILHcVFUeMsbvwS-lxjqQGg98faovwjxeTUgZAUMnRQ). Below, is an illustration of the architecture used for TicTacToe. For chess, the architecture uses 19 residual network blocks:
+CAZ is able to learn games entirely through self-play reinforcement learning. The idea is to use MCTS to explore a sample of the search space that seems most promising. At each step, the MCTS is guided by a policy retrieved from the neural network and evaluates a position using the neural network's evalution result. The neural network is a two-headed (policy head and value head) [ResNet](https://en.wikipedia.org/wiki/Residual_neural_network) architecture that is described in detail in DeepMind's [Nature paper](https://www.nature.com/articles/nature24270.epdf?author_access_token=VJXbVjaSHxFoctQQ4p2k4tRgN0jAjWel9jnR3ZoTv0PVW4gB86EEpGqTRDtpIz-2rmo8-KG06gqVobU5NSCFeHILHcVFUeMsbvwS-lxjqQGg98faovwjxeTUgZAUMnRQ). Below, is an illustration of the architecture used for TicTacToe. For chess, the architecture uses 19 residual network blocks:
 
 
 <div style="text-align:center">
