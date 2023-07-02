@@ -183,7 +183,7 @@ CAZ is not, nor ever intends to be a top chess engine\*. Rather, it is a showcas
 3. **Alpha Zero** where you can see CatchemAlphaZero's policies and play against it within an IPython setting
 4. Chess - which illustrates the exact details of the chess setup. You can interrogate the network and play againt it here (although GUI app preferred)
 
-\* However, I am a glutton for punsihment and will probably rewrite this project in C++ to make it stronger at some point...
+\* However, I am a glutton for punishment and will probably rewrite this project in C++ to make it stronger at some point...
 
 
 Thanks for making it this far!
