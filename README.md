@@ -59,7 +59,7 @@ At the time of writing, the 'state of the art' is to use an Efficiently Updating
 </div>
 <br/>
 
-It's possible to train CAZ directly but if you'd like to use the weights that I have produced, you can download them from here. CAZ assumes that the weights are saved in a `weights` folder within the active current directory.
+It's possible to train CAZ directly but if you'd like to use the weights that I have produced, you can download them from [here](https://github.com/CatchemAL/LargeFiles/tree/main/CAZ). CAZ assumes that the weights are saved in a `weights` folder within the active current directory.
 
 
 ### How it works
