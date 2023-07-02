@@ -2,8 +2,7 @@
 
 ## Features
 
-
-[![example workflow](https://github.com/CatchemAl/Doddle/actions/workflows/python-app.yml/badge.svg)](https://github.com/CatchemAl/Doddle/actions)
+[![example workflow](https://github.com/CatchemAl/CatchemAlphaZero/actions/workflows/python-app.yml/badge.svg)](https://github.com/CatchemAl/CatchemAlphaZero/actions)
 [![PyPI - Wheel](https://img.shields.io/pypi/wheel/catchem-alpha-zero)](https://pypi.org/project/catchem-alpha-zero/#files)
 [![PyPI](https://img.shields.io/pypi/v/catchem-alpha-zero.svg)](https://pypi.org/project/catchem-alpha-zero/)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/catchem-alpha-zero)
