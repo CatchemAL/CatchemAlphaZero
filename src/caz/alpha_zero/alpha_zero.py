@@ -363,10 +363,10 @@ class Arena:
         gen = arena_result.generation
 
         # Logging metrics to TensorBoard
-        writer.add_scalar(f"Arena/Win Ratio", arena_result.win_ratio, gen)
-        writer.add_scalar(f"Arena/Total Wins", arena_result.num_wins, gen)
-        writer.add_scalar(f"Arena/Total Draws", arena_result.num_draws, gen)
-        writer.add_scalar(f"Arena/Total Losses", arena_result.num_losses, gen)
+        writer.add_scalar("Arena/Win Ratio", arena_result.win_ratio, gen)
+        writer.add_scalar("Arena/Total Wins", arena_result.num_wins, gen)
+        writer.add_scalar("Arena/Total Draws", arena_result.num_draws, gen)
+        writer.add_scalar("Arena/Total Losses", arena_result.num_losses, gen)
         writer.close()
 
 

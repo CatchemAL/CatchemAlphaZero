@@ -369,7 +369,7 @@ class ChessScreen(tk.Frame):
 
         white_player_label = tk.Label(
             frame,
-            text=f"White: <<PLACEHOLDER>>",
+            text="White: <<PLACEHOLDER>>",
             font=("Cascadia Mono", 11),
             fg=BLUE_COLOR,
             bg=DARK_COLOR,
@@ -378,7 +378,7 @@ class ChessScreen(tk.Frame):
 
         black_player_label = tk.Label(
             frame,
-            text=f"Black: <<PLACEHOLDER>>",
+            text="Black: <<PLACEHOLDER>>",
             font=("Cascadia Mono", 11),
             fg=BLUE_COLOR,
             bg=DARK_COLOR,

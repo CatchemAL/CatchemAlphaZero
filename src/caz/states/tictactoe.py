@@ -4,7 +4,7 @@ from typing import Self
 import numpy as np
 
 from ..bitboard_utils import BitboardUtil
-from .state import State, Status, TemperatureSchedule
+from .state import State, Status
 
 # 3  7 11
 # 2  6 10

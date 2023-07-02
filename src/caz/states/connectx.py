@@ -4,7 +4,7 @@ from typing import Generator, Self
 import numpy as np
 
 from ..bitboard_utils import BitboardUtil
-from .state import State, Status, TemperatureSchedule
+from .state import State, Status
 
 
 @dataclass(slots=True)
