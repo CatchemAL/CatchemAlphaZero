@@ -42,7 +42,7 @@ class Application(tk.Tk):
         self.switch_to_title_screen()
         self.create_menu()
 
-        with resources.path("caz.icons", "tiny_chess.ico") as icon_path:
+        with resources.path("caz.images", "tiny_chess.ico") as icon_path:
             self.iconbitmap(icon_path)
 
     async def show_async(self):
@@ -87,7 +87,7 @@ class TitleScreen(tk.Frame):
         super().__init__(master)
 
         # Load and display the background image
-        with resources.path("caz.icons", "caz_splashscreen.jpg") as splash_path:
+        with resources.path("caz.images", "caz_splashscreen.jpg") as splash_path:
             logo = Image.open(splash_path).resize((614, 608))
 
         image = ImageTk.PhotoImage(logo)

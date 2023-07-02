@@ -443,7 +443,7 @@ class ChessScreen(tk.Frame):
         self.sims_combobox.pack(side=tk.TOP, anchor=tk.W, pady=(10, 0))
 
     def _add_catchemalphazero_logo(self, frame) -> None:
-        with resources.path("caz.icons", "caz_flat_logo.png") as image_path:
+        with resources.path("caz.images", "caz_flat_logo.png") as image_path:
             image = Image.open(image_path)
 
         image = image.resize((180, 176))
@@ -492,7 +492,7 @@ class ChessScreen(tk.Frame):
 
     @staticmethod
     def _get_piece_image_map() -> dict[Piece, tk.PhotoImage]:
-        with resources.files("caz.icons") as dir:
+        with resources.files("caz.images") as dir:
             piece_images = {
                 Piece(chess.PAWN, chess.WHITE): Image.open(dir / "white-pawn.png"),
                 Piece(chess.ROOK, chess.WHITE): Image.open(dir / "white-rook.png"),
@@ -526,7 +526,7 @@ class Application(tk.Tk):
 
         self.title("CatchemAlphaZero")
         self.resizable(False, False)
-        self.iconbitmap("icons/tiny_chess.ico")
+        self.iconbitmap("images/tiny_chess.ico")
         self.is_open = True
 
         game = Chess()

@@ -1,4 +1,4 @@
-<img src="https://raw.githubusercontent.com/CatchemAl/CatchemAlphaZero/main/src/caz/icons/caz_splashscreen.jpg" width="420">
+<img src="https://raw.githubusercontent.com/CatchemAl/CatchemAlphaZero/main/src/caz/images/caz_splashscreen.jpg" width="420">
 
 ## Features
 
