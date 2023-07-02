@@ -7,7 +7,7 @@
 [![PyPI - Wheel](https://img.shields.io/pypi/wheel/Doddle)](https://pypi.org/project/doddle/#files)
 [![PyPI](https://img.shields.io/pypi/v/doddle.svg)](https://pypi.org/project/doddle/)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/Doddle)
-[![Tutorial](https://img.shields.io/badge/doddle-tutorial-orange?logo=jupyter)](https://github.com/CatchemAl/Doddle/blob/main/tutorial/Getting%20Started.ipynb)
+[![Tutorial](https://img.shields.io/badge/CAZ-tutorial-orange?logo=jupyter)](https://github.com/CatchemAL/CatchemAlphaZero/tree/main/tutorials)
 
 ## Installation
 `pip install catchem-alpha-zero`
