@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
-from caz.games import Chess
 
+from caz.games import Chess
 from caz.states.chess import ObsPlanes
 from caz.states.chess_enums import KeyGames
 

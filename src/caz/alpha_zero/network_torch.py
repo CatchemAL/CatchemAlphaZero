@@ -194,9 +194,9 @@ class PytorchNeuralNetwork:
                     epoch_total_loss += total_loss.item()
 
             # Logging metrics to TensorBoard
-            writer.add_scalar(f"Generations/Total Loss", epoch_total_loss / num_points, gen)
-            writer.add_scalar(f"Generations/Policy Loss", epoch_policy_loss / num_points, gen)
-            writer.add_scalar(f"Generations/Outcome Loss", epoch_outcome_loss / num_points, gen)
+            writer.add_scalar("Generations/Total Loss", epoch_total_loss / num_points, gen)
+            writer.add_scalar("Generations/Policy Loss", epoch_policy_loss / num_points, gen)
+            writer.add_scalar("Generations/Outcome Loss", epoch_outcome_loss / num_points, gen)
 
         self.resnet.train()
         for epoch in trange(num_epochs, desc=" - Training", leave=False):

@@ -2,10 +2,8 @@ import sys
 from argparse import ArgumentParser, Namespace
 from typing import Sequence
 
-import numpy as np
-
 from .games import GameType, get_game
-from .solvers import AgentType, Solver
+from .solvers import AgentType
 
 
 def run(args: Namespace) -> None:

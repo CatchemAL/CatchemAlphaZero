@@ -7,7 +7,6 @@ from dataclasses import dataclass, field
 from math import sqrt
 from typing import Awaitable, Generic, Self
 
-import nest_asyncio
 import numpy as np
 
 from ..async_utils import asyncio_run

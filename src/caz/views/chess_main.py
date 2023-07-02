@@ -30,11 +30,12 @@ class Application(tk.Tk):
         self.current_screen = None
         self.protocol("WM_DELETE_WINDOW", self.raise_exit_flag)
 
-        logging.info("Loading Torch weights.")
+        logging.info("Loading Torch weights...")
         network = PytorchNeuralNetwork.create(game, ".")
         alpha_zero = AlphaZero(network)
         model = ChessScreenModel(alpha_zero, chess.BLACK)
 
+        logging.info("Loading screens...")
         self.title_screen = TitleScreen(self, self.switch_to_game_screen)
         self.game_screen = ChessScreen(self, self.switch_to_title_screen)
         self.game_controller = ChessScreenController(model, self.game_screen)
@@ -42,8 +43,11 @@ class Application(tk.Tk):
         self.switch_to_title_screen()
         self.create_menu()
 
-        with resources.path("caz.icons", "tiny_chess.ico") as icon_path:
+        logging.info("Loading icon...")
+        with resources.path("caz.images", "tiny_chess.ico") as icon_path:
             self.iconbitmap(icon_path)
+
+        logging.info("Initialization complete")
 
     async def show_async(self):
         while self.is_open:
@@ -87,7 +91,7 @@ class TitleScreen(tk.Frame):
         super().__init__(master)
 
         # Load and display the background image
-        with resources.path("caz.icons", "caz_splashscreen.jpg") as splash_path:
+        with resources.path("caz.images", "caz_splashscreen.jpg") as splash_path:
             logo = Image.open(splash_path).resize((614, 608))
 
         image = ImageTk.PhotoImage(logo)

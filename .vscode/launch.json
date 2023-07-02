@@ -80,14 +80,6 @@
             ]
         },
         {
-            "name": "MNIST Examples",
-            "type": "python",
-            "request": "launch",
-            "module": "src.caz.mnist",
-            "justMyCode": true,
-            "args": []
-        },
-        {
             "name": "Run TicTacToe (MCTS)",
             "type": "python",
             "request": "launch",

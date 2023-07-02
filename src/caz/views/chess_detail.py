@@ -79,7 +79,7 @@ class ChessScreenModel:
         elif self.root_node and state.board.move_stack:
             node = next(n for n in self.root_node.children if n.move == state.board.move_stack[-1])
 
-        temperature_schedule = TemperatureSchedule.competitive()
+        temperature_schedule = TemperatureSchedule(2, 1)
         await asyncio.sleep(REFRESH_RATE)
         policy = await self.alpha_zero.policy_async(state, num_sims, node)
         temperature = temperature_schedule.get_temperature(state.move_count)
@@ -369,7 +369,7 @@ class ChessScreen(tk.Frame):
 
         white_player_label = tk.Label(
             frame,
-            text=f"White: <<PLACEHOLDER>>",
+            text="White: <<PLACEHOLDER>>",
             font=("Cascadia Mono", 11),
             fg=BLUE_COLOR,
             bg=DARK_COLOR,
@@ -378,7 +378,7 @@ class ChessScreen(tk.Frame):
 
         black_player_label = tk.Label(
             frame,
-            text=f"Black: <<PLACEHOLDER>>",
+            text="Black: <<PLACEHOLDER>>",
             font=("Cascadia Mono", 11),
             fg=BLUE_COLOR,
             bg=DARK_COLOR,
@@ -443,7 +443,7 @@ class ChessScreen(tk.Frame):
         self.sims_combobox.pack(side=tk.TOP, anchor=tk.W, pady=(10, 0))
 
     def _add_catchemalphazero_logo(self, frame) -> None:
-        with resources.path("caz.icons", "caz_flat_logo.png") as image_path:
+        with resources.path("caz.images", "caz_flat_logo.png") as image_path:
             image = Image.open(image_path)
 
         image = image.resize((180, 176))
@@ -492,7 +492,7 @@ class ChessScreen(tk.Frame):
 
     @staticmethod
     def _get_piece_image_map() -> dict[Piece, tk.PhotoImage]:
-        with resources.files("caz.icons") as dir:
+        with resources.files("caz.images") as dir:
             piece_images = {
                 Piece(chess.PAWN, chess.WHITE): Image.open(dir / "white-pawn.png"),
                 Piece(chess.ROOK, chess.WHITE): Image.open(dir / "white-rook.png"),
@@ -526,7 +526,7 @@ class Application(tk.Tk):
 
         self.title("CatchemAlphaZero")
         self.resizable(False, False)
-        self.iconbitmap("icons/tiny_chess.ico")
+        self.iconbitmap("images/tiny_chess.ico")
         self.is_open = True
 
         game = Chess()

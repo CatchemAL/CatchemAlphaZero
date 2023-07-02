@@ -161,7 +161,7 @@ class TicTacToe(Game[TicTacToeState]):
 
     @property
     def fullname(self) -> str:
-        return f"TicTacToe"
+        return "TicTacToe"
 
     @property
     def shape(self) -> tuple[int, int]:
