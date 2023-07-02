@@ -188,6 +188,6 @@ CAZ is not, nor ever intends to be a top chess engine\*. Rather, it is a showcas
 
 Thanks for making it this far!
 
-Alex
+CatchemAL
 
 
