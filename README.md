@@ -45,7 +45,7 @@ The crowning glory of this project is chess. `CatchemAlphaZero` bundles a GUI ap
  - **MCTS Num Sims:** Increase the size of the Monte Carlo Tree Search to increase the difficulty (1,000 sims corresponds to a chess ELO of about 1,800).
  - **Show Eval Bar** to see how CAZ evaluates the current position
  - **Asynchronous Ponder:** CAZ is fully asynchronous and will ponder on your thinking time. CAZ efficiently recycles the tree search between moves and explores whilst its opponent is thinking. Take time to think but remember that CAZ is thinking too!
- - **Watch:** Click here to watch a demo of the application.
+ - **Watch:** Click [here](https://youtu.be/HdjE3QIr12A) to watch a demo of the application.
 
 
 
