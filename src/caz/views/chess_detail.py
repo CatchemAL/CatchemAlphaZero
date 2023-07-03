@@ -194,13 +194,22 @@ class ChessScreen(tk.Frame):
         white_height = int(bar_height * q_value)
         black_height = bar_height - white_height
 
-        # Render the black half bar
-        x1, y1, x2, y2 = bar_position, 0, bar_position + bar_width, black_height
-        self.eval_bar.create_rectangle(x1, y1, x2, y2, fill="black")
+        if self.flip_board.get():
+            # Render the black half bar
+            x1, y1, x2, y2 = bar_position, 0, bar_position + bar_width, white_height
+            self.eval_bar.create_rectangle(x1, y1, x2, y2, fill="white")
 
-        # Render the white half bar
-        x1, y1, x2, y2 = bar_position, black_height, bar_position + bar_width, canvas_height
-        self.eval_bar.create_rectangle(x1, y1, x2, y2, fill="white")
+            # Render the white half bar
+            x1, y1, x2, y2 = bar_position, white_height, bar_position + bar_width, canvas_height
+            self.eval_bar.create_rectangle(x1, y1, x2, y2, fill="black")
+        else:
+            # Render the black half bar
+            x1, y1, x2, y2 = bar_position, 0, bar_position + bar_width, black_height
+            self.eval_bar.create_rectangle(x1, y1, x2, y2, fill="black")
+
+            # Render the white half bar
+            x1, y1, x2, y2 = bar_position, black_height, bar_position + bar_width, canvas_height
+            self.eval_bar.create_rectangle(x1, y1, x2, y2, fill="white")
 
     def build_eval_bar(self, root) -> tk.Canvas:
         canvas_width = 20
@@ -220,6 +229,8 @@ class ChessScreen(tk.Frame):
         super().__init__(parent, bg=DARK_COLOR)
 
         # Initialize variables
+        self.flip_board = tk.BooleanVar(value=False)
+        self.eval_var = tk.BooleanVar(value=True)
         self.image_map = ChessScreen._get_piece_image_map()
 
         # Eval Bar
@@ -238,8 +249,6 @@ class ChessScreen(tk.Frame):
         rhs_frame.pack(side=tk.LEFT, padx=20, anchor=tk.W, expand=True)
 
         # Add labels to display game information
-        self.flip_board = tk.BooleanVar(value=False)
-        self.eval_var = tk.BooleanVar(value=True)
         self.white_label, self.black_label = self._add_status_labels(rhs_frame)
 
         # Create radio buttons for promotion options
