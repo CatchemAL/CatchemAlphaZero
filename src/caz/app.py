@@ -14,10 +14,12 @@ def launch() -> None:
         format="%(asctime)s - %(levelname)s - %(message)s",
     )
 
-    loop = asyncio.get_event_loop()
-    app = Application(loop)
-    asyncio.run(app.show_async())
-
+    try:
+        loop = asyncio.get_event_loop()
+        app = Application(loop)
+        asyncio.run(app.show_async())
+    except:
+        logging.exception('')
 
 if __name__ == "__main__":
     launch()
