@@ -19,7 +19,8 @@ def launch() -> None:
         app = Application(loop)
         asyncio.run(app.show_async())
     except:
-        logging.exception('')
+        logging.exception("")
+
 
 if __name__ == "__main__":
     launch()
