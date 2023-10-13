@@ -280,7 +280,13 @@ class PytorchNeuralNetwork:
         obs_shape = game_parameters.observation_shape
         action_size = game_parameters.action_size
 
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        if torch.cuda.is_available():
+            device = "cuda"
+        elif torch.backends.mps.is_available():
+            device = "mps"
+        else:
+            device = "cpu"
+
         map_location = torch.device(device)
 
         net_params = AZNetworkParameters.defaults(game.fullname)
